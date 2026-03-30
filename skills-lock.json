@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "skills": {
+    "docker-compose-creator": {
+      "source": "jeremylongshore/claude-code-plugins-plus-skills",
+      "sourceType": "github",
+      "computedHash": "935dbfd6ecec7d1621bd4ceafab802f394857c694b40fbe1c69b69eaf6d3b66b"
+    },
+    "docker-compose-orchestration": {
+      "source": "manutej/luxor-claude-marketplace",
+      "sourceType": "github",
+      "computedHash": "01831d0723a2ac491e233bd9bfdffdac8c0ae5500f140a3ca0382ac5f4a26159"
+    },
+    "documentation-writer": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "computedHash": "ee53d65b163cd7eb953a930c95841cfe398cc2c0bd24c06508bbaa07c432be35"
+    },
+    "gitignore-gen": {
+      "source": "thinkfleetai/thinkfleet-engine",
+      "sourceType": "github",
+      "computedHash": "6b3eeea3ee6ab168a98579cb8d2531b600a47ad76c60bc20a70ef15c048e306d"
+    },
+    "multi-stage-dockerfile": {
+      "source": "github/awesome-copilot",
+      "sourceType": "github",
+      "computedHash": "698bf93a84dae18fd7bd0b1d35c21427307fde78fbdf4624be9726f5f98189ca"
+    }
+  }
+}

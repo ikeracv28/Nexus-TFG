@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Administrativo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{css/PruebaCSS.css}">
+</head>
+<body>
+
+<header class="header">
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm py-3">
+        <div class="container">
+            <span class="navbar-brand fw-bold">PANEL DE CONTROL - ADMIN</span>
+        </div>
+    </nav>
+</header>
+
+<div class="container">
+    <h2 id="saludoUsuario" class="my-5 text-center"></h2>
+
+    <div class="container-main">
+        <h5 class="text-muted mb-4 text-uppercase small fw-bold border-bottom pb-2">Gestión de Usuarios</h5>
+
+        <div id="datosMostrar" class="table-responsive"></div>
+
+        <div class="mt-5 text-center">
+            <button class="btn btn-danger px-5 shadow-sm fw-bold" id="btnSalir">
+                Cerrar Sesión
+            </button>
+
+            <button class="btn btn-info px-5 shadow-sm fw-bold" id="btnVerUsuarios">
+                Ver usuarios
+            </button>
+
+        </div>
+    </div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{js/AdminController.js}"></script>
+</body>
+</html>

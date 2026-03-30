@@ -42,5 +42,23 @@ Este documento detalla la evolución arquitectónica del backend y el razonamien
 - **Razón:** Todos los métodos de búsqueda devuelven un objeto de tipo `Optional<T>`. 
 - **Impacto:** Esto obliga al desarrollador (a nosotros) a manejar explícitamente el caso de "dato no encontrado", evitando el clásico y temido `NullPointerException` en producción.
 
+## 5. Lógica de Autenticación y Seguridad
+
+### Cifrado BCrypt (SecurityConfig)
+- **Razón:** No se almacenan contraseñas en texto plano. Se utiliza `BCryptPasswordEncoder` para generar hashes seguros con 'salt' automático.
+- **Seguridad:** Cumple con los estándares de la OWASP para la protección de credenciales.
+
+### Java 21 Records (DTOs)
+- **Razón:** Se utilizan `Records` para los objetos de transferencia de datos (como `RegisterRequest`). 
+- **Decisión Crítica:** Al ser inmutables, garantizan que los datos que llegan del frontend no se modifiquen durante el flujo del servicio, lo que hace el sistema más predecible y seguro.
+
+### Capa de Servicio (AuthService)
+- **Razón:** Se separa la lógica de negocio (validar duplicados, cifrar contraseñas, asignar roles) de la capa de transporte (Controladores).
+- **Transaccionalidad:** Se usa `@Transactional` para asegurar la integridad de los datos en el proceso de registro (todo o nada).
+
+### Capa de Control (AuthController)
+- **Razón:** Se exponen endpoints REST bajo la ruta `/api/v1/auth`. 
+- **Validación:** Se utiliza `@Valid` para interceptar datos incorrectos antes de que lleguen al servicio, ahorrando recursos de procesamiento.
+
 ---
 *Última actualización: 30 de marzo de 2026*

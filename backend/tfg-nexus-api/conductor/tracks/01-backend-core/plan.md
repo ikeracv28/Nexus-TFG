@@ -18,11 +18,11 @@ Establecer el sistema de autenticación JWT y el modelo de datos principal (Empr
     - [x] Lógica de Servicio para Registro y Login (sin JWT aún).
     - [x] Controlador de Autenticación (`AuthController`).
 
-- [ ] **Task 3: Implementación de Seguridad JWT**
-    - [ ] Creación de `JwtUtils` para generar y validar tokens.
-    - [ ] Implementación de `UserDetailsService` (Spring Security).
-    - [ ] Filtro de Autenticación JWT (`JwtAuthenticationFilter`).
-    - [ ] Configuración del `SecurityFilterChain` para proteger rutas.
+- [x] **Task 3: Implementación de Seguridad JWT**
+    - [x] Creación de `JwtUtils` para generar y validar tokens.
+    - [x] Implementación de `UserDetailsService` (Spring Security).
+    - [x] Filtro de Autenticación JWT (`JwtAuthenticationFilter`).
+    - [x] Configuración del `SecurityFilterChain` para proteger rutas.
 
 - [ ] **Task 4: Modelo de Gestión de Prácticas**
     - [ ] Entidades `Empresa` y `Practica`.
@@ -35,6 +35,6 @@ Establecer el sistema de autenticación JWT y el modelo de datos principal (Empr
     - [ ] Lógica de validación de seguimientos por parte de tutores.
 
 ## Verificación Final
-- [ ] Registro de un alumno con éxito.
+- [x] Registro de un alumno con éxito.
 - [ ] Login con obtención de Token JWT válido.
 - [ ] Creación de una práctica vinculada a una empresa y dos tutores.

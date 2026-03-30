@@ -1,26 +1,28 @@
 package com.tfg.api.services.impl;
 
+import com.tfg.api.models.dto.AuthResponse;
+import com.tfg.api.models.dto.LoginRequest;
 import com.tfg.api.models.dto.RegisterRequest;
 import com.tfg.api.models.entity.Rol;
 import com.tfg.api.models.entity.Usuario;
 import com.tfg.api.models.repository.RolRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
+import com.tfg.api.security.JwtUtils;
+import com.tfg.api.security.UserDetailsServiceImpl;
 import com.tfg.api.services.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 /**
- * Implementación de la lógica de autenticación (AuthServiceImpl).
- * Aquí se definen los detalles internos de cómo se registra o loguea un usuario.
- * 
- * Uso de @RequiredArgsConstructor: 
- * Es una anotación de Lombok que genera automáticamente un constructor 
- * para los campos finales (final). Spring detecta ese constructor e 
- * inyecta las dependencias automáticamente (Inyección de dependencias).
+ * Implementación de la lógica de autenticación real para Nexus-TFG.
  */
 @Service
 @RequiredArgsConstructor
@@ -29,37 +31,31 @@ public class AuthServiceImpl implements AuthService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
+    private final AuthenticationManager authenticationManager;
+    private final UserDetailsServiceImpl userDetailsService;
 
     /**
-     * Registra un nuevo usuario en la base de datos.
-     * 
-     * @Transactional: Garantiza que si algo falla durante la creación del 
-     * usuario, toda la operación se deshace (rollback), evitando dejar 
-     * datos corruptos o a medias en la base de datos.
+     * Registra al usuario y devuelve automáticamente el Token para el Login inmediato.
      */
     @Override
     @Transactional
-    public Usuario registrar(RegisterRequest request) {
+    public AuthResponse registrar(RegisterRequest request) {
 
-        // 1. Validar que no exista un usuario con ese email
+        // Validaciones (DNI y Email únicos)
         if (usuarioRepository.existsByEmail(request.email())) {
             throw new RuntimeException("El email ya está registrado");
         }
-
-        // 2. Validar que no exista un usuario con ese DNI
         if (usuarioRepository.existsByDni(request.dni())) {
             throw new RuntimeException("El DNI ya está registrado");
         }
 
-        // 3. Obtener el rol de ALUMNO por defecto 
-        // Nota: En una fase real, el primer script Flyway debería haber 
-        // insertado los roles básicos.
+        // Asignación de rol base (Alumno)
         Rol rolAlumno = rolRepository.findByNombre("ROLE_ALUMNO")
-                .orElseThrow(() -> new RuntimeException("Error: Rol de Alumno no encontrado en el sistema"));
+                .orElseThrow(() -> new RuntimeException("Error: Rol de Alumno no encontrado"));
 
-        // 4. Crear el objeto Usuario y mapear los datos del DTO
-        // Ciframos la contraseña antes de guardar el objeto en la BD.
-        Usuario nuevoUsuario = Usuario.builder()
+        // Creación y persistencia
+        Usuario usuario = Usuario.builder()
                 .dni(request.dni())
                 .nombre(request.nombre())
                 .apellidos(request.apellidos())
@@ -69,23 +65,53 @@ public class AuthServiceImpl implements AuthService {
                 .activo(true)
                 .build();
 
-        // 5. Persistir el usuario en la base de datos
-        return usuarioRepository.save(nuevoUsuario);
+        usuarioRepository.save(usuario);
+
+        // Generamos el token de forma manual para devolverlo tras el registro
+        return generarAuthResponse(usuario);
     }
 
+    /**
+     * Proceso de Login oficial:
+     * 1. Usa AuthenticationManager para validar las credenciales.
+     * 2. Si es válido, genera el Token JWT y lo devuelve junto con info del usuario.
+     */
     @Override
-    public Usuario login(String email, String password) {
-        // Buscamos al usuario por su email
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Credenciales inválidas"));
+    public AuthResponse login(LoginRequest request) {
+        
+        // El AuthenticationManager usará internamente nuestro UserDetailsService
+        // y comparará contraseñas con el PasswordEncoder que configuramos.
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        );
 
-        // Comprobamos si la contraseña en texto plano enviada por el usuario 
-        // coincide con el hash guardado en la base de datos.
-        if (!passwordEncoder.matches(password, usuario.getPasswordHash())) {
-            throw new RuntimeException("Credenciales inválidas");
-        }
+        // Si la autenticación falla, Spring lanzará una excepción y no llegará a este punto.
+        Usuario usuario = usuarioRepository.findByEmail(request.email())
+                .orElseThrow();
 
-        // Si todo es correcto, devolvemos el objeto usuario (a falta de JWT)
-        return usuario;
+        return generarAuthResponse(usuario);
+    }
+
+    /**
+     * Método privado de utilidad para construir la respuesta común tras login/registro.
+     */
+    private AuthResponse generarAuthResponse(Usuario usuario) {
+        // Obtenemos el UserDetails para dárselo a JwtUtils
+        UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getEmail());
+        
+        // Generamos el token real
+        String token = jwtUtils.generateToken(userDetails);
+
+        // Mapeamos los roles a una lista de Strings simple para el frontend
+        var roles = usuario.getRoles().stream()
+                .map(Rol::getNombre)
+                .collect(Collectors.toSet());
+
+        return new AuthResponse(
+                token,
+                usuario.getEmail(),
+                usuario.getNombre(),
+                roles
+        );
     }
 }

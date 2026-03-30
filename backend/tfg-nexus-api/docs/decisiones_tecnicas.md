@@ -60,5 +60,23 @@ Este documento detalla la evolución arquitectónica del backend y el razonamien
 - **Razón:** Se exponen endpoints REST bajo la ruta `/api/v1/auth`. 
 - **Validación:** Se utiliza `@Valid` para interceptar datos incorrectos antes de que lleguen al servicio, ahorrando recursos de procesamiento.
 
+## 6. Arquitectura de Seguridad JWT (Task 3)
+
+### JwtUtils (Generación y Validación)
+- **Razón:** Centraliza la lógica de creación de tokens. Utiliza el algoritmo HS256 y una clave secreta configurable.
+- **Seguridad:** Los tokens incluyen fecha de emisión y expiración (24h por defecto) para mitigar riesgos de robo de tokens.
+
+### UserDetailsServiceImpl (Puente de Datos)
+- **Razón:** Implementa la interfaz estándar de Spring Security para cargar usuarios desde nuestra base de datos PostgreSQL.
+- **Conversión:** Transforma nuestras entidades `Rol` en `GrantedAuthority`, permitiendo que el framework gestione los permisos de forma nativa.
+
+### JwtAuthenticationFilter (Interceptor de Peticiones)
+- **Razón:** Implementa un filtro `OncePerRequestFilter` que extrae el token de la cabecera `Authorization: Bearer`.
+- **Estrategia:** Valida la firma del token y establece el contexto de seguridad en cada petición, permitiendo que la API sea **Stateless**.
+
+### SecurityFilterChain (Configuración Maestra)
+- **Razón:** Define las políticas de acceso globales. 
+- **Decisión Crítica:** Se deshabilita CSRF y se configura la política de sesiones como `STATELESS`. Se permite el acceso libre a la ruta de autenticación y se protege el resto de la API por defecto.
+
 ---
 *Última actualización: 30 de marzo de 2026*

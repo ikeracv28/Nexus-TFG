@@ -70,8 +70,11 @@ Este documento detalla la evolución arquitectónica del backend y el razonamien
 ### Capa de Control (AuthController)
 - **Razón:** Se exponen endpoints REST bajo la ruta `/api/v1/auth`. 
 - **Validación:** Se utiliza `@Valid` para interceptar datos incorrectos antes de que lleguen al servicio, ahorrando recursos de procesamiento.
+- **CORS:** Se habilita `@CrossOrigin(origins = "*")` para permitir que el cliente Flutter (ya sea en web o móvil) pueda consumir la API sin bloqueos de navegador.
+- **Naming:** Se sigue la convención de plurales para recursos, aunque en autenticación se usan verbos de acción (`/login`, `/register`) por ser operaciones procedimentales.
 
-## 6. Arquitectura de Seguridad JWT (Task 3)
+### 6. Arquitectura de Seguridad JWT (Task 3)
+
 
 ### JwtUtils (Generación y Validación)
 - **Razón:** Centraliza la lógica de creación de tokens. Utiliza el algoritmo HS256 y una clave secreta configurable.

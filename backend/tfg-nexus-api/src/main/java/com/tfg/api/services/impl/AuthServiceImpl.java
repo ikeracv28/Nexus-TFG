@@ -9,10 +9,12 @@ import com.tfg.api.models.mapper.UsuarioMapper;
 import com.tfg.api.models.repository.RolRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
 import com.tfg.api.security.JwtUtils;
+import com.tfg.api.security.UserDetailsServiceImpl;
 import com.tfg.api.services.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtils jwtUtils;
     private final AuthenticationManager authenticationManager;
     private final UsuarioMapper usuarioMapper;
+    private final UserDetailsServiceImpl userDetailsService;
 
     /**
      * Registra al usuario y devuelve automáticamente el Token para el Login inmediato.
@@ -43,60 +46,55 @@ public class AuthServiceImpl implements AuthService {
         // Validaciones de integridad (DNI y Email únicos)
         validarUnicidad(request);
 
-        // Uso del Mapper para convertir DTO a Entidad (Mapeo automático de campos simples)
+        // Uso del Mapper para convertir DTO a Entidad
         Usuario usuario = usuarioMapper.registerToEntity(request);
         
-        // Encriptación de contraseña (Lógica de seguridad)
+        // Encriptación de contraseña
         usuario.setPasswordHash(passwordEncoder.encode(request.password()));
 
-        // Asignación de rol base (Alumno por defecto en registro abierto)
+        // Asignación de rol base
         Rol rolAlumno = rolRepository.findByNombre("ROLE_ALUMNO")
-                .orElseThrow(() -> new RuntimeException("Error: El rol de Alumno no está configurado en la base de datos"));
+                .orElseThrow(() -> new RuntimeException("Error: El rol de Alumno no está configurado"));
         
         usuario.setRoles(Collections.singleton(rolAlumno));
         usuario.setActivo(true);
 
-        // Persistencia en PostgreSQL
+        // Persistencia
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
 
-        // Generamos el token JWT y mapeamos a la respuesta final
-        String token = jwtUtils.generateToken(usuarioGuardado);
+        // CARGA DE USERDETAILS PARA JWT (Corrección de tipo)
+        UserDetails userDetails = userDetailsService.loadUserByUsername(usuarioGuardado.getEmail());
+        String token = jwtUtils.generateToken(userDetails);
+
         return usuarioMapper.toAuthResponse(usuarioGuardado, token);
     }
 
     /**
-     * Proceso de Login oficial:
-     * 1. Usa AuthenticationManager para validar las credenciales contra la BD.
-     * 2. Si es válido, genera el Token JWT y lo devuelve al cliente.
+     * Proceso de Login oficial.
      */
     @Override
     public AuthResponse login(LoginRequest request) {
         
-        // Validación de credenciales delegada en Spring Security
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())
         );
 
-        // Si llegamos aquí, el usuario es válido
         Usuario usuario = usuarioRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado tras autenticación exitosa"));
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Generamos el token JWT para esta sesión
-        String token = jwtUtils.generateToken(usuario);
+        // CARGA DE USERDETAILS PARA JWT (Corrección de tipo)
+        UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getEmail());
+        String token = jwtUtils.generateToken(userDetails);
         
-        // Convertimos a DTO de respuesta usando el Mapper centralizado
         return usuarioMapper.toAuthResponse(usuario, token);
     }
 
-    /**
-     * Verifica que no existan duplicados de identificación en el sistema.
-     */
     private void validarUnicidad(RegisterRequest request) {
         if (usuarioRepository.existsByEmail(request.email())) {
             throw new RuntimeException("El correo electrónico ya se encuentra registrado");
         }
         if (usuarioRepository.existsByDni(request.dni())) {
-            throw new RuntimeException("El DNI introducido ya existe en el sistema");
+            throw new RuntimeException("El DNI introducido ya existe");
         }
     }
 }

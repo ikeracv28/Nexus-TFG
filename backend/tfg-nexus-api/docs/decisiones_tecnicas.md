@@ -73,6 +73,15 @@ Este documento detalla la evolución arquitectónica del backend y el razonamien
 - **CORS:** Se habilita `@CrossOrigin(origins = "*")` para permitir que el cliente Flutter (ya sea en web o móvil) pueda consumir la API sin bloqueos de navegador.
 - **Naming:** Se sigue la convención de plurales para recursos, aunque en autenticación se usan verbos de acción (`/login`, `/register`) por ser operaciones procedimentales.
 
+### Gestión Global de Errores (GlobalExceptionHandler)
+- **Razón:** Se implementa un interceptor centralizado mediante `@RestControllerAdvice` para estandarizar las respuestas ante fallos.
+- **ErrorResponse (Record):** Se define un esquema único de error en formato JSON para que el cliente Flutter pueda procesar las excepciones de forma predecible.
+- **Tratamiento de Validación:** Los errores de Bean Validation (`@NotBlank`, `@Email`) se desglosan en un mapa de campos, permitiendo al frontend marcar exactamente qué input del formulario es inválido.
+- **Estrategia de Status Code:**
+    - **404:** Para recursos no encontrados (`ResourceNotFoundException`).
+    - **401:** Para fallos de credenciales (`BadCredentialsException`).
+    - **409 (Conflict):** Se elige para errores de lógica de negocio (ej: email duplicado) en lugar del genérico 500, indicando que el problema es una violación de reglas de dominio, no un fallo del servidor.
+
 ### 6. Arquitectura de Seguridad JWT (Task 3)
 
 

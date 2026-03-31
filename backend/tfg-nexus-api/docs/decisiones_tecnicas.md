@@ -38,6 +38,17 @@ Este documento detalla la evolución arquitectónica del backend y el razonamien
 - **Razón:** Utilizamos `JpaRepository` para delegar el CRUD a Spring. 
 - **Decisión Crítica:** El uso de **Query Derivation** (como `findByEmail`) simplifica el código al no requerir sentencias SQL manuales. Spring analiza el nombre del método y genera la consulta óptima para PostgreSQL.
 
+### Modelo de Dominio Core (Entities & Relationships)
+- **Empresa:** Se diseña como una entidad independiente que almacena datos corporativos (CIF, contacto) necesarios para el convenio de prácticas.
+- **Practica (Entidad Pivote):** Es el núcleo funcional del sistema. Relaciona a un `Alumno` con su `Empresa`, un `TutorCentro` y un `TutorEmpresa`. 
+    - **Decisión Crítica:** Se opta por relaciones `@ManyToOne` con `FetchType.LAZY` en todas las claves foráneas para evitar la carga masiva de datos innecesarios en memoria (N+1 Select Problem).
+- **Seguimiento (Diario de Actividad):** Permite el registro cronológico de tareas. 
+    - **Decisión Crítica:** Se incluye una relación con el `Usuario` (Tutor) que valida el registro, permitiendo un flujo de aprobación formal integrado en la base de datos.
+
+### Repositorios Especializados
+- **PracticaRepository:** Se incluyen métodos personalizados para filtrar por alumno, tutor de centro y estado, permitiendo que cada rol visualice únicamente los convenios que le corresponden.
+- **SeguimientoRepository:** Implementa ordenación cronológica descendente por defecto (`OrderByFechaRegistroDesc`) para que el alumno y el tutor vean siempre la actividad más reciente primero.
+
 ### Uso de Optional
 - **Razón:** Todos los métodos de búsqueda devuelven un objeto de tipo `Optional<T>`. 
 - **Impacto:** Esto obliga al desarrollador (a nosotros) a manejar explícitamente el caso de "dato no encontrado", evitando el clásico y temido `NullPointerException` en producción.
@@ -79,4 +90,4 @@ Este documento detalla la evolución arquitectónica del backend y el razonamien
 - **Decisión Crítica:** Se deshabilita CSRF y se configura la política de sesiones como `STATELESS`. Se permite el acceso libre a la ruta de autenticación y se protege el resto de la API por defecto.
 
 ---
-*Última actualización: 30 de marzo de 2026*
+*Última actualización: 31 de marzo de 2026*

@@ -97,9 +97,16 @@ Este documento detalla la evolución arquitectónica del backend y el razonamien
 - **Razón:** Implementa un filtro `OncePerRequestFilter` que extrae el token de la cabecera `Authorization: Bearer`.
 - **Estrategia:** Valida la firma del token y establece el contexto de seguridad en cada petición, permitiendo que la API sea **Stateless**.
 
-### SecurityFilterChain (Configuración Maestra)
-- **Razón:** Define las políticas de acceso globales. 
-- **Decisión Crítica:** Se deshabilita CSRF y se configura la política de sesiones como `STATELESS`. Se permite el acceso libre a la ruta de autenticación y se protege el resto de la API por defecto.
+### Seguridad JWT y Tests de Integración
+- **Razón:** Se ha corregido la inyección de dependencias en los filtros de seguridad y se ha validado que el servidor emite tokens JWT válidos tras el registro y login.
+- **Verificación:** Superados tests de integración web (`AuthControllerTest`) y persistencia (`ModelPersistenceTest`).
+
+## 7. Próximos Pasos (Sesión Mañana)
+
+### Módulo de Gestión de Prácticas (Core Business)
+- **Implementación de PracticaService:** Lógica para la creación de convenios vinculando Alumno, Empresa y Tutores.
+- **DTOs de Negocio:** Diseño de records para la transferencia de datos de prácticas, evitando ciclos de referencia circular en el JSON.
+- **Seguridad por Método:** Introducción de `@PreAuthorize` para asegurar que solo los perfiles administrativos puedan gestionar los expedientes de prácticas.
 
 ---
 *Última actualización: 31 de marzo de 2026*

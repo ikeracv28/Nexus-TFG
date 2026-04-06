@@ -26,16 +26,24 @@ CREATE TABLE usuarios (
   apellidos VARCHAR(100) NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
-  centro_id BIGINT REFERENCES centros(id),
+  centro_id BIGINT,
   activo BOOLEAN DEFAULT TRUE,
-  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  -- Definición de claves foráneas
+  CONSTRAINT fk_usuario_centro FOREIGN KEY (centro_id) REFERENCES centros(id)
 );
 
 -- Relación Many-to-Many entre Usuarios y Roles.
 CREATE TABLE usuario_roles (
-  usuario_id BIGINT REFERENCES usuarios(id),
-  rol_id INT REFERENCES roles(id),
-  PRIMARY KEY (usuario_id, rol_id)
+  usuario_id BIGINT,
+  rol_id INT,
+  
+  PRIMARY KEY (usuario_id, rol_id),
+  
+  -- Definición de claves foráneas
+  CONSTRAINT fk_usuario_roles_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+  CONSTRAINT fk_usuario_roles_rol FOREIGN KEY (rol_id) REFERENCES roles(id)
 );
 
 -- Tabla de empresas: Donde se realizan las prácticas.
@@ -54,59 +62,81 @@ CREATE TABLE empresas (
 CREATE TABLE practicas (
   id BIGSERIAL PRIMARY KEY,
   codigo VARCHAR(50) UNIQUE NOT NULL,
-  alumno_id BIGINT REFERENCES usuarios(id) NOT NULL,
-  tutor_centro_id BIGINT REFERENCES usuarios(id) NOT NULL, -- Tutor del Instituto.
-  tutor_empresa_id BIGINT REFERENCES usuarios(id) NOT NULL, -- Tutor de la Empresa.
-  empresa_id BIGINT REFERENCES empresas(id) NOT NULL,
+  alumno_id BIGINT NOT NULL,
+  tutor_centro_id BIGINT NOT NULL, -- Tutor del Instituto.
+  tutor_empresa_id BIGINT NOT NULL, -- Tutor de la Empresa.
+  empresa_id BIGINT NOT NULL,
   fecha_inicio DATE,
   fecha_fin DATE,
   horas_totales INT,
   estado VARCHAR(20) DEFAULT 'BORRADOR', -- Ej: BORRADOR, ACTIVA, FINALIZADA.
-  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  -- Definición de claves foráneas
+  CONSTRAINT fk_practica_alumno FOREIGN KEY (alumno_id) REFERENCES usuarios(id),
+  CONSTRAINT fk_practica_tutor_centro FOREIGN KEY (tutor_centro_id) REFERENCES usuarios(id),
+  CONSTRAINT fk_practica_tutor_empresa FOREIGN KEY (tutor_empresa_id) REFERENCES usuarios(id),
+  CONSTRAINT fk_practica_empresa FOREIGN KEY (empresa_id) REFERENCES empresas(id)
 );
 
 -- Seguimientos semanales/diarios de los alumnos.
 CREATE TABLE seguimientos (
   id BIGSERIAL PRIMARY KEY,
-  practica_id BIGINT REFERENCES practicas(id) NOT NULL,
+  practica_id BIGINT NOT NULL,
   fecha_registro DATE NOT NULL,
   horas_realizadas INT NOT NULL,
   descripcion TEXT,
   estado VARCHAR(20) DEFAULT 'PENDIENTE', -- PENDIENTE, VALIDADO, RECHAZADO.
-  validado_por BIGINT REFERENCES usuarios(id),
+  validado_por BIGINT,
   comentario_tutor TEXT,
-  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  -- Definición de claves foráneas
+  CONSTRAINT fk_seguimiento_practica FOREIGN KEY (practica_id) REFERENCES practicas(id),
+  CONSTRAINT fk_seguimiento_validador FOREIGN KEY (validado_por) REFERENCES usuarios(id)
 );
 
 -- Incidencias durante el periodo de prácticas.
 CREATE TABLE incidencias (
   id BIGSERIAL PRIMARY KEY,
-  practica_id BIGINT REFERENCES practicas(id) NOT NULL,
-  creada_por BIGINT REFERENCES usuarios(id) NOT NULL,
+  practica_id BIGINT NOT NULL,
+  creada_por BIGINT NOT NULL,
   tipo VARCHAR(50), -- Ej: AUSENCIA, COMPORTAMIENTO, OTROS.
   descripcion TEXT NOT NULL,
   estado VARCHAR(20) DEFAULT 'ABIERTA',
-  resuelta_por BIGINT REFERENCES usuarios(id),
+  resuelta_por BIGINT,
   fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  fecha_resolucion TIMESTAMP
+  fecha_resolucion TIMESTAMP,
+  
+  -- Definición de claves foráneas
+  CONSTRAINT fk_incidencia_practica FOREIGN KEY (practica_id) REFERENCES practicas(id),
+  CONSTRAINT fk_incidencia_creador FOREIGN KEY (creada_por) REFERENCES usuarios(id),
+  CONSTRAINT fk_incidencia_resolutor FOREIGN KEY (resuelta_por) REFERENCES usuarios(id)
 );
 
 -- Mensajería interna (Chat) de la práctica.
 CREATE TABLE mensajes (
   id BIGSERIAL PRIMARY KEY,
-  practica_id BIGINT REFERENCES practicas(id) NOT NULL,
-  emisor_id BIGINT REFERENCES usuarios(id) NOT NULL,
+  practica_id BIGINT NOT NULL,
+  emisor_id BIGINT NOT NULL,
   contenido TEXT NOT NULL,
   leido BOOLEAN DEFAULT FALSE,
-  fecha_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  fecha_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  -- Definición de claves foráneas
+  CONSTRAINT fk_mensaje_practica FOREIGN KEY (practica_id) REFERENCES practicas(id),
+  CONSTRAINT fk_mensaje_emisor FOREIGN KEY (emisor_id) REFERENCES usuarios(id)
 );
 
 -- Notificaciones genéricas al usuario.
 CREATE TABLE notificaciones (
   id BIGSERIAL PRIMARY KEY,
-  usuario_id BIGINT REFERENCES usuarios(id) NOT NULL,
+  usuario_id BIGINT NOT NULL,
   tipo VARCHAR(50),
   mensaje TEXT NOT NULL,
   leida BOOLEAN DEFAULT FALSE,
-  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  
+  -- Definición de claves foráneas
+  CONSTRAINT fk_notificacion_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );

@@ -22,13 +22,16 @@ CREATE TABLE "usuarios" (
   "password_hash" varchar,
   "centro_id" bigint,
   "activo" boolean,
-  "fecha_creacion" timestamp
+  "fecha_creacion" timestamp,
+  FOREIGN KEY ("centro_id") REFERENCES "centros" ("id")
 );
 
 CREATE TABLE "usuario_roles" (
   "usuario_id" bigint,
   "rol_id" int,
-  PRIMARY KEY ("usuario_id", "rol_id")
+  PRIMARY KEY ("usuario_id", "rol_id"),
+  FOREIGN KEY ("usuario_id") REFERENCES "usuarios" ("id"),
+  FOREIGN KEY ("rol_id") REFERENCES "roles" ("id")
 );
 
 CREATE TABLE "empresas" (
@@ -51,7 +54,10 @@ CREATE TABLE "practicas" (
   "fecha_fin" date,
   "horas_totales" int,
   "estado" varchar,
-  "fecha_creacion" timestamp
+  "fecha_creacion" timestamp,
+  FOREIGN KEY ("alumno_id") REFERENCES "usuarios" ("id"),
+  FOREIGN KEY ("tutor_id") REFERENCES "usuarios" ("id"),
+  FOREIGN KEY ("empresa_id") REFERENCES "empresas" ("id")
 );
 
 CREATE TABLE "seguimientos" (
@@ -63,7 +69,9 @@ CREATE TABLE "seguimientos" (
   "estado" varchar,
   "validado_por" bigint,
   "comentario_tutor" text,
-  "fecha_creacion" timestamp
+  "fecha_creacion" timestamp,
+  FOREIGN KEY ("practica_id") REFERENCES "practicas" ("id"),
+  FOREIGN KEY ("validado_por") REFERENCES "usuarios" ("id")
 );
 
 CREATE TABLE "incidencias" (
@@ -75,7 +83,10 @@ CREATE TABLE "incidencias" (
   "estado" varchar,
   "resuelta_por" bigint,
   "fecha_creacion" timestamp,
-  "fecha_resolucion" timestamp
+  "fecha_resolucion" timestamp,
+  FOREIGN KEY ("practica_id") REFERENCES "practicas" ("id"),
+  FOREIGN KEY ("creada_por") REFERENCES "usuarios" ("id"),
+  FOREIGN KEY ("resuelta_por") REFERENCES "usuarios" ("id")
 );
 
 CREATE TABLE "mensajes" (
@@ -84,7 +95,9 @@ CREATE TABLE "mensajes" (
   "emisor_id" bigint,
   "contenido" text,
   "leido" boolean,
-  "fecha_envio" timestamp
+  "fecha_envio" timestamp,
+  FOREIGN KEY ("practica_id") REFERENCES "practicas" ("id"),
+  FOREIGN KEY ("emisor_id") REFERENCES "usuarios" ("id")
 );
 
 CREATE TABLE "notificaciones" (
@@ -93,33 +106,6 @@ CREATE TABLE "notificaciones" (
   "tipo" varchar,
   "mensaje" text,
   "leida" boolean,
-  "fecha_creacion" timestamp
+  "fecha_creacion" timestamp,
+  FOREIGN KEY ("usuario_id") REFERENCES "usuarios" ("id")
 );
-
-ALTER TABLE "usuarios" ADD FOREIGN KEY ("centro_id") REFERENCES "centros" ("id");
-
-ALTER TABLE "usuario_roles" ADD FOREIGN KEY ("usuario_id") REFERENCES "usuarios" ("id");
-
-ALTER TABLE "usuario_roles" ADD FOREIGN KEY ("rol_id") REFERENCES "roles" ("id");
-
-ALTER TABLE "practicas" ADD FOREIGN KEY ("alumno_id") REFERENCES "usuarios" ("id");
-
-ALTER TABLE "practicas" ADD FOREIGN KEY ("tutor_id") REFERENCES "usuarios" ("id");
-
-ALTER TABLE "practicas" ADD FOREIGN KEY ("empresa_id") REFERENCES "empresas" ("id");
-
-ALTER TABLE "seguimientos" ADD FOREIGN KEY ("practica_id") REFERENCES "practicas" ("id");
-
-ALTER TABLE "seguimientos" ADD FOREIGN KEY ("validado_por") REFERENCES "usuarios" ("id");
-
-ALTER TABLE "incidencias" ADD FOREIGN KEY ("practica_id") REFERENCES "practicas" ("id");
-
-ALTER TABLE "incidencias" ADD FOREIGN KEY ("creada_por") REFERENCES "usuarios" ("id");
-
-ALTER TABLE "incidencias" ADD FOREIGN KEY ("resuelta_por") REFERENCES "usuarios" ("id");
-
-ALTER TABLE "mensajes" ADD FOREIGN KEY ("practica_id") REFERENCES "practicas" ("id");
-
-ALTER TABLE "mensajes" ADD FOREIGN KEY ("emisor_id") REFERENCES "usuarios" ("id");
-
-ALTER TABLE "notificaciones" ADD FOREIGN KEY ("usuario_id") REFERENCES "usuarios" ("id");

@@ -2,6 +2,7 @@ package com.tfg.api.models.mapper;
 
 import com.tfg.api.models.dto.AuthResponse;
 import com.tfg.api.models.dto.RegisterRequest;
+import com.tfg.api.models.dto.UsuarioResponse;
 import com.tfg.api.models.entity.Rol;
 import com.tfg.api.models.entity.Usuario;
 import org.mapstruct.Mapper;
@@ -45,6 +46,13 @@ public interface UsuarioMapper {
     @Mapping(target = "nombre", expression = "java(usuario.getNombre() + \" \" + usuario.getApellidos())")
     @Mapping(target = "roles", source = "usuario.roles", qualifiedByName = "mapRoles")
     AuthResponse toAuthResponse(Usuario usuario, String token);
+
+    /**
+     * Convierte un usuario en un perfil público (UsuarioResponse).
+     */
+    @Mapping(target = "centroNombre", source = "usuario.centro.nombre")
+    @Mapping(target = "roles", source = "usuario.roles", qualifiedByName = "mapRoles")
+    UsuarioResponse toResponse(Usuario usuario);
 
     /**
      * Método auxiliar para extraer solo los nombres de los roles 

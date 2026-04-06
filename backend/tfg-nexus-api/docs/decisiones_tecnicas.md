@@ -101,12 +101,27 @@ Este documento detalla la evolución arquitectónica del backend y el razonamien
 - **Razón:** Se ha corregido la inyección de dependencias en los filtros de seguridad y se ha validado que el servidor emite tokens JWT válidos tras el registro y login.
 - **Verificación:** Superados tests de integración web (`AuthControllerTest`) y persistencia (`ModelPersistenceTest`).
 
-## 7. Próximos Pasos (Sesión Mañana)
+## 8. Sincronización y Fortalecimiento (Hito 1 - 25%)
 
+### Sincronización de Contrato de APIs
+- **Razón:** Existía una discrepancia entre la documentación teórica (`ARQUITECTURA_API.md`) y el código implementado.
+- **Acción:** Se han implementado los endpoints mínimos de "Maestros" (Centros y Empresas) y el perfil de usuario autenticado (`/me`) para cumplir con las promesas de la memoria de seguimiento.
+- **Roadmap:** Se han marcado explícitamente los módulos de Prácticas, Seguimientos e Incidencias como "Diseño de Contrato" para el Hito 2.
+
+### Módulo de Perfil de Usuario (/me)
+- **Razón:** Permitir al cliente Flutter recuperar el perfil completo del usuario (nombre, email, roles, centro) a partir del token JWT.
+- **Implementación:** Se extrae el `username` (email) del `SecurityContextHolder` en el `UsuarioService`.
+
+### Mapeo de Relaciones en DTOs
+- **Razón:** El DTO `UsuarioResponse` debe incluir información de entidades relacionadas sin causar ciclos.
+- **Decisión:** Se utiliza MapStruct para extraer el `nombre` del `Centro` asociado y aplanarlo en el JSON final.
+
+---
+*Última actualización: 6 de abril de 2026*
 ### Módulo de Gestión de Prácticas (Core Business)
 - **Implementación de PracticaService:** Lógica para la creación de convenios vinculando Alumno, Empresa y Tutores.
 - **DTOs de Negocio:** Diseño de records para la transferencia de datos de prácticas, evitando ciclos de referencia circular en el JSON.
 - **Seguridad por Método:** Introducción de `@PreAuthorize` para asegurar que solo los perfiles administrativos puedan gestionar los expedientes de prácticas.
 
 ---
-*Última actualización: 31 de marzo de 2026*
+*Última actualización: 6 de abril de 2026*

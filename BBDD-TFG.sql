@@ -48,7 +48,8 @@ CREATE TABLE "practicas" (
   "id" bigserial PRIMARY KEY,
   "codigo" varchar UNIQUE,
   "alumno_id" bigint,
-  "tutor_id" bigint,
+  "tutor_centro_id" bigint,
+  "tutor_empresa_id" bigint,
   "empresa_id" bigint,
   "fecha_inicio" date,
   "fecha_fin" date,
@@ -56,7 +57,8 @@ CREATE TABLE "practicas" (
   "estado" varchar,
   "fecha_creacion" timestamp,
   FOREIGN KEY ("alumno_id") REFERENCES "usuarios" ("id"),
-  FOREIGN KEY ("tutor_id") REFERENCES "usuarios" ("id"),
+  FOREIGN KEY ("tutor_centro_id") REFERENCES "usuarios" ("id"),
+  FOREIGN KEY ("tutor_empresa_id") REFERENCES "usuarios" ("id"),
   FOREIGN KEY ("empresa_id") REFERENCES "empresas" ("id")
 );
 

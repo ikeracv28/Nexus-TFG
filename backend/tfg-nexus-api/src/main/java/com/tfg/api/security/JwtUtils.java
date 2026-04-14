@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -12,6 +13,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Clase de utilidad para la gestión de tokens JWT.
@@ -20,14 +22,22 @@ import java.util.function.Function;
 @Component
 public class JwtUtils {
 
-    @Value("${jwt.secret:clave_secreta_muy_larga_y_segura_para_el_proyecto_nexus_tfg_2026}")
+    @Value("${JWT_SECRET:clave_secreta_para_desarrollo_local_nexus_tfg_2026_sustituir_en_produccion}")
     private String secret;
 
     @Value("${jwt.expiration:86400000}")
     private Long expiration;
 
+    /**
+     * Genera un token JWT incluyendo los roles (authorities) del usuario.
+     */
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        // Extraemos los roles y los añadimos como claim 'roles'
+        claims.put("roles", userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+        
         return createToken(claims, userDetails.getUsername());
     }
 

@@ -2,6 +2,7 @@ package com.tfg.api.exceptions;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -53,6 +54,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Captura errores de acceso denegado (Seguridad por roles).
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ex) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                "No tiene permisos suficientes para realizar esta acción."
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
+
+    /**
      * Captura errores de autenticación (credenciales incorrectas).
      */
     @ExceptionHandler(BadCredentialsException.class)
@@ -65,12 +78,12 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Captura excepciones genéricas de lógica de negocio (RuntimeException).
+     * Captura excepciones genéricas de lógica de negocio (BusinessRuleException).
      */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessRuleException(BusinessRuleException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-                HttpStatus.CONFLICT.value(), // Usamos 409 para conflictos de negocio (ej: email duplicado)
+                HttpStatus.CONFLICT.value(), 
                 ex.getMessage()
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
@@ -78,12 +91,13 @@ public class GlobalExceptionHandler {
 
     /**
      * Captura cualquier otro error no controlado para evitar trazas HTML.
+     * CRÍTICO: No exponemos el mensaje de la excepción directamente para evitar fugas de información.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Ocurrió un error inesperado en el servidor: " + ex.getMessage()
+                "Ha ocurrido un error inesperado en el sistema. Por favor, contacte con el soporte técnico."
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }

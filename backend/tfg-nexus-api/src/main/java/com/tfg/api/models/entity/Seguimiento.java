@@ -10,7 +10,9 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "seguimientos")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

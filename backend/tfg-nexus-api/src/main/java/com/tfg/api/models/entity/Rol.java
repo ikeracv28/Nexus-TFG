@@ -15,7 +15,9 @@ import lombok.*;
  */
 @Entity
 @Table(name = "roles")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

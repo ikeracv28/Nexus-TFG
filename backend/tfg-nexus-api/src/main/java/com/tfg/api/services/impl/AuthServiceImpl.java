@@ -1,5 +1,7 @@
 package com.tfg.api.services.impl;
 
+import com.tfg.api.exceptions.BusinessRuleException;
+import com.tfg.api.exceptions.ResourceNotFoundException;
 import com.tfg.api.models.dto.AuthResponse;
 import com.tfg.api.models.dto.LoginRequest;
 import com.tfg.api.models.dto.RegisterRequest;
@@ -49,12 +51,12 @@ public class AuthServiceImpl implements AuthService {
         // Uso del Mapper para convertir DTO a Entidad
         Usuario usuario = usuarioMapper.registerToEntity(request);
         
-        // Encriptación de contraseña
+        // Encriptación de contraseña (Lógica centralizada aquí por seguridad)
         usuario.setPasswordHash(passwordEncoder.encode(request.password()));
 
         // Asignación de rol base
         Rol rolAlumno = rolRepository.findByNombre("ROLE_ALUMNO")
-                .orElseThrow(() -> new RuntimeException("Error: El rol de Alumno no está configurado"));
+                .orElseThrow(() -> new BusinessRuleException("Error: El rol de Alumno no está configurado en el sistema"));
         
         usuario.setRoles(Collections.singleton(rolAlumno));
         usuario.setActivo(true);
@@ -80,7 +82,7 @@ public class AuthServiceImpl implements AuthService {
         );
 
         Usuario usuario = usuarioRepository.findByEmail(request.email())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con el email: " + request.email()));
 
         // CARGA DE USERDETAILS PARA JWT (Corrección de tipo)
         UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getEmail());
@@ -91,10 +93,10 @@ public class AuthServiceImpl implements AuthService {
 
     private void validarUnicidad(RegisterRequest request) {
         if (usuarioRepository.existsByEmail(request.email())) {
-            throw new RuntimeException("El correo electrónico ya se encuentra registrado");
+            throw new BusinessRuleException("El correo electrónico ya se encuentra registrado en Nexus");
         }
         if (usuarioRepository.existsByDni(request.dni())) {
-            throw new RuntimeException("El DNI introducido ya existe");
+            throw new BusinessRuleException("El DNI introducido ya existe en nuestro sistema");
         }
     }
 }

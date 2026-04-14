@@ -12,7 +12,9 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "usuarios")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

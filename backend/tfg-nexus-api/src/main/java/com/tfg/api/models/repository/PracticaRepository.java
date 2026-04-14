@@ -1,14 +1,15 @@
 package com.tfg.api.models.repository;
 
 import com.tfg.api.models.entity.Practica;
-import com.tfg.api.models.entity.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Repositorio para la gestión de convenios de prácticas académica (FCT).
+ * Repositorio para la entidad Practica.
+ * Proporciona acceso a los datos de los convenios de formación.
  */
 @Repository
 public interface PracticaRepository extends JpaRepository<Practica, Long> {
@@ -19,22 +20,27 @@ public interface PracticaRepository extends JpaRepository<Practica, Long> {
     Optional<Practica> findByCodigo(String codigo);
 
     /**
-     * Lista todas las prácticas asignadas a un alumno específico.
+     * Obtiene todas las prácticas asociadas a un alumno específico.
      */
-    List<Practica> findByAlumno(Usuario alumno);
+    List<Practica> findByAlumnoId(Long alumnoId);
 
     /**
-     * Lista todas las prácticas supervisadas por un tutor de centro determinado.
+     * Obtiene las prácticas donde el usuario es el tutor del centro.
      */
-    List<Practica> findByTutorCentro(Usuario tutorCentro);
+    List<Practica> findByTutorCentroId(Long tutorId);
 
     /**
-     * Lista todas las prácticas que pertenecen a una empresa específica.
+     * Obtiene las prácticas donde el usuario es el tutor de la empresa.
+     */
+    List<Practica> findByTutorEmpresaId(Long tutorId);
+
+    /**
+     * Obtiene las prácticas vinculadas a una empresa específica.
      */
     List<Practica> findByEmpresaId(Long empresaId);
 
     /**
-     * Filtra prácticas por su estado actual (ACTIVA, FINALIZADA, etc.).
+     * Verifica si ya existe una práctica con un código determinado.
      */
-    List<Practica> findByEstado(String estado);
+    boolean existsByCodigo(String codigo);
 }

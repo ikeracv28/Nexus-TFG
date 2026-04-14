@@ -11,7 +11,9 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "practicas")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(of = "id")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

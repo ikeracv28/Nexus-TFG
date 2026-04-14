@@ -21,6 +21,11 @@
       "sourceType": "github",
       "computedHash": "6b3eeea3ee6ab168a98579cb8d2531b600a47ad76c60bc20a70ef15c048e306d"
     },
+    "mermaid-diagram-specialist": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "4fd9576e76e89e17d72891fb63e11741bf34c72390058baeb42812e396698525"
+    },
     "multi-stage-dockerfile": {
       "source": "github/awesome-copilot",
       "sourceType": "github",

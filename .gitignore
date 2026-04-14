@@ -1,11 +1,3 @@
-# Java / Maven
-target/
-*.class
-*.jar
-*.war
-*.ear
-.mvn/wrapper/maven-wrapper.jar
-
 # Flutter / Dart
 .dart_tool/
 .packages
@@ -18,21 +10,99 @@ ios/Flutter/flutter_export_environment.sh
 lib/generated_plugin_registrant.dart
 pubspec.lock
 
-# IDEs y Editores
+--- Compiled class files ---
+*.class
+
+--- Log files ---
+*.log
+logs/
+.log.
+
+--- Package Files ---
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+.rar
+
+--- Virtual machine crash logs ---
+hs_err_pid
+replay_pid*
+
+--- Maven ---
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+--- IDEs (IntelliJ, Eclipse, VS Code, NetBeans) ---
 .idea/
-.vscode/
 *.iml
 *.iws
 *.ipr
-.project
-.classpath
+.apt_generated/
+.apt_generated_tests/
 .settings/
-.DS_Store
+.project/
+.classpath/
+.factorypath/
+.nb-gradle/
+nbproject/
+build/
+bin/
+.vscode/
+.code-workspace
+.history/
+.recommenders/
 
-# Datos Sensibles / Configuración Local
+--- Docker & Environment ---
+.docker/
 .env
 .env.local
-application-local.properties
+.env..local
+docker-compose.override.yml
 
-# Logs
-*.log
+--- System Files ---
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+ehthumbs.db
+[Dd]esktop.ini
+memoria_tfg.pdf
+
+--- Agent & Workspace Tools ---
+.gemini/
+conductor/
+.gemini_security/
+gha-creds-*.json
+.site/
+skills-lock.json
+.agents/
+GEMINI.md
+HELP.md
+app_logs.txt
+backlog.md
+skills-lock.json
+node_modules/
+CLAUDE.md
+config-tone.md
+Package-lock.json
+Package.json
+skills-lock.json
+sonarqube_issues.json
+
+
+--- OS Specific ---
+*.swp
+*.bak
+*~
+.directory

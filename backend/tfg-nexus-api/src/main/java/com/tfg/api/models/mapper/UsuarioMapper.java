@@ -26,21 +26,19 @@ public interface UsuarioMapper {
     /**
      * Convierte los datos de registro en una Entidad de base de datos.
      * Ignoramos el ID (autogenerado) y la fechaCreación.
+     * CRÍTICO: No mapeamos la password en claro al passwordHash directamente 
+     * para evitar errores de seguridad. El hash se genera en el Service.
      */
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "passwordHash", source = "password") // Mapeamos password de DTO a passwordHash de Entity
-    @Mapping(target = "centro", ignore = true) // El centro se asignará en el Service
-    @Mapping(target = "roles", ignore = true)  // Los roles se asignarán en el Service
+    @Mapping(target = "passwordHash", ignore = true)
+    @Mapping(target = "centro", ignore = true)
+    @Mapping(target = "roles", ignore = true)
     @Mapping(target = "activo", constant = "true")
     @Mapping(target = "fechaCreacion", ignore = true)
     Usuario registerToEntity(RegisterRequest request);
 
     /**
      * Convierte un usuario de la BD en una respuesta de autenticación con el Token.
-     * 
-     * @param usuario Entidad JPA.
-     * @param token JWT generado previamente.
-     * @return DTO AuthResponse listo para el cliente Flutter.
      */
     @Mapping(target = "token", source = "token")
     @Mapping(target = "nombre", expression = "java(usuario.getNombre() + \" \" + usuario.getApellidos())")
@@ -49,8 +47,9 @@ public interface UsuarioMapper {
 
     /**
      * Convierte un usuario en un perfil público (UsuarioResponse).
+     * Se utiliza una expresión para evitar NPE si el usuario no tiene centro asignado.
      */
-    @Mapping(target = "centroNombre", source = "usuario.centro.nombre")
+    @Mapping(target = "centroNombre", expression = "java(usuario.getCentro() != null ? usuario.getCentro().getNombre() : \"Sin Centro\")")
     @Mapping(target = "roles", source = "usuario.roles", qualifiedByName = "mapRoles")
     UsuarioResponse toResponse(Usuario usuario);
 

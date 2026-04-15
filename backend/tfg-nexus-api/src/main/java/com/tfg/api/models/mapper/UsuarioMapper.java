@@ -40,6 +40,7 @@ public interface UsuarioMapper {
     /**
      * Convierte un usuario de la BD en una respuesta de autenticación con el Token.
      */
+    @Mapping(target = "id", source = "usuario.id")
     @Mapping(target = "token", source = "token")
     @Mapping(target = "nombre", expression = "java(usuario.getNombre() + \" \" + usuario.getApellidos())")
     @Mapping(target = "roles", source = "usuario.roles", qualifiedByName = "mapRoles")

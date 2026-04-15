@@ -3,11 +3,13 @@
  * Representa los datos básicos del perfil del usuario logueado.
  */
 class User {
+  final int id;
   final String email;
   final String nombreCompleto;
   final List<String> roles;
 
   User({
+    required this.id,
     required this.email,
     required this.nombreCompleto,
     required this.roles,
@@ -15,6 +17,7 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
+      id: json['id'] as int,
       email: json['email'] as String,
       nombreCompleto: json['nombre'] as String,
       roles: List<String>.from(json['roles'] as List),

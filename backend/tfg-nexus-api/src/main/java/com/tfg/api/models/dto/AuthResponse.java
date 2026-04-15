@@ -12,6 +12,7 @@ import java.util.Set;
  * según sus roles sin tener que hacer otra petición inmediata.
  */
 public record AuthResponse(
+    Long id,
     String token,
     String email,
     String nombre,

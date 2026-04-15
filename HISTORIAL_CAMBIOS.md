@@ -2,6 +2,28 @@
 
 Este documento registra las implementaciones técnicas realizadas tras la entrega del Hito 1 (25%) para alcanzar los objetivos del Hito 2 (50%).
 
+---
+
+## [15/04/2026] - Integración Visual y Sincronización de Identidad
+
+### Backend (Spring Boot)
+- **Seguridad y DTOs**: Se ha modificado el record `AuthResponse` y el `UsuarioMapper` para incluir el `id` del usuario en la respuesta de autenticación. Esta mejora es crítica para que el cliente móvil realice peticiones dependientes del contexto del usuario (como listar sus propias prácticas) de forma eficiente sin decodificar manualmente el JWT.
+- **Mapeo Automatizado**: MapStruct ahora gestiona la sincronización del ID de la entidad `Usuario` al DTO de respuesta, garantizando integridad en el flujo de login.
+
+### Frontend (Flutter)
+- **Modelos de Negocio**: Creación de la entidad `Practica` sincronizada 1:1 con el contrato del backend (`PracticaResponse`).
+- **Comunicaciones**: Implementación del `PracticaService` para el consumo de endpoints protegidos y el `PracticaProvider` para la gestión del estado global de las prácticas académicas.
+- **UI/UX (Dashboard)**:
+  - Diseño e implementación de la pantalla **Dashboard**, siguiendo las directrices de diseño (Cards con elevación, estados visuales mediante colores semánticos).
+  - Integración de saludo dinámico y resumen de formación práctica (Empresa, Código, Tutores).
+- **Navegación**: Refactorización del flujo de arranque en `main.dart`. La aplicación ahora detecta reactivamente el estado de autenticación mediante `Consumer<AuthProvider>`, redirigiendo automáticamente entre el Login y el Dashboard sin gestión manual de rutas.
+
+### Documentación y Seguimiento
+- **Memoria de Seguimiento**: Actualización del plan operativo en `conductor/` marcando la Tarea 4 (Gestión de Prácticas) como completada.
+- **Bitácora**: Unificación de registros en este documento (`HISTORIAL_CAMBIOS.md`) para simplificar la futura redacción de la memoria del TFG.
+
+---
+
 ## [14/04/2026] - Preparación Hito 2 (50%)
 
 ### Backend (Spring Boot)

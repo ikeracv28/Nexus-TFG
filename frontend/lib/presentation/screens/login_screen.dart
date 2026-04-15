@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'dashboard_screen.dart';
 
 /**
  * Pantalla de inicio de sesión de Nexus-TFG.
@@ -26,9 +27,9 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (success && mounted) {
-        // Navegar al Dashboard (que crearemos a continuación)
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bienvenido a Nexus-TFG')),
+        // Navegar al Dashboard
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
         );
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

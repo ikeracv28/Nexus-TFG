@@ -9,6 +9,12 @@ Este documento registra las implementaciones técnicas realizadas tras la entreg
 ### Backend (Spring Boot)
 - **Seguridad y DTOs**: Se ha modificado el record `AuthResponse` y el `UsuarioMapper` para incluir el `id` del usuario en la respuesta de autenticación. Esta mejora es crítica para que el cliente móvil realice peticiones dependientes del contexto del usuario (como listar sus propias prácticas) de forma eficiente sin decodificar manualmente el JWT.
 - **Mapeo Automatizado**: MapStruct ahora gestiona la sincronización del ID de la entidad `Usuario` al DTO de respuesta, garantizando integridad en el flujo de login.
+- **Módulo de Seguimientos (Tarea 5)**: Implementación completa de la lógica de partes diarios:
+  - **Persistencia**: Creado `SeguimientoRepository` con filtrado por práctica y estado.
+  - **DTOs y Mappers**: Definidos `SeguimientoRequest/Response` y su integración con MapStruct para proteger las entidades JPA.
+  - **Servicios**: Implementado `SeguimientoService` con validación de estados (protección de registros ya procesados) y captura automática de la identidad del tutor desde el contexto de seguridad.
+  - **Controlador REST**: Expuestos endpoints para registro (ALUMNO), consulta (TODOS) y validación (TUTORES) bajo `@PreAuthorize`.
+  - **Calidad**: Añadido `SeguimientoServiceTest` y configurado perfil de test con H2 para validaciones independientes.
 
 ### Frontend (Flutter)
 - **Modelos de Negocio**: Creación de la entidad `Practica` sincronizada 1:1 con el contrato del backend (`PracticaResponse`).

@@ -2,6 +2,8 @@ package com.tfg.api.services;
 
 import com.tfg.api.models.dto.PracticaRequest;
 import com.tfg.api.models.dto.PracticaResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -21,9 +23,9 @@ public interface PracticaService {
     PracticaResponse obtenerPorId(Long id);
 
     /**
-     * Obtiene todas las prácticas registradas.
+     * Obtiene todas las prácticas registradas de forma paginada.
      */
-    List<PracticaResponse> listarTodas();
+    Page<PracticaResponse> listarTodas(Pageable pageable);
 
     /**
      * Lista las prácticas asociadas a un alumno.

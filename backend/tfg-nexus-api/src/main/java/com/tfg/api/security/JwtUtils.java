@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @Component
 public class JwtUtils {
 
-    @Value("${JWT_SECRET:clave_secreta_para_desarrollo_local_nexus_tfg_2026_sustituir_en_produccion}")
+    @Value("${JWT_SECRET:CAMBIAR_EN_PRODUCCION}")
     private String secret;
 
     @Value("${jwt.expiration:86400000}")

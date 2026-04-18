@@ -8,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,8 +33,8 @@ public class PracticaController {
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR_CENTRO', 'TUTOR_EMPRESA')")
-    public ResponseEntity<List<PracticaResponse>> listarTodas() {
-        return ResponseEntity.ok(practicaService.listarTodas());
+    public ResponseEntity<Page<PracticaResponse>> listarTodas(@PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(practicaService.listarTodas(pageable));
     }
 
     /**

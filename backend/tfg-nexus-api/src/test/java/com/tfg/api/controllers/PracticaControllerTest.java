@@ -14,9 +14,15 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static org.mockito.ArgumentMatchers.any;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -89,12 +95,13 @@ class PracticaControllerTest {
     void tutor_centro_should_list_all_practicas() throws Exception {
         // Arrange
         PracticaResponse response = new PracticaResponse(1L, "P-001", 1L, "A", 2L, "B", 3L, "C", 4L, "D", null, null, 0, "ACTIVA", null);
-        when(practicaService.listarTodas()).thenReturn(List.of(response));
+        Page<PracticaResponse> page = new PageImpl<>(List.of(response));
+        when(practicaService.listarTodas(any(Pageable.class))).thenReturn(page);
 
         // Act & Assert
         mockMvc.perform(get("/api/v1/practicas"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].codigo").value("P-001"));
+                .andExpect(jsonPath("$.content[0].codigo").value("P-001"));
     }
 
     @Test

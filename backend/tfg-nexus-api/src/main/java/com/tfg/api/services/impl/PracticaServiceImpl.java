@@ -1,5 +1,6 @@
 package com.tfg.api.services.impl;
 
+import com.tfg.api.exceptions.BusinessRuleException;
 import com.tfg.api.exceptions.ResourceNotFoundException;
 import com.tfg.api.models.dto.PracticaRequest;
 import com.tfg.api.models.dto.PracticaResponse;
@@ -12,6 +13,9 @@ import com.tfg.api.services.PracticaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -43,7 +47,7 @@ public class PracticaServiceImpl implements PracticaService {
 
         // Comprobamos duplicados por código de expediente
         if (practicaRepository.existsByCodigo(request.codigo())) {
-            throw new RuntimeException("Ya existe una práctica con el código: " + request.codigo());
+            throw new BusinessRuleException("Ya existe una práctica con el código: " + request.codigo());
         }
 
         Practica practica = practicaMapper.toEntity(request);
@@ -65,8 +69,8 @@ public class PracticaServiceImpl implements PracticaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PracticaResponse> listarTodas() {
-        return practicaMapper.toResponseList(practicaRepository.findAll());
+    public Page<PracticaResponse> listarTodas(Pageable pageable) {
+        return practicaRepository.findAll(pageable).map(practicaMapper::toResponse);
     }
 
     @Override
@@ -102,7 +106,7 @@ public class PracticaServiceImpl implements PracticaService {
         
         // No permitimos eliminar prácticas que ya estén activas o finalizadas
         if (!"BORRADOR".equals(practica.getEstado())) {
-            throw new RuntimeException("No se puede eliminar una práctica que no esté en estado BORRADOR");
+            throw new BusinessRuleException("No se puede eliminar una práctica que no esté en estado BORRADOR");
         }
 
         practicaRepository.delete(practica);

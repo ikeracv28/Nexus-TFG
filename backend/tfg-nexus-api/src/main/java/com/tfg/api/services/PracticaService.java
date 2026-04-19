@@ -46,4 +46,10 @@ public interface PracticaService {
      * Cambia el estado de una práctica (ej: de BORRADOR a ACTIVA).
      */
     PracticaResponse cambiarEstado(Long id, String nuevoEstado);
+
+    /**
+     * Devuelve la práctica ACTIVA del alumno autenticado actualmente.
+     * Se usa en el endpoint /me para que el alumno no tenga que conocer su ID.
+     */
+    PracticaResponse obtenerPracticaActivaDelAlumno();
 }

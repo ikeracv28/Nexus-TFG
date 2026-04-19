@@ -43,4 +43,10 @@ public interface PracticaRepository extends JpaRepository<Practica, Long> {
      * Verifica si ya existe una práctica con un código determinado.
      */
     boolean existsByCodigo(String codigo);
+
+    /**
+     * Busca la práctica activa de un alumno.
+     * Devuelve Optional para manejar el caso de que no tenga práctica activa.
+     */
+    Optional<Practica> findFirstByAlumnoIdAndEstado(Long alumnoId, String estado);
 }

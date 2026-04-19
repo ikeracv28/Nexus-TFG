@@ -11,6 +11,7 @@ import com.tfg.api.models.repository.PracticaRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
 import com.tfg.api.services.PracticaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -117,8 +118,23 @@ public class PracticaServiceImpl implements PracticaService {
     public PracticaResponse cambiarEstado(Long id, String nuevoEstado) {
         Practica practica = practicaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Práctica no encontrada"));
-        
+
         practica.setEstado(nuevoEstado.toUpperCase());
         return practicaMapper.toResponse(practicaRepository.save(practica));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PracticaResponse obtenerPracticaActivaDelAlumno() {
+        // Obtenemos el email del alumno autenticado desde el JWT ya validado
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        var alumno = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado"));
+
+        return practicaRepository
+                .findFirstByAlumnoIdAndEstado(alumno.getId(), "ACTIVA")
+                .map(practicaMapper::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("No tienes ninguna práctica activa en este momento"));
     }
 }

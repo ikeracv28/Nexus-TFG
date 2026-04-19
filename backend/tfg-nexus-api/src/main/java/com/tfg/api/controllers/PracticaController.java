@@ -38,6 +38,17 @@ public class PracticaController {
     }
 
     /**
+     * Devuelve la práctica ACTIVA del alumno autenticado.
+     * El alumno no necesita conocer su propio ID; el servicio lo obtiene del JWT.
+     * Acceso: Solo ALUMNO.
+     */
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('ALUMNO')")
+    public ResponseEntity<PracticaResponse> obtenerMiPracticaActiva() {
+        return ResponseEntity.ok(practicaService.obtenerPracticaActivaDelAlumno());
+    }
+
+    /**
      * Obtiene los detalles de una práctica por su ID.
      * Acceso: Cualquier usuario autenticado (la lógica de servicio podría filtrar más adelante).
      */

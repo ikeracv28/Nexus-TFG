@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/practica_model.dart';
+import '../../data/models/seguimiento_model.dart';
+import '../../data/models/incidencia_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/practica_provider.dart';
+import 'seguimiento_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -19,11 +22,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
-      if (auth.user != null) {
-        Provider.of<PracticaProvider>(context, listen: false)
-            .cargarPracticas(auth.user!.id);
-      }
+      // Usamos /me: el JWT identifica al alumno, no necesitamos pasar el ID
+      Provider.of<PracticaProvider>(context, listen: false).cargarDashboard();
     });
   }
 
@@ -127,7 +127,7 @@ class _DashboardContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return RefreshIndicator(
       color: NexusColors.primary,
-      onRefresh: () => practica.cargarPracticas(auth.user!.id),
+      onRefresh: () => practica.cargarDashboard(),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(NexusSizes.space2XL),
@@ -253,12 +253,17 @@ class _PracticaCard extends StatelessWidget {
             ),
           ],
 
-          // Barra de progreso de horas
+          // Barra de progreso de horas (solo seguimientos COMPLETADOS)
           if (horas > 0) ...[
             const SizedBox(height: NexusSizes.spaceLG),
             const Divider(height: 1, thickness: 0.5, color: NexusColors.border),
             const SizedBox(height: NexusSizes.spaceLG),
-            _ProgressBar(horasRealizadas: 0, horasTotales: horas),
+            Consumer<PracticaProvider>(
+              builder: (_, p, __) => _ProgressBar(
+                horasRealizadas: p.horasCompletadas,
+                horasTotales: horas,
+              ),
+            ),
           ],
         ],
       ),
@@ -391,13 +396,87 @@ class _SeguimientosCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SectionCard(
-      title: 'Seguimientos',
-      icon: Icons.list_alt_outlined,
-      action: practica != null ? 'Ver todos' : null,
-      child: practica == null
-          ? const _SectionEmpty(mensaje: 'Sin practica activa')
-          : const _SectionEmpty(mensaje: 'Sin seguimientos registrados'),
+    return Consumer<PracticaProvider>(
+      builder: (_, provider, __) {
+        final seguimientos = provider.seguimientos;
+        return _SectionCard(
+          title: 'Seguimientos',
+          icon: Icons.list_alt_outlined,
+          action: practica != null ? 'Ver todos' : null,
+          child: practica == null
+              ? const _SectionEmpty(mensaje: 'Sin practica activa')
+              : seguimientos.isEmpty
+                  ? const _SectionEmpty(mensaje: 'Sin seguimientos registrados')
+                  : _SeguimientosLista(seguimientos: seguimientos.take(3).toList()),
+        );
+      },
+    );
+  }
+}
+
+class _SeguimientosLista extends StatelessWidget {
+  final List<Seguimiento> seguimientos;
+  const _SeguimientosLista({required this.seguimientos});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: seguimientos.map((s) => _SeguimientoTile(seguimiento: s)).toList(),
+    );
+  }
+}
+
+class _SeguimientoTile extends StatelessWidget {
+  final Seguimiento seguimiento;
+  const _SeguimientoTile({required this.seguimiento});
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, textColor, label) = switch (seguimiento.estado) {
+      'COMPLETADO' => (NexusColors.successLight, NexusColors.successText, 'Completado'),
+      'VALIDADO'   => (NexusColors.primaryLight,  NexusColors.primaryText,  'Validado'),
+      'RECHAZADO'  => (NexusColors.dangerLight,    NexusColors.dangerText,    'Rechazado'),
+      _            => (NexusColors.warningLight,  NexusColors.warningText,  'Pendiente'),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: NexusSizes.spaceLG,
+        vertical: NexusSizes.spaceMD,
+      ),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: NexusColors.border, width: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${seguimiento.fechaRegistro.day}/${seguimiento.fechaRegistro.month}/${seguimiento.fechaRegistro.year}',
+                  style: NexusText.small.copyWith(fontWeight: FontWeight.w500),
+                ),
+                if (seguimiento.descripcion != null &&
+                    seguimiento.descripcion!.isNotEmpty)
+                  Text(
+                    seguimiento.descripcion!,
+                    style: NexusText.caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: NexusSizes.spaceSM),
+          Text(
+            '${seguimiento.horasRealizadas}h',
+            style: NexusText.small.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: NexusSizes.spaceSM),
+          nexusEstadoBadge(label, bg: color, textColor: textColor),
+        ],
+      ),
     );
   }
 }
@@ -408,13 +487,87 @@ class _IncidenciasCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SectionCard(
-      title: 'Incidencias',
-      icon: Icons.warning_amber_outlined,
-      action: practica != null ? 'Reportar' : null,
-      child: practica == null
-          ? const _SectionEmpty(mensaje: 'Sin practica activa')
-          : const _SectionEmpty(mensaje: 'Sin incidencias activas'),
+    return Consumer<PracticaProvider>(
+      builder: (_, provider, __) {
+        final incidencias = provider.incidencias;
+        return _SectionCard(
+          title: 'Incidencias',
+          icon: Icons.warning_amber_outlined,
+          action: practica != null ? 'Reportar' : null,
+          child: practica == null
+              ? const _SectionEmpty(mensaje: 'Sin practica activa')
+              : incidencias.isEmpty
+                  ? const _SectionEmpty(mensaje: 'Sin incidencias activas')
+                  : _IncidenciasLista(incidencias: incidencias.take(3).toList()),
+        );
+      },
+    );
+  }
+}
+
+class _IncidenciasLista extends StatelessWidget {
+  final List<Incidencia> incidencias;
+  const _IncidenciasLista({required this.incidencias});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: incidencias.map((i) => _IncidenciaTile(incidencia: i)).toList(),
+    );
+  }
+}
+
+class _IncidenciaTile extends StatelessWidget {
+  final Incidencia incidencia;
+  const _IncidenciaTile({required this.incidencia});
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, textColor, label) = switch (incidencia.estado) {
+      'RESUELTA' => (NexusColors.successLight, NexusColors.successText, 'Resuelta'),
+      'CERRADA'  => (NexusColors.neutralLight,  NexusColors.neutralText,  'Cerrada'),
+      _          => (NexusColors.dangerLight,    NexusColors.dangerText,    'Abierta'),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: NexusSizes.spaceLG,
+        vertical: NexusSizes.spaceMD,
+      ),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: NexusColors.border, width: 0.5)),
+      ),
+      child: Row(
+        children: [
+          if (incidencia.tipo != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: NexusColors.neutralLight,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                incidencia.tipo!,
+                style: NexusText.caption.copyWith(
+                  color: NexusColors.neutralText,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(width: NexusSizes.spaceSM),
+          ],
+          Expanded(
+            child: Text(
+              incidencia.descripcion,
+              style: NexusText.small,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: NexusSizes.spaceSM),
+          nexusEstadoBadge(label, bg: color, textColor: textColor),
+        ],
+      ),
     );
   }
 }
@@ -512,7 +665,11 @@ class _AccionesRapidas extends StatelessWidget {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () {
-              // TODO: Navegar a registro de seguimiento
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const SeguimientoScreen(),
+                ),
+              );
             },
             icon: const Icon(Icons.add, size: 18),
             label: const Text('Registrar seguimiento'),

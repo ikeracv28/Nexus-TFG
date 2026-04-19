@@ -6,7 +6,12 @@ import '../../data/models/seguimiento_model.dart';
 import '../../data/models/incidencia_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/practica_provider.dart';
+import '../widgets/seguimiento_tile.dart';
+import '../widgets/incidencia_tile.dart';
 import 'seguimiento_screen.dart';
+import 'seguimientos_screen.dart';
+import 'incidencias_screen.dart';
+import 'chat_placeholder_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -38,9 +43,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth > 600;
-          final content = _DashboardContent(
-            auth: auth,
-            practica: practica,
+          final content = IndexedStack(
+            index: _navIndex,
+            children: [
+              _InicioTab(
+                auth: auth,
+                practica: practica,
+                onVerTodosSeguimientos: () => setState(() => _navIndex = 1),
+                onReportarIncidencia: () => setState(() => _navIndex = 2),
+              ),
+              const SeguimientosScreen(),
+              const IncidenciasScreen(),
+              const ChatPlaceholderScreen(),
+            ],
           );
 
           if (isWide) {
@@ -115,13 +130,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// Contenido principal del dashboard
+// Tab de inicio del dashboard
 
-class _DashboardContent extends StatelessWidget {
+class _InicioTab extends StatelessWidget {
   final AuthProvider auth;
   final PracticaProvider practica;
+  final VoidCallback onVerTodosSeguimientos;
+  final VoidCallback onReportarIncidencia;
 
-  const _DashboardContent({required this.auth, required this.practica});
+  const _InicioTab({
+    required this.auth,
+    required this.practica,
+    required this.onVerTodosSeguimientos,
+    required this.onReportarIncidencia,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -143,7 +165,11 @@ class _DashboardContent extends StatelessWidget {
             else
               const _EmptyState(),
             const SizedBox(height: NexusSizes.space2XL),
-            _SectionGrid(practica: practica.practicaActiva),
+            _SectionGrid(
+              practica: practica.practicaActiva,
+              onVerTodosSeguimientos: onVerTodosSeguimientos,
+              onReportarIncidencia: onReportarIncidencia,
+            ),
             const SizedBox(height: NexusSizes.space2XL),
             if (practica.practicaActiva != null) const _AccionesRapidas(),
           ],
@@ -360,7 +386,14 @@ class _ProgressBar extends StatelessWidget {
 
 class _SectionGrid extends StatelessWidget {
   final Practica? practica;
-  const _SectionGrid({required this.practica});
+  final VoidCallback onVerTodosSeguimientos;
+  final VoidCallback onReportarIncidencia;
+
+  const _SectionGrid({
+    required this.practica,
+    required this.onVerTodosSeguimientos,
+    required this.onReportarIncidencia,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -372,17 +405,17 @@ class _SectionGrid extends StatelessWidget {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _SeguimientosCard(practica: practica)),
+              Expanded(child: _SeguimientosCard(practica: practica, onVerTodos: onVerTodosSeguimientos)),
               const SizedBox(width: NexusSizes.spaceLG),
-              Expanded(child: _IncidenciasCard(practica: practica)),
+              Expanded(child: _IncidenciasCard(practica: practica, onReportar: onReportarIncidencia)),
             ],
           );
         }
         return Column(
           children: [
-            _SeguimientosCard(practica: practica),
+            _SeguimientosCard(practica: practica, onVerTodos: onVerTodosSeguimientos),
             const SizedBox(height: NexusSizes.spaceLG),
-            _IncidenciasCard(practica: practica),
+            _IncidenciasCard(practica: practica, onReportar: onReportarIncidencia),
           ],
         );
       },
@@ -392,7 +425,9 @@ class _SectionGrid extends StatelessWidget {
 
 class _SeguimientosCard extends StatelessWidget {
   final Practica? practica;
-  const _SeguimientosCard({required this.practica});
+  final VoidCallback onVerTodos;
+
+  const _SeguimientosCard({required this.practica, required this.onVerTodos});
 
   @override
   Widget build(BuildContext context) {
@@ -403,6 +438,7 @@ class _SeguimientosCard extends StatelessWidget {
           title: 'Seguimientos',
           icon: Icons.list_alt_outlined,
           action: practica != null ? 'Ver todos' : null,
+          onActionTap: onVerTodos,
           child: practica == null
               ? const _SectionEmpty(mensaje: 'Sin practica activa')
               : seguimientos.isEmpty
@@ -421,69 +457,16 @@ class _SeguimientosLista extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: seguimientos.map((s) => _SeguimientoTile(seguimiento: s)).toList(),
-    );
-  }
-}
-
-class _SeguimientoTile extends StatelessWidget {
-  final Seguimiento seguimiento;
-  const _SeguimientoTile({required this.seguimiento});
-
-  @override
-  Widget build(BuildContext context) {
-    final (color, textColor, label) = switch (seguimiento.estado) {
-      'COMPLETADO' => (NexusColors.successLight, NexusColors.successText, 'Completado'),
-      'VALIDADO'   => (NexusColors.primaryLight,  NexusColors.primaryText,  'Validado'),
-      'RECHAZADO'  => (NexusColors.dangerLight,    NexusColors.dangerText,    'Rechazado'),
-      _            => (NexusColors.warningLight,  NexusColors.warningText,  'Pendiente'),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: NexusSizes.spaceLG,
-        vertical: NexusSizes.spaceMD,
-      ),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: NexusColors.border, width: 0.5)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${seguimiento.fechaRegistro.day}/${seguimiento.fechaRegistro.month}/${seguimiento.fechaRegistro.year}',
-                  style: NexusText.small.copyWith(fontWeight: FontWeight.w500),
-                ),
-                if (seguimiento.descripcion != null &&
-                    seguimiento.descripcion!.isNotEmpty)
-                  Text(
-                    seguimiento.descripcion!,
-                    style: NexusText.caption,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(width: NexusSizes.spaceSM),
-          Text(
-            '${seguimiento.horasRealizadas}h',
-            style: NexusText.small.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(width: NexusSizes.spaceSM),
-          nexusEstadoBadge(label, bg: color, textColor: textColor),
-        ],
-      ),
+      children: seguimientos.map((s) => SeguimientoTile(seguimiento: s)).toList(),
     );
   }
 }
 
 class _IncidenciasCard extends StatelessWidget {
   final Practica? practica;
-  const _IncidenciasCard({required this.practica});
+  final VoidCallback onReportar;
+
+  const _IncidenciasCard({required this.practica, required this.onReportar});
 
   @override
   Widget build(BuildContext context) {
@@ -494,6 +477,7 @@ class _IncidenciasCard extends StatelessWidget {
           title: 'Incidencias',
           icon: Icons.warning_amber_outlined,
           action: practica != null ? 'Reportar' : null,
+          onActionTap: onReportar,
           child: practica == null
               ? const _SectionEmpty(mensaje: 'Sin practica activa')
               : incidencias.isEmpty
@@ -512,62 +496,7 @@ class _IncidenciasLista extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: incidencias.map((i) => _IncidenciaTile(incidencia: i)).toList(),
-    );
-  }
-}
-
-class _IncidenciaTile extends StatelessWidget {
-  final Incidencia incidencia;
-  const _IncidenciaTile({required this.incidencia});
-
-  @override
-  Widget build(BuildContext context) {
-    final (color, textColor, label) = switch (incidencia.estado) {
-      'RESUELTA' => (NexusColors.successLight, NexusColors.successText, 'Resuelta'),
-      'CERRADA'  => (NexusColors.neutralLight,  NexusColors.neutralText,  'Cerrada'),
-      _          => (NexusColors.dangerLight,    NexusColors.dangerText,    'Abierta'),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: NexusSizes.spaceLG,
-        vertical: NexusSizes.spaceMD,
-      ),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: NexusColors.border, width: 0.5)),
-      ),
-      child: Row(
-        children: [
-          if (incidencia.tipo != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: NexusColors.neutralLight,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                incidencia.tipo!,
-                style: NexusText.caption.copyWith(
-                  color: NexusColors.neutralText,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const SizedBox(width: NexusSizes.spaceSM),
-          ],
-          Expanded(
-            child: Text(
-              incidencia.descripcion,
-              style: NexusText.small,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: NexusSizes.spaceSM),
-          nexusEstadoBadge(label, bg: color, textColor: textColor),
-        ],
-      ),
+      children: incidencias.map((i) => IncidenciaTile(incidencia: i)).toList(),
     );
   }
 }
@@ -576,6 +505,7 @@ class _SectionCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final String? action;
+  final VoidCallback? onActionTap;
   final Widget child;
 
   const _SectionCard({
@@ -583,6 +513,7 @@ class _SectionCard extends StatelessWidget {
     required this.icon,
     required this.child,
     this.action,
+    this.onActionTap,
   });
 
   @override
@@ -609,7 +540,7 @@ class _SectionCard extends StatelessWidget {
                 ),
                 if (action != null)
                   TextButton(
-                    onPressed: () {},
+                    onPressed: onActionTap,
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: NexusSizes.spaceSM, vertical: 4),
                       minimumSize: Size.zero,

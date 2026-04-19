@@ -24,4 +24,20 @@ class IncidenciaService {
       throw Exception('Error al obtener incidencias: ${e.message}');
     }
   }
+
+  /**
+   * Reporta una nueva incidencia en la práctica activa del usuario autenticado.
+   * Endpoint: POST /api/v1/incidencias
+   */
+  Future<Incidencia> reportar({required String tipo, required String descripcion}) async {
+    try {
+      final response = await _apiClient.dio.post('/incidencias', data: {
+        'tipo': tipo,
+        'descripcion': descripcion,
+      });
+      return Incidencia.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception('Error al reportar incidencia: ${e.message}');
+    }
+  }
 }

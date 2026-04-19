@@ -48,6 +48,72 @@ todas las pantallas de validación.
 
 ---
 
+## [19/04/2026] — Hito 2: datos de prueba, endpoint /me, dashboard real, SeguimientoScreen
+
+### Contexto
+Sesión de preparación de la demo del Hito 2 (entrega 21/04). El backend ya tenía
+autenticación JWT, CRUD de prácticas y seguimientos. El dashboard Flutter mostraba
+datos reales pero sin datos seed útiles y con la barra de progreso hardcodeada a 0.
+
+### Cambios realizados
+
+**Migración V4__Datos_Prueba_Hito2.sql**
+- Nueva empresa EjemploTech S.L. (CIF B12345678)
+- Nuevo usuario tutor de empresa: tutorempresa@nexus.edu / 123456 (ROLE_TUTOR_EMPRESA)
+- Práctica activa FCT-2025-001 para alumno@nexus.edu, 240 horas, del 02/04 al 01/11/2025
+- 3 seguimientos (COMPLETADO 8h, VALIDADO 8h, PENDIENTE 8h) para mostrar el flujo
+- 1 incidencia ABIERTA tipo ACCESO vinculada a la práctica
+
+**Endpoint GET /api/v1/practicas/me**
+- Nuevo endpoint exclusivo para ROLE_ALUMNO
+- El servicio obtiene el email del JWT mediante SecurityContextHolder en lugar de recibir
+  el alumnoId como parámetro — el alumno no necesita conocer su propio ID
+- Devuelve 404 con mensaje claro si el alumno no tiene práctica activa
+- Requirió añadir `findFirstByAlumnoIdAndEstado()` al PracticaRepository
+
+**IncidenciaController y IncidenciaRepository (básico)**
+- GET /api/v1/incidencias/practica/{id}: lista de incidencias ordenada por fecha desc
+- GET /api/v1/incidencias/{id}: detalle de una incidencia
+- El mapeo a IncidenciaResponse se hace inline en el controller (sin MapStruct aún,
+  se formalizará en Hito 3 cuando el módulo sea completo)
+
+**Flutter — PracticaProvider refactorizado**
+- `cargarPracticas(alumnoId)` sustituido por `cargarDashboard()` sin parámetros
+- Las tres llamadas (práctica activa, seguimientos, incidencias) se ejecutan en paralelo
+  con `Future.wait()` para minimizar la latencia percibida
+- `horasCompletadas`: getter calculado sumando solo seguimientos con estado COMPLETADO
+- `agregarSeguimiento()`: actualiza la lista local al registrar sin recargar toda la red
+
+**Flutter — Nuevos modelos y servicios**
+- `seguimiento_model.dart`: sincronizado con SeguimientoResponse.java
+- `incidencia_model.dart`: sincronizado con IncidenciaResponse.java
+- `seguimiento_service.dart`: GET /seguimientos/practica/{id} y POST /seguimientos
+- `incidencia_service.dart`: GET /incidencias/practica/{id}
+- `practica_service.dart`: nuevo método `getPracticaActiva()` → GET /practicas/me
+
+**Flutter — Dashboard con datos reales**
+- Barra de progreso conectada a `provider.horasCompletadas` (ya no hardcodeada a 0)
+- Cards de seguimientos e incidencias muestran datos reales de la API (primeros 3 items)
+- Color semántico: verde=COMPLETADO, azul=VALIDADO, ámbar=PENDIENTE, rojo=RECHAZADO/ABIERTA
+
+**Flutter — SeguimientoScreen**
+- Formulario con 3 campos: DatePicker (fecha ≤ hoy), número de horas (1-24), descripción
+- POST /seguimientos y actualización local del provider sin recarga extra
+- SnackBar de confirmación en verde al registrar correctamente
+
+**Fix DatePicker (19/04/2026)**
+- El DatePicker aparecía en blanco porque se pasaba `locale: Locale('es','ES')` sin tener
+  `flutter_localizations` configurado en el MaterialApp
+- Solución: añadir `flutter_localizations` al pubspec.yaml y configurar
+  `localizationsDelegates` y `supportedLocales` en main.dart
+
+### Tests
+- 10/10 tests pasando con Java 21
+- NOTA: el JAVA_HOME del sistema apunta a Java 11. Para correr tests desde terminal:
+  `JAVA_HOME="C:/Program Files/Eclipse Adoptium/jdk-21.0.10.7-hotspot" ./mvnw test`
+
+---
+
 ## [18/04/2025] — Definición del sistema de diseño visual
 
 ### Contexto

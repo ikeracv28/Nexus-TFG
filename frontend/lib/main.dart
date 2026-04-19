@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/providers/auth_provider.dart';
@@ -24,6 +25,17 @@ class MyApp extends StatelessWidget {
         title: 'Nexus',
         debugShowCheckedModeBanner: false,
         theme: nexusTheme(),
+        // Localización en español para DatePicker, TimePicker y otros widgets de Material
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('es', 'ES'),
+          Locale('en', 'US'),
+        ],
+        locale: const Locale('es', 'ES'),
         home: Consumer<AuthProvider>(
           builder: (context, auth, _) {
             return auth.isAuthenticated ? const DashboardScreen() : const LoginScreen();

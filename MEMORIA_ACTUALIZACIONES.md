@@ -59,26 +59,51 @@ de Spring, sin necesidad de que el cliente lo envíe explícitamente.
 
 Para garantizar que los datos de las entidades JPA nunca se exponen directamente en la API,
 se utilizó MapStruct: una librería que genera automáticamente el código de mapeo entre entidades
-y DTOs (Data Transfer Objects) en tiempo de compilación, sin reflection y sin coste en runtime.
+y DTOs en tiempo de compilación, sin reflection y sin coste en runtime.
+
+Un aspecto que merece mención es el diseño del endpoint `GET /api/v1/practicas/me`. En lugar
+de que el cliente tenga que conocer el identificador del alumno para solicitar sus prácticas,
+este endpoint extrae la identidad del usuario directamente del token JWT mediante el
+`SecurityContextHolder` de Spring Security. Esto simplifica el cliente y elimina la necesidad
+de almacenar el ID del usuario de forma separada al token, reduciendo la superficie de posibles
+inconsistencias.
+
+Para el módulo de incidencias se implementó un primer nivel de consulta que permite listar y
+visualizar las incidencias de una práctica. En el tercer hito este módulo se ampliará con la
+capacidad de reportar nuevas incidencias desde la aplicación y gestionarlas por parte del
+tutor del centro.
 
 ### Para el capítulo del Frontend (5.1 Panel del Alumno)
 
-El cliente móvil se desarrolló con Flutter, framework de Google que permite compilar una
-única base de código Dart para web, Android e iOS. Para la gestión del estado de la aplicación
-se utilizó el patrón Provider: cuando el usuario hace login, el `AuthProvider` almacena sus
-datos en memoria y notifica automáticamente a todos los widgets que dependen de esa información,
-provocando que la interfaz se actualice sin necesidad de gestión manual.
+El cliente se desarrolló con Flutter, framework de Google que permite compilar una única base
+de código Dart para web, Android e iOS. Para la gestión del estado de la aplicación se utilizó
+el patrón Provider: cuando el usuario hace login, el `AuthProvider` almacena sus datos en memoria
+y notifica automáticamente a todos los widgets que dependen de esa información, provocando que
+la interfaz se actualice sin necesidad de gestión manual.
 
 La comunicación con la API se centraliza en un cliente Dio configurado con un interceptor JWT:
 antes de enviar cualquier petición, el interceptor recupera el token del almacenamiento seguro
-del dispositivo y lo añade a la cabecera de la petición. Esto significa que ninguna pantalla ni
-servicio de la aplicación necesita preocuparse de la autenticación; el interceptor lo gestiona
-de forma transparente.
+del dispositivo y lo añade a la cabecera de la petición. Ninguna pantalla ni servicio de la
+aplicación necesita gestionar la autenticación; el interceptor lo hace de forma transparente.
 
-El Dashboard muestra al alumno la práctica activa con el nombre de la empresa, el código del
-convenio, los tutores asignados y el estado actual. Se implementó con el widget `RefreshIndicator`
-de Flutter, que permite actualizar los datos con un gesto de deslizamiento hacia abajo, un
-patrón de interacción estándar en aplicaciones móviles modernas.
+El Dashboard carga tres tipos de información al arrancar: la práctica activa del alumno, sus
+seguimientos y sus incidencias. Las tres llamadas a la API se ejecutan en paralelo mediante
+`Future.wait()` de Dart, lo que reduce el tiempo de carga percibido frente a ejecutarlas de
+forma secuencial. La barra de progreso de horas muestra únicamente las horas de los seguimientos
+en estado `COMPLETADO`, es decir, aquellos que han recibido el visto bueno definitivo, reflejando
+con precisión el avance real de las prácticas.
+
+El sistema de diseño visual establece un código de color semántico consistente en toda la
+aplicación: el azul identifica elementos activos y acciones principales, el verde señala
+validaciones correctas, el ámbar advierte de elementos pendientes de atención y el rojo alerta
+sobre incidencias abiertas o partes rechazados. Todos los colores se definen en un único archivo
+centralizado, de modo que ninguna pantalla los hardcodea directamente.
+
+El formulario de registro de seguimientos implementa validación de entrada tanto en cliente
+como en servidor. En cliente se verifica que la fecha no sea futura, que las horas estén en
+el rango 1-24 y que la descripción tenga al menos 10 caracteres. Al enviar correctamente, el
+nuevo seguimiento se añade a la lista local del provider sin necesidad de recargar toda la
+información desde la red, lo que proporciona una respuesta inmediata al usuario.
 
 ---
 

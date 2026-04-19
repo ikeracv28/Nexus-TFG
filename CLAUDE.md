@@ -224,6 +224,12 @@ PATCH /api/v1/seguimientos/{id}/validar-centro
 - [x] Tests de integración: AuthController, PracticaController, SeguimientoService
 - [x] Flutter: LoginScreen funcional conectada a la API
 - [x] Flutter: DashboardScreen con datos reales de la práctica activa
+- [x] Flutter: Navegación funcional con IndexedStack (NavigationRail web + BottomNav móvil)
+- [x] Flutter: SeguimientosScreen con lista completa y FAB para nuevo parte
+- [x] Flutter: IncidenciasScreen con listado y bottom sheet para reportar
+- [x] Flutter: ChatPlaceholderScreen (placeholder Hito 3)
+- [x] Flutter: Widgets compartidos SeguimientoTile e IncidenciaTile en presentation/widgets/
+- [x] Backend: POST /api/v1/incidencias — el alumno reporta incidencias desde la app
 - [x] Docker Compose con healthcheck y red interna
 
 ### CORRECCIONES PREVIAS A LA ENTREGA DEL HITO 2

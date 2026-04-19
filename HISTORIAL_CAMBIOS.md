@@ -4,6 +4,23 @@ Este documento registra las implementaciones técnicas realizadas tras la entreg
 
 ---
 
+## [19/04/2026] — Navegación funcional del Dashboard + POST incidencias
+
+### Backend (Spring Boot)
+- **IncidenciaRequest DTO**: Nuevo record con campos `tipo` y `descripcion` validados con Bean Validation (`@NotBlank`, `@Size`).
+- **POST /api/v1/incidencias**: Nuevo endpoint en `IncidenciaController` que permite reportar una incidencia vinculada a la práctica activa del usuario autenticado. El backend resuelve el ID de la práctica desde el JWT (via `SecurityContextHolder`), sin requerir que el cliente lo envíe. La incidencia se crea con estado `ABIERTA` de forma automática.
+- **Tests**: Los 10 tests existentes siguen pasando tras los cambios.
+
+### Frontend (Flutter)
+- **Arquitectura de navegación**: `DashboardScreen` refactorizado para usar `IndexedStack` con 4 hijos. El `NavigationRail` (web) y el `BottomNavigationBar` (móvil) ahora cambian el contenido real de la pantalla al pulsar, en lugar de solo marcar el item seleccionado.
+- **SeguimientosScreen**: Nueva pantalla con la lista completa de partes del alumno, barra de progreso de horas completadas vs totales, y FAB para registrar un nuevo seguimiento. Al volver del formulario, recarga los datos automáticamente.
+- **IncidenciasScreen**: Nueva pantalla con listado de incidencias y botón outline "Reportar incidencia" que abre un `ModalBottomSheet`. El sheet contiene un dropdown de tipo y un textarea de descripción. Al enviar, llama al nuevo `POST /incidencias` y recarga la lista.
+- **ChatPlaceholderScreen**: Pantalla placeholder estilo Nexus con icono, texto "Chat en tiempo real" y badge "Próximo — Hito 3".
+- **Widgets compartidos**: `SeguimientoTile` e `IncidenciaTile` extraídos a `presentation/widgets/` para ser reutilizados desde el tab de inicio y desde sus respectivas pantallas completas.
+- **Callbacks conectados**: Los botones "Ver todos" y "Reportar" del tab de inicio ahora navegan a sus respectivos tabs via callbacks al `IndexedStack`.
+
+---
+
 ## [15/04/2026] - Integración Visual y Sincronización de Identidad
 
 ### Backend (Spring Boot)

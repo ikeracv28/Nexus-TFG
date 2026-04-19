@@ -1,5 +1,5 @@
 # ARQUITECTURA_API.md — Contrato REST de Nexus
-# Última actualización: 19/04/2026 (Hito 2)
+# Última actualización: 19/04/2026 (Hito 2 — navegación Flutter + POST incidencias)
 # Base URL: http://localhost:8080/api/v1
 
 ---
@@ -137,7 +137,17 @@
 **Acceso**: cualquier usuario autenticado
 **Respuesta 200**: `IncidenciaResponse`
 
-> **Pendiente Hito 3**: POST /incidencias (reportar desde Flutter), gestión de resolución por tutor centro
+### POST /incidencias
+**Acceso**: ALUMNO, TUTOR_CENTRO, TUTOR_EMPRESA
+**Descripción**: Reporta una nueva incidencia vinculada a la práctica ACTIVA del usuario autenticado. El alumno no necesita indicar el ID de práctica; el backend lo resuelve desde el JWT.
+**Body**: `IncidenciaRequest { tipo, descripcion }`
+**Tipos válidos**: `ACCESO`, `AUSENCIA`, `COMPORTAMIENTO`, `ACCIDENTE`, `OTROS`
+**Validación**: `descripcion` entre 10 y 1000 caracteres.
+**Respuesta 201**: `IncidenciaResponse` con `estado: "ABIERTA"`
+**Respuesta 400**: si la descripción no cumple las validaciones
+**Respuesta 409**: si el usuario no tiene práctica activa
+
+> **Pendiente Hito 3**: `PATCH /incidencias/{id}/estado` — gestión de resolución por tutor centro
 
 ---
 
@@ -177,7 +187,7 @@
 
 | Endpoint | Descripción |
 |----------|-------------|
-| `POST /incidencias` | El alumno reporta una incidencia desde la app |
+| ~~`POST /incidencias`~~ | ~~El alumno reporta una incidencia desde la app~~ — **Implementado 19/04/2026** |
 | `PATCH /incidencias/{id}/estado` | Tutor centro actualiza estado de incidencia |
 | `PATCH /seguimientos/{id}/validar-empresa` | Primera validación (TUTOR_EMPRESA) |
 | `PATCH /seguimientos/{id}/validar-centro` | Segunda validación (TUTOR_CENTRO) |

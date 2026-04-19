@@ -68,10 +68,11 @@ este endpoint extrae la identidad del usuario directamente del token JWT mediant
 de almacenar el ID del usuario de forma separada al token, reduciendo la superficie de posibles
 inconsistencias.
 
-Para el módulo de incidencias se implementó un primer nivel de consulta que permite listar y
-visualizar las incidencias de una práctica. En el tercer hito este módulo se ampliará con la
-capacidad de reportar nuevas incidencias desde la aplicación y gestionarlas por parte del
-tutor del centro.
+Para el módulo de incidencias se implementó tanto la consulta como el reporte de nuevas
+incidencias. El endpoint `POST /api/v1/incidencias` identifica al alumno desde el JWT y
+vincula automáticamente la incidencia a su práctica activa, sin que el cliente tenga que
+conocer ni enviar el identificador de la práctica. En el tercer hito se añadirá la gestión
+de resolución por parte del tutor del centro.
 
 ### Para el capítulo del Frontend (5.1 Panel del Alumno)
 
@@ -107,11 +108,23 @@ información desde la red, lo que proporciona una respuesta inmediata al usuario
 
 ---
 
-## BLOQUE 003 — [RESERVADO para Hito 3]
+## BLOQUE 003 — Hito 2 (complemento): Navegación del Dashboard y pantallas secundarias
+**Sección destino en memoria**: Capítulo 5 (Diseño de Interfaz — Panel del Alumno)
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+La navegación de la aplicación se diseñó para adaptarse al dispositivo de forma automática. En pantallas anchas (escritorio y tablet, más de 600 píxeles) aparece un `NavigationRail` lateral con iconos, siguiendo las convenciones de las aplicaciones web modernas. En pantallas estrechas (móvil) se muestra un `BottomNavigationBar` en la parte inferior, respetando los patrones de uso táctil. Esta adaptación se implementó con un único `LayoutBuilder` que evalúa el ancho disponible y decide qué componente de navegación renderizar.
+
+El contenido del dashboard se organiza en cuatro pestañas gestionadas por un `IndexedStack`: inicio, seguimientos, incidencias y chat. El `IndexedStack` mantiene todos los hijos montados en memoria aunque no estén visibles, lo que preserva el estado de scroll y evita recargar datos al cambiar de pestaña. Esto es especialmente relevante en la pestaña de seguimientos, que contiene la lista completa de partes del alumno con su barra de progreso de horas.
+
+La pestaña de incidencias permite reportar un problema directamente desde la aplicación mediante un `ModalBottomSheet`. El formulario incluye un selector de tipo de incidencia (acceso, ausencia, comportamiento, accidente u otros) y un campo de texto libre con validación de longitud mínima en cliente. Al confirmarlo, la petición llega al backend, que vincula la incidencia a la práctica activa del alumno usando su identidad del token JWT, devuelve la incidencia creada y la lista se actualiza de inmediato.
+
+La cuarta pestaña muestra una pantalla informativa que anuncia la función de chat en tiempo real prevista para el siguiente hito. Esta decisión de incluir un placeholder visible en la demo cumple dos propósitos: comunica al evaluador que la arquitectura de navegación está completa y anticipa la integración del módulo de mensajería con WebSocket.
+
+## BLOQUE 004 — [RESERVADO para Hito 3]
 **Sección destino en memoria**: Capítulo 5 (Incidencias y Chat)
 **Estado**: [PENDIENTE — se generará al completar las features]
 
-> Este bloque se completará cuando se implementen los módulos de incidencias y chat.
+> Este bloque se completará cuando se implementen el chat y la doble validación de seguimientos.
 > Incluirá la explicación del protocolo WebSocket/STOMP para el chat en tiempo real.
 
 ---

@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/theme/app_theme.dart';
+import '../../data/models/practica_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/practica_provider.dart';
-import '../../data/models/practica_model.dart';
 
-/**
- * Pantalla principal para el Alumno.
- * Muestra el resumen de su práctica actual y accesos directos.
- */
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -16,10 +13,11 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  int _navIndex = 0;
+
   @override
   void initState() {
     super.initState();
-    // Cargamos las prácticas al iniciar la pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       if (auth.user != null) {
@@ -31,176 +29,635 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final practicaProvider = Provider.of<PracticaProvider>(context);
+    final auth = Provider.of<AuthProvider>(context);
+    final practica = Provider.of<PracticaProvider>(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Nexus Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => authProvider.logout(),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () => practicaProvider.cargarPracticas(authProvider.user!.id),
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Hola, ${authProvider.user?.nombreCompleto ?? 'Usuario'}',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue[900],
+      backgroundColor: NexusColors.surfaceAlt,
+      appBar: _buildAppBar(auth),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 600;
+          final content = _DashboardContent(
+            auth: auth,
+            practica: practica,
+          );
+
+          if (isWide) {
+            return Row(
+              children: [
+                _NexusRail(
+                  selectedIndex: _navIndex,
+                  onDestinationSelected: (i) => setState(() => _navIndex = i),
                 ),
-              ),
-              const SizedBox(height: 8),
-              const Text('Aquí tienes el estado de tu formación práctica.'),
-              const SizedBox(height: 24),
-              
-              if (practicaProvider.isLoading)
-                const Center(child: CircularProgressIndicator())
-              else if (practicaProvider.practicaActiva != null)
-                _buildPracticaCard(practicaProvider.practicaActiva!)
-              else
-                _buildEmptyState(),
-                
-              const SizedBox(height: 24),
-              _buildQuickActions(),
-            ],
-          ),
-        ),
+                const VerticalDivider(width: 1, thickness: 0.5, color: NexusColors.border),
+                Expanded(child: content),
+              ],
+            );
+          }
+          return content;
+        },
+      ),
+      bottomNavigationBar: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth > 600) return const SizedBox.shrink();
+          return _NexusBottomNav(
+            selectedIndex: _navIndex,
+            onTap: (i) => setState(() => _navIndex = i),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildPracticaCard(Practica practica) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
+  PreferredSizeWidget _buildAppBar(AuthProvider auth) {
+    final initials = _getInitials(auth.user?.nombreCompleto ?? '');
+    return AppBar(
+      backgroundColor: NexusColors.surface,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      title: const Text('Nexus', style: NexusText.heading3),
+      bottom: const PreferredSize(
+        preferredSize: Size.fromHeight(0.5),
+        child: Divider(height: 0.5, thickness: 0.5, color: NexusColors.border),
+      ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: NexusSizes.spaceSM),
+          child: CircleAvatar(
+            radius: 16,
+            backgroundColor: NexusColors.primaryLight,
+            child: Text(
+              initials,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: NexusColors.primaryText,
+              ),
+            ),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.logout_outlined, size: 20, color: NexusColors.inkSecondary),
+          tooltip: 'Cerrar sesión',
+          onPressed: () => auth.logout(),
+        ),
+        const SizedBox(width: NexusSizes.spaceXS),
+      ],
+    );
+  }
+
+  String _getInitials(String nombre) {
+    final parts = nombre.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+}
+
+// Contenido principal del dashboard
+
+class _DashboardContent extends StatelessWidget {
+  final AuthProvider auth;
+  final PracticaProvider practica;
+
+  const _DashboardContent({required this.auth, required this.practica});
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      color: NexusColors.primary,
+      onRefresh: () => practica.cargarPracticas(auth.user!.id),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(NexusSizes.space2XL),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    practica.empresaNombre,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _getStatusColor(practica.estado).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _getStatusColor(practica.estado)),
-                  ),
-                  child: Text(
-                    practica.estado,
-                    style: TextStyle(
-                      color: _getStatusColor(practica.estado),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildInfoRow(Icons.tag, 'Código', practica.codigo),
-            _buildInfoRow(Icons.person, 'Tutor Centro', practica.tutorCentroNombre),
-            _buildInfoRow(Icons.business_center, 'Tutor Empresa', practica.tutorEmpresaNombre),
-            const Divider(height: 32),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStat('Horas Totales', '${practica.horasTotales ?? 0}h'),
-                _buildStat('Progreso', '0h'), // TODO: Vincular con seguimientos
-              ],
-            ),
+            _GreetingHeader(nombreCompleto: auth.user?.nombreCompleto ?? 'Usuario'),
+            const SizedBox(height: NexusSizes.space2XL),
+            if (practica.isLoading)
+              const _LoadingCard()
+            else if (practica.practicaActiva != null)
+              _PracticaCard(practica: practica.practicaActiva!)
+            else
+              const _EmptyState(),
+            const SizedBox(height: NexusSizes.space2XL),
+            _SectionGrid(practica: practica.practicaActiva),
+            const SizedBox(height: NexusSizes.space2XL),
+            if (practica.practicaActiva != null) const _AccionesRapidas(),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: Colors.grey[600]),
-          const SizedBox(width: 8),
-          Text('$label: ', style: const TextStyle(color: Colors.grey)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
+// Saludo con fecha
 
-  Widget _buildStat(String label, String value) {
+class _GreetingHeader extends StatelessWidget {
+  final String nombreCompleto;
+  const _GreetingHeader({required this.nombreCompleto});
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final fecha = _formatDate(now);
+    final firstName = nombreCompleto.split(' ').first;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        Text('Hola, $firstName', style: NexusText.heading2),
+        const SizedBox(height: NexusSizes.spaceXS),
+        Text(fecha, style: NexusText.caption),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
+  String _formatDate(DateTime d) {
+    const dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    return '${dias[d.weekday - 1].substring(0, 1).toUpperCase()}${dias[d.weekday - 1].substring(1)}, '
+           '${d.day} de ${meses[d.month - 1]} de ${d.year}';
+  }
+}
+
+// Card de practica activa
+
+class _PracticaCard extends StatelessWidget {
+  final Practica practica;
+  const _PracticaCard({required this.practica});
+
+  @override
+  Widget build(BuildContext context) {
+    final horas = practica.horasTotales ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(NexusSizes.space2XL),
+      decoration: BoxDecoration(
+        color: NexusColors.surface,
+        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.assignment_late_outlined, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          const Text('No tienes prácticas asignadas actualmente.'),
+          // Cabecera: empresa + estado
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      practica.empresaNombre,
+                      style: NexusText.heading3,
+                    ),
+                    const SizedBox(height: NexusSizes.spaceXS),
+                    Text(
+                      practica.codigo,
+                      style: NexusText.caption,
+                    ),
+                  ],
+                ),
+              ),
+              _estadoBadge(practica.estado),
+            ],
+          ),
+          const SizedBox(height: NexusSizes.spaceLG),
+          const Divider(height: 1, thickness: 0.5, color: NexusColors.border),
+          const SizedBox(height: NexusSizes.spaceLG),
+
+          // Tutores
+          _InfoRow(
+            icon: Icons.person_outline,
+            label: 'Tutor centro',
+            value: practica.tutorCentroNombre,
+          ),
+          const SizedBox(height: NexusSizes.spaceSM),
+          _InfoRow(
+            icon: Icons.business_center_outlined,
+            label: 'Tutor empresa',
+            value: practica.tutorEmpresaNombre,
+          ),
+
+          if (practica.fechaInicio != null) ...[
+            const SizedBox(height: NexusSizes.spaceSM),
+            _InfoRow(
+              icon: Icons.calendar_today_outlined,
+              label: 'Periodo',
+              value: _formatPeriodo(practica.fechaInicio, practica.fechaFin),
+            ),
+          ],
+
+          // Barra de progreso de horas
+          if (horas > 0) ...[
+            const SizedBox(height: NexusSizes.spaceLG),
+            const Divider(height: 1, thickness: 0.5, color: NexusColors.border),
+            const SizedBox(height: NexusSizes.spaceLG),
+            _ProgressBar(horasRealizadas: 0, horasTotales: horas),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildQuickActions() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _estadoBadge(String estado) {
+    switch (estado) {
+      case 'ACTIVA':
+        return nexusEstadoBadge('Activa', bg: NexusColors.primaryLight, textColor: NexusColors.primaryText);
+      case 'FINALIZADA':
+        return nexusEstadoBadge('Finalizada', bg: NexusColors.successLight, textColor: NexusColors.successText);
+      default:
+        return nexusEstadoBadge('Borrador', bg: NexusColors.neutralLight, textColor: NexusColors.neutralText);
+    }
+  }
+
+  String _formatPeriodo(DateTime? inicio, DateTime? fin) {
+    String fmt(DateTime d) => '${d.day}/${d.month}/${d.year}';
+    if (inicio == null) return '-';
+    if (fin == null) return 'Desde ${fmt(inicio)}';
+    return '${fmt(inicio)} - ${fmt(fin)}';
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _InfoRow({required this.icon, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
       children: [
-        const Text(
-          'Acciones Rápidas',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Navegar a pantalla de nuevo seguimiento
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Registrar Seguimiento Diario'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+        Icon(icon, size: 15, color: NexusColors.inkTertiary),
+        const SizedBox(width: NexusSizes.spaceSM),
+        Text('$label  ', style: NexusText.caption),
+        Expanded(
+          child: Text(
+            value,
+            style: NexusText.small.copyWith(fontWeight: FontWeight.w500),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
     );
   }
+}
 
-  Color _getStatusColor(String estado) {
-    switch (estado) {
-      case 'ACTIVA': return Colors.green;
-      case 'BORRADOR': return Colors.orange;
-      case 'FINALIZADA': return Colors.blue;
-      default: return Colors.grey;
-    }
+class _ProgressBar extends StatelessWidget {
+  final int horasRealizadas;
+  final int horasTotales;
+  const _ProgressBar({required this.horasRealizadas, required this.horasTotales});
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = horasTotales > 0 ? (horasRealizadas / horasTotales).clamp(0.0, 1.0) : 0.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Horas completadas', style: NexusText.caption),
+            Text(
+              '$horasRealizadas / $horasTotales h',
+              style: NexusText.small.copyWith(fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+        const SizedBox(height: NexusSizes.spaceSM),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: LinearProgressIndicator(
+            value: pct,
+            minHeight: 6,
+            backgroundColor: NexusColors.border,
+            valueColor: const AlwaysStoppedAnimation<Color>(NexusColors.primary),
+          ),
+        ),
+        const SizedBox(height: NexusSizes.spaceXS),
+        Text(
+          '${(pct * 100).toStringAsFixed(0)}%  ·  ${horasTotales - horasRealizadas} h restantes',
+          style: NexusText.caption,
+        ),
+      ],
+    );
+  }
+}
+
+// Grid de seguimientos e incidencias
+
+class _SectionGrid extends StatelessWidget {
+  final Practica? practica;
+  const _SectionGrid({required this.practica});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth > 500;
+
+        if (isWide) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _SeguimientosCard(practica: practica)),
+              const SizedBox(width: NexusSizes.spaceLG),
+              Expanded(child: _IncidenciasCard(practica: practica)),
+            ],
+          );
+        }
+        return Column(
+          children: [
+            _SeguimientosCard(practica: practica),
+            const SizedBox(height: NexusSizes.spaceLG),
+            _IncidenciasCard(practica: practica),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SeguimientosCard extends StatelessWidget {
+  final Practica? practica;
+  const _SeguimientosCard({required this.practica});
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Seguimientos',
+      icon: Icons.list_alt_outlined,
+      action: practica != null ? 'Ver todos' : null,
+      child: practica == null
+          ? const _SectionEmpty(mensaje: 'Sin practica activa')
+          : const _SectionEmpty(mensaje: 'Sin seguimientos registrados'),
+    );
+  }
+}
+
+class _IncidenciasCard extends StatelessWidget {
+  final Practica? practica;
+  const _IncidenciasCard({required this.practica});
+
+  @override
+  Widget build(BuildContext context) {
+    return _SectionCard(
+      title: 'Incidencias',
+      icon: Icons.warning_amber_outlined,
+      action: practica != null ? 'Reportar' : null,
+      child: practica == null
+          ? const _SectionEmpty(mensaje: 'Sin practica activa')
+          : const _SectionEmpty(mensaje: 'Sin incidencias activas'),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final String? action;
+  final Widget child;
+
+  const _SectionCard({
+    required this.title,
+    required this.icon,
+    required this.child,
+    this.action,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: NexusColors.surface,
+        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              NexusSizes.spaceLG, NexusSizes.spaceMD, NexusSizes.spaceSM, NexusSizes.spaceMD,
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 15, color: NexusColors.inkSecondary),
+                const SizedBox(width: NexusSizes.spaceSM),
+                Expanded(
+                  child: Text(title, style: NexusText.small.copyWith(fontWeight: FontWeight.w500)),
+                ),
+                if (action != null)
+                  TextButton(
+                    onPressed: () {},
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: NexusSizes.spaceSM, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      action!,
+                      style: NexusText.caption.copyWith(color: NexusColors.primary),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, thickness: 0.5, color: NexusColors.border),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionEmpty extends StatelessWidget {
+  final String mensaje;
+  const _SectionEmpty({required this.mensaje});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: NexusSizes.space2XL),
+      child: Center(
+        child: Text(mensaje, style: NexusText.caption),
+      ),
+    );
+  }
+}
+
+// Acciones rapidas
+
+class _AccionesRapidas extends StatelessWidget {
+  const _AccionesRapidas();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Acciones rapidas',
+          style: NexusText.small.copyWith(fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: NexusSizes.spaceMD),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              // TODO: Navegar a registro de seguimiento
+            },
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Registrar seguimiento'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Estado vacio (sin practica)
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: NexusSizes.space3XL),
+      decoration: BoxDecoration(
+        color: NexusColors.surface,
+        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.assignment_outlined, size: 36, color: NexusColors.inkTertiary),
+          const SizedBox(height: NexusSizes.spaceMD),
+          Text('Sin practica asignada', style: NexusText.small.copyWith(fontWeight: FontWeight.w500)),
+          const SizedBox(height: NexusSizes.spaceXS),
+          Text(
+            'Contacta con tu tutor del centro para que te asigne una practica.',
+            style: NexusText.caption,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Skeleton de carga
+
+class _LoadingCard extends StatelessWidget {
+  const _LoadingCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 160,
+      decoration: BoxDecoration(
+        color: NexusColors.surface,
+        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: NexusColors.primary,
+        ),
+      ),
+    );
+  }
+}
+
+// NavigationRail para web/tablet
+
+class _NexusRail extends StatelessWidget {
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+
+  const _NexusRail({
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationRail(
+      selectedIndex: selectedIndex,
+      onDestinationSelected: onDestinationSelected,
+      backgroundColor: NexusColors.surface,
+      indicatorColor: NexusColors.primaryLight,
+      selectedIconTheme: const IconThemeData(color: NexusColors.primary),
+      unselectedIconTheme: const IconThemeData(color: NexusColors.inkSecondary),
+      labelType: NavigationRailLabelType.none,
+      minWidth: 56,
+      destinations: const [
+        NavigationRailDestination(
+          icon: Icon(Icons.dashboard_outlined),
+          selectedIcon: Icon(Icons.dashboard),
+          label: Text('Inicio'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.list_alt_outlined),
+          selectedIcon: Icon(Icons.list_alt),
+          label: Text('Seguimientos'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.warning_amber_outlined),
+          selectedIcon: Icon(Icons.warning_amber),
+          label: Text('Incidencias'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.chat_bubble_outline),
+          selectedIcon: Icon(Icons.chat_bubble),
+          label: Text('Chat'),
+        ),
+      ],
+    );
+  }
+}
+
+// BottomNavigationBar para movil
+
+class _NexusBottomNav extends StatelessWidget {
+  final int selectedIndex;
+  final ValueChanged<int> onTap;
+
+  const _NexusBottomNav({required this.selectedIndex, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth)),
+      ),
+      child: BottomNavigationBar(
+        currentIndex: selectedIndex,
+        onTap: onTap,
+        backgroundColor: NexusColors.surface,
+        selectedItemColor: NexusColors.primary,
+        unselectedItemColor: NexusColors.inkTertiary,
+        selectedLabelStyle: NexusText.caption.copyWith(color: NexusColors.primary),
+        unselectedLabelStyle: NexusText.caption,
+        elevation: 0,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Inicio'),
+          BottomNavigationBarItem(icon: Icon(Icons.list_alt_outlined), activeIcon: Icon(Icons.list_alt), label: 'Seguimientos'),
+          BottomNavigationBarItem(icon: Icon(Icons.warning_amber_outlined), activeIcon: Icon(Icons.warning_amber), label: 'Incidencias'),
+          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), activeIcon: Icon(Icons.chat_bubble), label: 'Chat'),
+        ],
+      ),
+    );
   }
 }

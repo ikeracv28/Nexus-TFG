@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'core/theme/app_theme.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/practica_provider.dart';
 import 'presentation/screens/login_screen.dart';
@@ -20,18 +21,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => PracticaProvider()),
       ],
       child: MaterialApp(
-        title: 'Nexus-TFG',
+        title: 'Nexus',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ),
+        theme: nexusTheme(),
         home: Consumer<AuthProvider>(
           builder: (context, auth, _) {
             return auth.isAuthenticated ? const DashboardScreen() : const LoginScreen();

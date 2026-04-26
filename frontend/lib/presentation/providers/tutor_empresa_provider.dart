@@ -9,19 +9,31 @@ class TutorEmpresaProvider extends ChangeNotifier {
   final SeguimientoService _seguimientoService = SeguimientoService();
 
   List<Practica> _practicas = [];
-  // Partes pendientes agrupados por práctica para mostrar contexto (alumno, empresa)
-  Map<int, List<Seguimiento>> _pendientesPorPractica = {};
+  Map<int, List<Seguimiento>> _todosSeguimientosPorPractica = {};
   bool _isLoading = false;
   String? _error;
 
   List<Practica> get practicas => _practicas;
-  Map<int, List<Seguimiento>> get pendientesPorPractica => _pendientesPorPractica;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  List<Seguimiento> get todosPendientes => _pendientesPorPractica.values
-      .expand((lista) => lista)
+  List<Seguimiento> get todosPendientes => _todosSeguimientosPorPractica.values
+      .expand((l) => l)
+      .where((s) => s.estado == 'PENDIENTE_EMPRESA')
       .toList();
+
+  int get totalPartes => _todosSeguimientosPorPractica.values
+      .expand((l) => l)
+      .length;
+
+  int get totalHoras => _todosSeguimientosPorPractica.values
+      .expand((l) => l)
+      .fold(0, (sum, s) => sum + s.horasRealizadas);
+
+  int get totalValidados => _todosSeguimientosPorPractica.values
+      .expand((l) => l)
+      .where((s) => s.estado == 'PENDIENTE_CENTRO' || s.estado == 'COMPLETADO')
+      .length;
 
   Future<void> cargar() async {
     _isLoading = true;
@@ -30,14 +42,12 @@ class TutorEmpresaProvider extends ChangeNotifier {
 
     try {
       _practicas = await _practicaService.getMisPracticasComoTutorEmpresa();
-      _pendientesPorPractica = {};
+      _todosSeguimientosPorPractica = {};
 
       for (final practica in _practicas) {
-        final todos = await _seguimientoService.getSeguimientosPorPractica(practica.id);
-        final pendientes = todos.where((s) => s.estado == 'PENDIENTE_EMPRESA').toList();
-        if (pendientes.isNotEmpty) {
-          _pendientesPorPractica[practica.id] = pendientes;
-        }
+        final todos =
+            await _seguimientoService.getSeguimientosPorPractica(practica.id);
+        _todosSeguimientosPorPractica[practica.id] = todos;
       }
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');

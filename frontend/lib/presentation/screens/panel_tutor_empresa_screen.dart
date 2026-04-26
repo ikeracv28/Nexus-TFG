@@ -10,7 +10,8 @@ class PanelTutorEmpresaScreen extends StatefulWidget {
   const PanelTutorEmpresaScreen({super.key});
 
   @override
-  State<PanelTutorEmpresaScreen> createState() => _PanelTutorEmpresaScreenState();
+  State<PanelTutorEmpresaScreen> createState() =>
+      _PanelTutorEmpresaScreenState();
 }
 
 class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
@@ -29,25 +30,30 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
 
     return Scaffold(
       backgroundColor: NexusColors.surfaceAlt,
-      appBar: AppBar(
-        title: const Text('Validar Partes Semanales'),
-        actions: [
-          TextButton.icon(
-            onPressed: () => auth.logout(),
-            icon: const Icon(Icons.logout, size: 18),
-            label: const Text('Salir'),
-          ),
-        ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isWide = constraints.maxWidth > 600;
+          return Row(
+            children: [
+              if (isWide) _Sidebar(auth: auth),
+              Expanded(child: _buildContent(auth, provider)),
+            ],
+          );
+        },
       ),
-      body: _buildBody(provider),
+      bottomNavigationBar: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth > 600) return const SizedBox.shrink();
+          return _buildBottomBar(auth);
+        },
+      ),
     );
   }
 
-  Widget _buildBody(TutorEmpresaProvider provider) {
+  Widget _buildContent(AuthProvider auth, TutorEmpresaProvider provider) {
     if (provider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-
     if (provider.error != null) {
       return Center(
         child: Column(
@@ -67,41 +73,176 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
     }
 
     final pendientes = provider.todosPendientes;
-
-    if (pendientes.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.check_circle_outline,
-                size: 64, color: Color.fromRGBO(59, 109, 17, 0.6)),
-            const SizedBox(height: NexusSizes.spaceLG),
-            Text('Sin partes pendientes', style: NexusText.heading2),
-            const SizedBox(height: NexusSizes.spaceSM),
-            Text('Todos los partes han sido procesados.',
-                style: NexusText.body.copyWith(color: NexusColors.inkSecondary)),
-          ],
-        ),
-      );
-    }
+    final empresa = provider.practicas.isNotEmpty
+        ? provider.practicas.first.empresaNombre
+        : '';
 
     return RefreshIndicator(
       onRefresh: () => context.read<TutorEmpresaProvider>().cargar(),
-      child: ListView.separated(
-        padding: const EdgeInsets.all(NexusSizes.spaceLG),
-        itemCount: pendientes.length,
-        separatorBuilder: (_, __) => const SizedBox(height: NexusSizes.spaceMD),
-        itemBuilder: (context, index) {
-          final seguimiento = pendientes[index];
-          final practica = provider.practicaDe(seguimiento.practicaId);
-          return _PartePendienteCard(
-            seguimiento: seguimiento,
-            alumnoNombre: practica?.alumnoNombre ?? 'Alumno',
-            empresaNombre: practica?.empresaNombre ?? '',
-            onValidar: () => _confirmarValidar(seguimiento.id),
-            onRechazar: () => _mostrarModalRechazo(seguimiento.id),
-          );
-        },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(NexusSizes.space2XL),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Text('Partes pendientes de firma', style: NexusText.heading2),
+            const SizedBox(height: NexusSizes.spaceXS),
+            Text(
+              '${auth.user?.nombreCompleto ?? ''} · $empresa',
+              style: NexusText.caption.copyWith(color: NexusColors.inkSecondary),
+            ),
+            const SizedBox(height: NexusSizes.space2XL),
+
+            // Stats
+            Row(
+              children: [
+                Expanded(
+                  child: _StatCard(
+                    value: '${pendientes.length}',
+                    label: 'Pendientes',
+                    bg: NexusColors.warningLight,
+                    valueColor: NexusColors.warning,
+                    labelColor: NexusColors.warningText,
+                  ),
+                ),
+                const SizedBox(width: NexusSizes.spaceSM),
+                Expanded(
+                  child: _StatCard(
+                    value: '${provider.totalValidados}',
+                    label: 'Procesados',
+                    bg: NexusColors.successLight,
+                    valueColor: NexusColors.success,
+                    labelColor: NexusColors.successText,
+                  ),
+                ),
+                const SizedBox(width: NexusSizes.spaceSM),
+                Expanded(
+                  child: _StatCard(
+                    value: '${provider.totalHoras}h',
+                    label: 'Horas totales',
+                    bg: NexusColors.neutralLight,
+                    valueColor: NexusColors.neutral,
+                    labelColor: NexusColors.neutralText,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: NexusSizes.space2XL),
+
+            if (pendientes.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: NexusSizes.space3XL),
+                decoration: BoxDecoration(
+                  color: NexusColors.surface,
+                  border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+                  borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.check_circle_outline,
+                        size: 48, color: Color.fromRGBO(59, 109, 17, 0.5)),
+                    const SizedBox(height: NexusSizes.spaceMD),
+                    Text('Sin partes pendientes', style: NexusText.heading3),
+                    const SizedBox(height: NexusSizes.spaceXS),
+                    Text('Todos los partes han sido procesados.',
+                        style: NexusText.caption.copyWith(color: NexusColors.inkSecondary)),
+                  ],
+                ),
+              )
+            else ...[
+              Container(
+                decoration: BoxDecoration(
+                  color: NexusColors.surface,
+                  border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+                  borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        NexusSizes.spaceLG, NexusSizes.spaceMD,
+                        NexusSizes.spaceLG, NexusSizes.spaceMD,
+                      ),
+                      child: Text(
+                        'Partes de seguimiento',
+                        style: NexusText.label.copyWith(
+                          color: NexusColors.inkSecondary,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 1, thickness: 0.5, color: NexusColors.border),
+                    ...pendientes.asMap().entries.map((e) {
+                      final isLast = e.key == pendientes.length - 1;
+                      final practica = provider.practicaDe(e.value.practicaId);
+                      return _ParteItem(
+                        seguimiento: e.value,
+                        alumnoNombre: practica?.alumnoNombre ?? 'Alumno',
+                        isLast: isLast,
+                        onValidar: () => _confirmarValidar(e.value.id),
+                        onRechazar: () => _mostrarModalRechazo(e.value.id),
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(height: NexusSizes.spaceLG),
+              Container(
+                padding: const EdgeInsets.all(NexusSizes.spaceMD),
+                decoration: BoxDecoration(
+                  color: NexusColors.primaryLight,
+                  border: Border.all(color: const Color(0xFFB5D4F4), width: 0.5),
+                  borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                ),
+                child: Text(
+                  'Al rechazar un parte deberás indicar el motivo. El tutor del centro será notificado automáticamente.',
+                  style: NexusText.small.copyWith(color: NexusColors.primaryText),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomBar(AuthProvider auth) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+            top: BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth)),
+      ),
+      child: BottomAppBar(
+        color: NexusColors.surface,
+        elevation: 0,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                const SizedBox(width: NexusSizes.spaceSM),
+                Container(
+                  width: 24, height: 24,
+                  decoration: BoxDecoration(
+                    color: NexusColors.success,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(Icons.star_outline, size: 12, color: Colors.white),
+                ),
+                const SizedBox(width: NexusSizes.spaceMD),
+                Text('Partes', style: NexusText.caption.copyWith(color: NexusColors.success, fontWeight: FontWeight.w600)),
+              ],
+            ),
+            TextButton.icon(
+              onPressed: () => auth.logout(),
+              icon: const Icon(Icons.logout_outlined, size: 16, color: NexusColors.inkTertiary),
+              label: Text('Salir', style: NexusText.caption.copyWith(color: NexusColors.inkSecondary)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -114,11 +255,14 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
         content: const Text('¿Confirmas que las horas y actividades son correctas?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Validar')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: NexusColors.success),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Validar y firmar'),
+          ),
         ],
       ),
     );
-
     if (confirmar != true || !mounted) return;
 
     final ok = await context.read<TutorEmpresaProvider>().validar(id);
@@ -133,86 +277,81 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
   Future<void> _mostrarModalRechazo(int id) async {
     final motivoController = TextEditingController();
     final formKey = GlobalKey<FormState>();
-
     try {
       await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: NexusColors.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(NexusSizes.radiusLG)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.fromLTRB(
-          NexusSizes.space2XL,
-          NexusSizes.space2XL,
-          NexusSizes.space2XL,
-          MediaQuery.of(ctx).viewInsets.bottom + NexusSizes.space2XL,
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: NexusColors.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(NexusSizes.radiusLG)),
         ),
-        child: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Rechazar parte', style: NexusText.heading2),
-              const SizedBox(height: NexusSizes.spaceSM),
-              Text(
-                'El alumno recibirá una incidencia automática con el motivo indicado.',
-                style: NexusText.body.copyWith(color: NexusColors.inkSecondary),
-              ),
-              const SizedBox(height: NexusSizes.spaceLG),
-              TextFormField(
-                controller: motivoController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Motivo del rechazo *',
-                  hintText: 'Describe qué debe corregir el alumno...',
-                  alignLabelWithHint: true,
+        builder: (ctx) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            NexusSizes.space2XL, NexusSizes.space2XL,
+            NexusSizes.space2XL,
+            MediaQuery.of(ctx).viewInsets.bottom + NexusSizes.space2XL,
+          ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Rechazar parte', style: NexusText.heading2),
+                const SizedBox(height: NexusSizes.spaceSM),
+                Text(
+                  'El alumno recibirá una incidencia automática con el motivo indicado.',
+                  style: NexusText.body.copyWith(color: NexusColors.inkSecondary),
                 ),
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'El motivo es obligatorio'
-                    : null,
-              ),
-              const SizedBox(height: NexusSizes.spaceLG),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('Cancelar'),
-                    ),
+                const SizedBox(height: NexusSizes.spaceLG),
+                TextFormField(
+                  controller: motivoController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    labelText: 'Motivo del rechazo *',
+                    hintText: 'Describe qué debe corregir el alumno...',
+                    alignLabelWithHint: true,
                   ),
-                  const SizedBox(width: NexusSizes.spaceMD),
-                  Expanded(
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: NexusColors.danger,
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'El motivo es obligatorio' : null,
+                ),
+                const SizedBox(height: NexusSizes.spaceLG),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancelar'),
                       ),
-                      onPressed: () async {
-                        if (!formKey.currentState!.validate()) return;
-                        Navigator.pop(ctx);
-                        final ok = await context
-                            .read<TutorEmpresaProvider>()
-                            .rechazar(id, motivoController.text.trim());
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(ok
-                                ? 'Parte rechazado. Se notificará al alumno.'
-                                : 'Error al rechazar el parte'),
-                            backgroundColor: ok ? NexusColors.warning : NexusColors.danger,
-                          ));
-                        }
-                      },
-                      child: const Text('Rechazar'),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    const SizedBox(width: NexusSizes.spaceMD),
+                    Expanded(
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(backgroundColor: NexusColors.danger),
+                        onPressed: () async {
+                          if (!formKey.currentState!.validate()) return;
+                          Navigator.pop(ctx);
+                          final ok = await context
+                              .read<TutorEmpresaProvider>()
+                              .rechazar(id, motivoController.text.trim());
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text(ok
+                                  ? 'Parte rechazado. Se notificará al alumno.'
+                                  : 'Error al rechazar el parte'),
+                              backgroundColor: ok ? NexusColors.warning : NexusColors.danger,
+                            ));
+                          }
+                        },
+                        child: const Text('Rechazar'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       );
     } finally {
       motivoController.dispose();
@@ -220,17 +359,127 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
   }
 }
 
-class _PartePendienteCard extends StatelessWidget {
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+
+class _Sidebar extends StatelessWidget {
+  final AuthProvider auth;
+  const _Sidebar({required this.auth});
+
+  @override
+  Widget build(BuildContext context) {
+    final initials = _getInitials(auth.user?.nombreCompleto ?? '');
+    return Container(
+      width: 52,
+      decoration: const BoxDecoration(
+        color: NexusColors.surface,
+        border: Border(
+            right: BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 28, height: 28,
+            decoration: BoxDecoration(
+              color: NexusColors.success,
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: const Icon(Icons.star_outline, size: 14, color: Colors.white),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 34, height: 34,
+            decoration: BoxDecoration(
+              color: NexusColors.successLight,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.list_alt_outlined, size: 17, color: NexusColors.success),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => auth.logout(),
+            child: Tooltip(
+              message: 'Cerrar sesión',
+              child: CircleAvatar(
+                radius: 15,
+                backgroundColor: NexusColors.successLight,
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    fontSize: 11, fontWeight: FontWeight.w600, color: NexusColors.successText,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
+  String _getInitials(String nombre) {
+    final parts = nombre.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+}
+
+// ── Stat card ─────────────────────────────────────────────────────────────────
+
+class _StatCard extends StatelessWidget {
+  final String value;
+  final String label;
+  final Color bg;
+  final Color valueColor;
+  final Color labelColor;
+
+  const _StatCard({
+    required this.value,
+    required this.label,
+    required this.bg,
+    required this.valueColor,
+    required this.labelColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          vertical: NexusSizes.spaceMD, horizontal: NexusSizes.spaceSM),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+      ),
+      child: Column(
+        children: [
+          Text(value,
+              style: TextStyle(
+                  fontSize: 20, fontWeight: FontWeight.w500, color: valueColor)),
+          const SizedBox(height: 2),
+          Text(label,
+              style: TextStyle(fontSize: 11, color: labelColor),
+              textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Parte item ────────────────────────────────────────────────────────────────
+
+class _ParteItem extends StatelessWidget {
   final Seguimiento seguimiento;
   final String alumnoNombre;
-  final String empresaNombre;
+  final bool isLast;
   final VoidCallback onValidar;
   final VoidCallback onRechazar;
 
-  const _PartePendienteCard({
+  const _ParteItem({
     required this.seguimiento,
     required this.alumnoNombre,
-    required this.empresaNombre,
+    required this.isLast,
     required this.onValidar,
     required this.onRechazar,
   });
@@ -238,112 +487,97 @@ class _PartePendienteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fecha = DateFormat('d MMM yyyy', 'es_ES').format(seguimiento.fechaRegistro);
+    final initials = alumnoNombre.trim().split(' ').where((p) => p.isNotEmpty).take(2)
+        .map((p) => p[0].toUpperCase()).join();
 
     return Container(
-      decoration: BoxDecoration(
-        color: NexusColors.surface,
-        borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
-      ),
       padding: const EdgeInsets.all(NexusSizes.spaceLG),
-      child: Column(
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : const Border(
+                bottom: BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth)),
+      ),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Cabecera: alumno + badge pendiente
-          Row(
-            children: [
-              Expanded(
-                child: Text(alumnoNombre,
-                    style: NexusText.heading3, overflow: TextOverflow.ellipsis),
-              ),
-              _Badge(label: 'Pendiente firma', color: NexusColors.warning),
-            ],
+          CircleAvatar(
+            radius: 15,
+            backgroundColor: NexusColors.primaryLight,
+            child: Text(initials,
+                style: const TextStyle(
+                    fontSize: 10, fontWeight: FontWeight.w600, color: NexusColors.primaryText)),
           ),
-          if (empresaNombre.isNotEmpty) ...[
-            const SizedBox(height: NexusSizes.spaceXS),
-            Text(empresaNombre,
-                style: NexusText.caption.copyWith(color: NexusColors.inkSecondary)),
-          ],
-          const SizedBox(height: NexusSizes.spaceMD),
-          const Divider(color: NexusColors.border, height: 1),
-          const SizedBox(height: NexusSizes.spaceMD),
-
-          // Datos del parte
-          Row(
-            children: [
-              const Icon(Icons.calendar_today_outlined,
-                  size: 14, color: NexusColors.inkTertiary),
-              const SizedBox(width: NexusSizes.spaceXS),
-              Text(fecha, style: NexusText.caption),
-              const SizedBox(width: NexusSizes.spaceLG),
-              const Icon(Icons.access_time_outlined,
-                  size: 14, color: NexusColors.inkTertiary),
-              const SizedBox(width: NexusSizes.spaceXS),
-              Text('${seguimiento.horasRealizadas} h', style: NexusText.caption),
-            ],
-          ),
-          if (seguimiento.descripcion != null &&
-              seguimiento.descripcion!.isNotEmpty) ...[
-            const SizedBox(height: NexusSizes.spaceSM),
-            Text(
-              seguimiento.descripcion!,
-              style: NexusText.body.copyWith(color: NexusColors.inkSecondary),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+          const SizedBox(width: NexusSizes.spaceMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(alumnoNombre,
+                          style: NexusText.small.copyWith(fontWeight: FontWeight.w500)),
+                    ),
+                    nexusEstadoBadge('Pendiente firma',
+                        bg: NexusColors.warningLight, textColor: NexusColors.warningText),
+                  ],
+                ),
+                const SizedBox(height: NexusSizes.spaceXS),
+                Text(
+                  '$fecha · ${seguimiento.horasRealizadas}h',
+                  style: NexusText.caption.copyWith(color: NexusColors.inkSecondary),
+                ),
+                if (seguimiento.descripcion != null &&
+                    seguimiento.descripcion!.isNotEmpty) ...[
+                  const SizedBox(height: NexusSizes.spaceSM),
+                  Container(
+                    padding: const EdgeInsets.all(NexusSizes.spaceSM),
+                    decoration: BoxDecoration(
+                      color: NexusColors.surfaceAlt,
+                      borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
+                    ),
+                    child: Text(
+                      '"${seguimiento.descripcion}"',
+                      style: NexusText.small.copyWith(color: NexusColors.inkSecondary),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: NexusSizes.spaceMD),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: onRechazar,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: NexusColors.danger,
+                          side: const BorderSide(color: NexusColors.danger),
+                          padding: const EdgeInsets.symmetric(vertical: NexusSizes.spaceSM),
+                        ),
+                        child: const Text('Rechazar', style: TextStyle(fontSize: 12)),
+                      ),
+                    ),
+                    const SizedBox(width: NexusSizes.spaceSM),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: onValidar,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: NexusColors.success,
+                          padding: const EdgeInsets.symmetric(vertical: NexusSizes.spaceSM),
+                        ),
+                        child: const Text('Validar y firmar',
+                            style: TextStyle(fontSize: 12)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-          const SizedBox(height: NexusSizes.spaceLG),
-
-          // Botones de acción
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onRechazar,
-                  icon: const Icon(Icons.close, size: 16),
-                  label: const Text('Rechazar'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: NexusColors.danger,
-                    side: const BorderSide(color: NexusColors.danger),
-                  ),
-                ),
-              ),
-              const SizedBox(width: NexusSizes.spaceMD),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: onValidar,
-                  icon: const Icon(Icons.check, size: 16),
-                  label: const Text('Validar'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: NexusColors.success,
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final String label;
-  final Color color;
-  const _Badge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: NexusSizes.spaceSM, vertical: NexusSizes.spaceXS),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
-      ),
-      child: Text(label,
-          style: NexusText.caption.copyWith(
-              color: color, fontWeight: FontWeight.w600)),
     );
   }
 }

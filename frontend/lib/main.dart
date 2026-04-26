@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/practica_provider.dart';
 import 'presentation/providers/tutor_empresa_provider.dart';
+import 'presentation/providers/tutor_centro_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => PracticaProvider()),
         ChangeNotifierProvider(create: (_) => TutorEmpresaProvider()),
+        ChangeNotifierProvider(create: (_) => TutorCentroProvider()),
       ],
       child: const _AppWithRouter(),
     );

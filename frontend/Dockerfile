@@ -42,6 +42,10 @@ RUN flutter config --enable-web
 # 5. Establecemos el directorio de trabajo donde colocaremos nuestro código
 WORKDIR /app
 
+# ARG que permite invalidar el caché del código fuente sin re-clonar Flutter.
+# Uso: docker compose build --build-arg CACHE_DATE=$(date +%s) frontend
+ARG CACHE_DATE=default
+
 # 6. Copiamos todo el código fuente del frontend al contenedor
 COPY . .
 

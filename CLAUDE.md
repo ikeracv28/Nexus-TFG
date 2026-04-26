@@ -233,23 +233,14 @@ PATCH /api/v1/seguimientos/{id}/validar-centro
 - [x] Docker Compose con healthcheck y red interna
 
 ### CORRECCIONES PREVIAS A LA ENTREGA DEL HITO 2
-> Resolver ANTES de continuar con features nuevas. Menos de 1 hora en total.
+> Completadas y verificadas el 26/04/2026.
 
-- [ ] FIX-1: JWT Secret — el fallback en JwtUtils.java es texto plano en el repo.
-  Generar clave aleatoria real (64+ caracteres) en .env. El fallback queda como CAMBIAR_EN_PRODUCCION.
-
-- [ ] FIX-2: Rol.java usa @Data. Cambiar a @Getter + @Setter + @EqualsAndHashCode(of = "id").
-
-- [ ] FIX-3: Dos lanzamientos de RuntimeException en PracticaServiceImpl.
-  Reemplazar por BusinessRuleException. El GlobalExceptionHandler devolverá 409 en vez de 500.
-
-- [ ] FIX-4: BBDD-TFG.sql sin cabecera. Añadir comentario explicando que es referencia histórica
-  y que Flyway (V1__Esquema_Inicial.sql) es la única fuente de verdad del esquema.
-
-- [ ] FIX-5: Sin perfiles Spring. Crear application-dev.properties y application-prod.properties.
-
-- [ ] FIX-6: PracticaController.listarTodas() devuelve List sin paginar.
-  Cambiar a Page<PracticaResponse> con Pageable como parámetro.
+- [x] FIX-1: JWT Secret — clave real en .env (base64 64 chars). Fallback queda como CAMBIAR_EN_PRODUCCION.
+- [x] FIX-2: Rol.java — usa @Getter + @Setter + @EqualsAndHashCode(of = "id"). Javadoc corregido.
+- [x] FIX-3: PracticaServiceImpl — usa BusinessRuleException y ResourceNotFoundException. Sin RuntimeException genérica.
+- [x] FIX-4: BBDD-TFG.sql — cabecera de referencia histórica presente.
+- [x] FIX-5: Perfiles Spring — application-dev.properties y application-prod.properties creados.
+- [x] FIX-6: PracticaController.listarTodas() — retorna Page<PracticaResponse> con @PageableDefault(size=20).
 
 ### Pendiente — Hito 3
 

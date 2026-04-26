@@ -1,6 +1,18 @@
 # Registro de Cambios y Avances - TFG Nexus
 
-Este documento registra las implementaciones técnicas realizadas tras la entrega del Hito 1 (25%) para alcanzar los objetivos del Hito 2 (50%).
+Este documento registra las implementaciones técnicas realizadas a lo largo del proyecto.
+
+---
+
+## [26/04/2026] — Verificación de correcciones del Hito 2 + arranque Hito 3
+
+### Correcciones verificadas (Bloque 1)
+- **FIX-1 JWT Secret**: `.env` contiene clave aleatoria de 64 caracteres base64. `JwtUtils.java` usa `@Value("${JWT_SECRET:CAMBIAR_EN_PRODUCCION}")` — el fallback nunca se activa en entornos reales. Docker Compose inyecta la variable correctamente.
+- **FIX-2 Rol.java**: Ya usa `@Getter + @Setter + @EqualsAndHashCode(of = "id")`. Corregido el Javadoc que describía incorrectamente `@Data`.
+- **FIX-3 RuntimeException**: `PracticaServiceImpl` ya usa `BusinessRuleException` y `ResourceNotFoundException` en todos los puntos de fallo. Sin `RuntimeException` genérica.
+- **FIX-4 BBDD-TFG.sql**: Cabecera de referencia histórica ya presente desde commits anteriores.
+- **FIX-5 Perfiles Spring**: `application-dev.properties` y `application-prod.properties` existen con configuración de logs por entorno.
+- **FIX-6 Paginación**: `PracticaController.listarTodas()` ya retorna `Page<PracticaResponse>` con `@PageableDefault(size = 20)`.
 
 ---
 

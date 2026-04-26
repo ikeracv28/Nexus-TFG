@@ -281,3 +281,31 @@ estar actuando incorrectamente.
 
 **Momento de detección**: Durante análisis del flujo de implementación, antes de escribir código.
 Coste del cambio en este momento: bajo. Coste si se hubiera detectado tras implementar el frontend: alto.
+
+---
+
+## [PENDIENTE DE INTEGRAR] — Hito 3: Doble Validación y Paneles de Tutor (26/04/2026)
+
+### Bloque: Implementación del flujo de doble validación de seguimientos
+
+En el Hito 3 se implementó el mecanismo de doble validación para los partes de seguimiento semanales, que constituye el núcleo funcional del proceso de supervisión de prácticas en el sistema real.
+
+El flujo parte de una decisión de diseño tomada durante el análisis: en las FCT reales existen dos actos de validación conceptualmente distintos. El tutor de empresa certifica que el trabajo descrito en el parte es real y se ha realizado correctamente en la empresa. El tutor del centro, por su parte, valida que ese trabajo encaja con los objetivos formativos del ciclo. Tratar ambas validaciones como una sola —como hacía el sistema anterior— perdía esta distinción fundamental.
+
+La implementación refleja esta realidad mediante cuatro estados posibles para cada parte: `PENDIENTE_EMPRESA` (alumno ha registrado el parte, espera al tutor de empresa), `PENDIENTE_CENTRO` (tutor de empresa ha dado su visto bueno, espera la validación académica del centro), `COMPLETADO` (ambas validaciones realizadas, horas contabilizadas en el progreso del alumno) y `RECHAZADO` (tutor de empresa ha rechazado el parte indicando el motivo).
+
+Un aspecto especialmente relevante desde el punto de vista de la calidad del sistema es la creación automática de incidencias al rechazar un parte. Cuando el tutor de empresa rechaza, el servicio `SeguimientoServiceImpl` crea automáticamente una entidad `Incidencia` de tipo `RECHAZO_PARTE` vinculada a la práctica. Esta automatización protege al alumno: el tutor del centro queda informado del rechazo sin que el alumno tenga que reportarlo manualmente, y sin que el tutor de empresa necesite conocer la existencia del módulo de incidencias.
+
+La separación de responsabilidades entre los dos métodos `validarEmpresa()` y `validarCentro()` garantiza la regla de negocio principal: ningún tutor del centro puede actuar sobre un parte que no haya pasado primero por el tutor de empresa. Esta invariante se verifica en el propio servicio, no en el controlador, siguiendo el principio de que las reglas de negocio no deben filtrarse hacia las capas de presentación.
+
+Se añadieron cinco tests de integración que cubren los cuatro casos de negocio críticos: registro con estado inicial correcto, aprobación por tutor de empresa, rechazo con generación automática de incidencia, e intento de saltarse el orden por parte del tutor del centro. El quinto test verifica el flujo completo de extremo a extremo.
+
+### Bloque: Arquitectura de pantallas para los roles de tutor
+
+En paralelo al backend, se implementaron las pantallas Flutter para los dos roles de supervisión, siguiendo el sistema de diseño Nexus establecido en iteraciones anteriores.
+
+La pantalla del tutor de empresa (`PanelTutorEmpresaScreen`) sigue una filosofía minimalista acorde con el rol: su única función es firmar partes. La interfaz muestra tres métricas en la cabecera (partes pendientes, partes procesados, horas acumuladas) y la lista de partes pendientes, cada uno con la descripción del alumno en formato de cita y dos acciones bien diferenciadas visualmente. El rechazo abre un bottom sheet que exige motivo obligatorio antes de confirmar.
+
+La pantalla del tutor del centro (`PanelTutorCentroScreen`) responde a un rol más complejo mediante un layout de tres columnas en web: una barra lateral de iconos funcionales, una lista de alumnos con indicadores de estado, y un panel de detalle del alumno seleccionado. La barra lateral tiene cuatro modos: vista de alumno individual (con su progreso FCT, partes pendientes e incidencias abiertas), vista global de todos los partes pendientes, vista de incidencias agrupadas por estado, y placeholder de chat para el Hito 4. En dispositivos móviles se adapta a un patrón de navegación inferior con las mismas cuatro secciones.
+
+La barra de progreso FCT en el panel de detalle es un indicador clave para el tutor del centro: muestra en todo momento cuántas horas ha completado el alumno del total acordado en la práctica, permitiendo detectar retrasos antes de que se conviertan en un problema.

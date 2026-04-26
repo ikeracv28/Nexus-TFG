@@ -4,6 +4,32 @@ Este documento registra las implementaciones técnicas realizadas a lo largo del
 
 ---
 
+## [26/04/2026] - Hito 3: Doble Validación y Paneles de Tutor
+
+### Backend (Spring Boot)
+- **Migración V5**: Renombrado de estados en tabla `seguimientos`. `PENDIENTE` → `PENDIENTE_EMPRESA`, `VALIDADO` → `PENDIENTE_CENTRO`. Los registros existentes se reclasifican automáticamente. Los estados `COMPLETADO` y `RECHAZADO` no cambian.
+- **Flujo de doble validación completo**: `SeguimientoServiceImpl` refactorizado con dos métodos de negocio separados:
+  - `validarEmpresa()`: solo actúa sobre `PENDIENTE_EMPRESA`. Puede aprobar (`PENDIENTE_CENTRO`) o rechazar (`RECHAZADO`). Al rechazar, crea automáticamente una `Incidencia` de tipo `RECHAZO_PARTE` vinculada a la práctica — el alumno no necesita reportarla manualmente.
+  - `validarCentro()`: solo actúa sobre `PENDIENTE_CENTRO`. Marca el parte como `COMPLETADO`, sumando las horas al progreso del alumno.
+- **Endpoints nuevos**: `PATCH /api/v1/seguimientos/{id}/validar-empresa` (TUTOR_EMPRESA) y `PATCH /api/v1/seguimientos/{id}/validar-centro` (TUTOR_CENTRO).
+- **IncidenciaService completo**: CRUD de incidencias con transición de estados `ABIERTA → EN_PROCESO → RESUELTA → CERRADA`. Solo el tutor del centro puede avanzar el estado. `IncidenciaController` expone `POST /incidencias`, `GET /incidencias/practica/{id}`, `PATCH /incidencias/{id}/estado`.
+- **Tests**: 5 tests de integración en `SeguimientoDoubleValidationTest` — todos pasan. Cubren los 4 casos de negocio obligatorios (registro, validación empresa, rechazo empresa con incidencia automática, intento de saltar el orden) más el flujo completo empresa→centro→COMPLETADO.
+
+### Frontend (Flutter)
+- **Sistema de diseño**: `app_theme.dart` con `NexusColors`, `NexusSizes` y `NexusText`. Todos los colores son semánticos (verde=validado, ámbar=pendiente, rojo=rechazado/incidencia, azul=activo). Cero hardcoding de colores en pantallas.
+- **Routing por rol**: `go_router` con guards de autenticación. Cada rol redirige a su pantalla propia al hacer login (alumno→dashboard, tutor empresa→panel empresa, tutor centro→panel centro).
+- **PanelTutorEmpresaScreen**: Sidebar verde 52px + contenido. Stats con borde izquierdo semántico (pendientes/procesados/horas). Parte-cards con cabecera, cita de descripción y acciones validar/rechazar. Modal de rechazo con motivo obligatorio.
+- **PanelTutorCentroScreen**: Layout 3 columnas (sidebar 52px + lista alumnos 220px + panel detalle). Sidebar con 4 iconos funcionales: Alumnos (lista+detalle), Partes (todos los pendientes), Incidencias (agrupadas por estado), Chat (placeholder). Lista de alumnos con selección sólida azul y badges de estado. Panel detalle: barra de progreso FCT con gradiente y porcentaje, partes pendientes con validación inline, incidencias abiertas con gestión de estado. Adaptativo: bottom nav en móvil.
+- **Providers actualizados**: `TutorEmpresaProvider` con stats calculados (totalPartes, totalHoras, totalValidados). `TutorCentroProvider` con selección de alumno, seguimientos y incidencias por práctica, horas completadas.
+- **Correcciones de sesión**: JWT expirado no provoca crash (catch en `JwtAuthenticationFilter`). Token localStorage persiste correctamente entre sesiones. go_router gestiona redirecciones sin conflicto con Navigator.
+
+### Decisiones Técnicas
+- **Incidencia automática al rechazar**: La crea el servicio de seguimientos, no el controller. El tutor de empresa no necesita conocer la existencia de la entidad Incidencia para generar una.
+- **Sidebar 52px en lugar de AppBar**: Libera espacio vertical. El logout como icono propio separado del avatar mejora la discoverabilidad.
+- **Modo de vistas en sidebar tutor centro**: En lugar de navegar entre pantallas, los iconos cambian el modo del panel derecho. Evita recargas y mantiene la lista de alumnos siempre visible.
+
+---
+
 ## [26/04/2026] — Bloque 3: go_router + pantalla tutor empresa + endpoints /me por rol
 
 ### Backend

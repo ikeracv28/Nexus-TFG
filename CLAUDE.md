@@ -242,22 +242,27 @@ PATCH /api/v1/seguimientos/{id}/validar-centro
 - [x] FIX-5: Perfiles Spring — application-dev.properties y application-prod.properties creados.
 - [x] FIX-6: PracticaController.listarTodas() — retorna Page<PracticaResponse> con @PageableDefault(size=20).
 
+### Completado — Hito 3 (parcial, en curso)
+
+- [x] [BACKEND] Migración Flyway V5: estados PENDIENTE_EMPRESA / PENDIENTE_CENTRO / COMPLETADO / RECHAZADO
+- [x] [BACKEND] Seed tutor empresa (V4: tutorempresa@nexus.edu / 123456)
+- [x] [BACKEND] IncidenciaController + IncidenciaService completos (CRUD + cambio de estado)
+- [x] [BACKEND] Refactorizar SeguimientoServiceImpl: validarEmpresa() + validarCentro() + incidencia automática al rechazar
+- [x] [BACKEND] Tests del nuevo flujo: 5 tests (4 casos de negocio + flujo completo) — todos pasan
+- [x] [FLUTTER] Crear core/theme/app_theme.dart con NexusColors y NexusSizes
+- [x] [FLUTTER] Configurar go_router con rutas por rol y guards de autenticación
+- [x] [FLUTTER] Navegación adaptativa: sidebar 52px en web, BottomNavigationBar en móvil
+- [x] [FLUTTER] Pantalla de validación del tutor de empresa (PanelTutorEmpresaScreen — sidebar verde, stats, lista de partes con firma)
+- [x] [FLUTTER] Panel del tutor del centro (PanelTutorCentroScreen — 3 columnas, sidebar con 4 modos funcionales, lista alumnos, detalle con progreso FCT)
+- [x] [FLUTTER] Contador visual de horas (barra de progreso FCT con % en DetailPanel del tutor centro)
+
 ### Pendiente — Hito 3
 
-- [ ] [BACKEND] Migración Flyway V4: nuevos estados de seguimientos + seed tutor empresa
-- [ ] [BACKEND] IncidenciaController + IncidenciaService completos
-- [ ] [BACKEND] Refactorizar SeguimientoServiceImpl: doble validación con incidencia automática
-- [ ] [BACKEND] Tests del nuevo flujo (4 casos de negocio obligatorios)
 - [ ] [BACKEND] WebSocket/STOMP para chat en tiempo real
-- [ ] [FLUTTER] Crear core/theme/app_theme.dart con NexusColors y NexusSizes
-- [ ] [FLUTTER] Configurar go_router con rutas por rol y guards de autenticación
-- [ ] [FLUTTER] Navegación adaptativa: NavigationRail en web, BottomNavigationBar en móvil
-- [ ] [FLUTTER] Pantalla de registro de seguimiento (alumno)
-- [ ] [FLUTTER] Pantalla de validación del tutor de empresa (minimalista, solo firma partes)
-- [ ] [FLUTTER] Panel del tutor del centro (lista alumnos, segunda validación, incidencias)
-- [ ] [FLUTTER] Pantalla de incidencias (alumno y tutor centro)
-- [ ] [FLUTTER] Pantalla de chat (WebSocket)
-- [ ] [FLUTTER] Contador visual de horas (suma seguimientos COMPLETADOS vs horasTotales)
+- [ ] [FLUTTER] Pantalla de registro de seguimiento del alumno (FAB → formulario → POST /seguimientos)
+- [ ] [FLUTTER] Verificar endpoints getMisPracticasComoTutorCentro y getMisPracticasComoTutorEmpresa en backend
+- [ ] [FLUTTER] Pantalla de incidencias del alumno (mejora — actualmente lista básica, sin gestión de estado)
+- [ ] [FLUTTER] Pantalla de chat (WebSocket — placeholder implementado, funcionalidad real en Hito 4)
 
 ---
 

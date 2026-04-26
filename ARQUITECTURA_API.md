@@ -1,5 +1,5 @@
 # ARQUITECTURA_API.md — Contrato REST de Nexus
-# Última actualización: 19/04/2026 (Hito 2 — navegación Flutter + POST incidencias)
+# Última actualización: 26/04/2026 (Hito 3 — doble validación seguimientos + IncidenciaService)
 # Base URL: http://localhost:8080/api/v1
 
 ---
@@ -90,23 +90,33 @@
 }
 ```
 
-**Estados posibles**: `PENDIENTE`, `VALIDADO`, `COMPLETADO`, `RECHAZADO`
-> Nota: en el Hito 3 los estados pasarán a: `PENDIENTE_EMPRESA`, `PENDIENTE_CENTRO`, `COMPLETADO`, `RECHAZADO`
+**Estados posibles**: `PENDIENTE_EMPRESA`, `PENDIENTE_CENTRO`, `COMPLETADO`, `RECHAZADO`
+- `PENDIENTE_EMPRESA`: alumno registró el parte, esperando firma del tutor de empresa.
+- `PENDIENTE_CENTRO`: tutor de empresa aprobó, esperando visto bueno del tutor del centro.
+- `COMPLETADO`: ambos tutores validaron. Las horas se contabilizan en el progreso.
+- `RECHAZADO`: tutor de empresa rechazó. Se genera incidencia de tipo RECHAZO_PARTE automáticamente.
 
 ### POST /seguimientos
 **Acceso**: ALUMNO
 **Body**: `SeguimientoRequest { practicaId, fechaRegistro, horasRealizadas, descripcion }`
-**Respuesta 201**: `SeguimientoResponse`
+**Respuesta 201**: `SeguimientoResponse` con `estado: "PENDIENTE_EMPRESA"`
 
-### PATCH /seguimientos/{id}/validar
-**Acceso**: TUTOR_CENTRO, TUTOR_EMPRESA
-**Query**: `nuevoEstado=VALIDADO|RECHAZADO`, `comentario` (opcional)
+### PATCH /seguimientos/{id}/validar-empresa
+**Acceso**: TUTOR_EMPRESA
+**Query**: `nuevoEstado=PENDIENTE_CENTRO|RECHAZADO`, `motivo` (obligatorio si RECHAZADO)
 **Respuesta 200**: `SeguimientoResponse`
-> Este endpoint se dividirá en Hito 3 en `/validar-empresa` y `/validar-centro`
+**Respuesta 409**: si el parte no está en estado PENDIENTE_EMPRESA
+**Efecto secundario**: si RECHAZADO, crea incidencia de tipo RECHAZO_PARTE vinculada a la práctica.
+
+### PATCH /seguimientos/{id}/validar-centro
+**Acceso**: TUTOR_CENTRO
+**Sin parámetros**: siempre marca como COMPLETADO
+**Respuesta 200**: `SeguimientoResponse`
+**Respuesta 409**: si el parte no está en estado PENDIENTE_CENTRO (orden empresa-primero inviolable)
 
 ### DELETE /seguimientos/{id}
 **Acceso**: ALUMNO
-**Regla**: solo eliminable si estado == PENDIENTE
+**Regla**: solo eliminable si estado == PENDIENTE_EMPRESA
 **Respuesta 204**
 
 ---
@@ -141,11 +151,18 @@
 **Acceso**: ALUMNO, TUTOR_CENTRO, TUTOR_EMPRESA
 **Descripción**: Reporta una nueva incidencia vinculada a la práctica ACTIVA del usuario autenticado. El alumno no necesita indicar el ID de práctica; el backend lo resuelve desde el JWT.
 **Body**: `IncidenciaRequest { tipo, descripcion }`
-**Tipos válidos**: `ACCESO`, `AUSENCIA`, `COMPORTAMIENTO`, `ACCIDENTE`, `OTROS`
+**Tipos válidos**: `ACCESO`, `AUSENCIA`, `COMPORTAMIENTO`, `ACCIDENTE`, `OTROS`, `RECHAZO_PARTE` (generado automáticamente al rechazar un seguimiento)
 **Validación**: `descripcion` entre 10 y 1000 caracteres.
 **Respuesta 201**: `IncidenciaResponse` con `estado: "ABIERTA"`
 **Respuesta 400**: si la descripción no cumple las validaciones
 **Respuesta 409**: si el usuario no tiene práctica activa
+
+### PATCH /incidencias/{id}/estado
+**Acceso**: TUTOR_CENTRO
+**Query**: `nuevoEstado=EN_PROCESO|RESUELTA|CERRADA`
+**Descripción**: Gestiona el ciclo de resolución de una incidencia. Solo permite avanzar (no retroceder). Al llegar a RESUELTA o CERRADA registra la fecha de resolución.
+**Respuesta 200**: `IncidenciaResponse`
+**Respuesta 409**: si el estado no es válido o ya está CERRADA
 
 > **Pendiente Hito 3**: `PATCH /incidencias/{id}/estado` — gestión de resolución por tutor centro
 

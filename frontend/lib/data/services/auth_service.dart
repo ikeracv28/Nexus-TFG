@@ -27,8 +27,9 @@ class AuthService {
       
       return authResponse;
     } on DioException catch (e) {
-      // Lanzamos una excepción con el mensaje que venga del backend
-      final message = e.response?.data['message'] ?? 'Error al iniciar sesión';
+      final data = e.response?.data;
+      final message = (data is Map ? data['message'] as String? : null)
+          ?? 'Error al iniciar sesión';
       throw Exception(message);
     }
   }

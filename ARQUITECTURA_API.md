@@ -40,6 +40,16 @@
 **Respuesta 200**: `PracticaResponse`
 **Respuesta 404**: si el alumno no tiene práctica activa
 
+### GET /practicas/tutor-empresa/me
+**Acceso**: TUTOR_EMPRESA
+**Descripción**: Lista las prácticas donde el tutor de empresa autenticado está asignado.
+**Respuesta 200**: `List<PracticaResponse>`
+
+### GET /practicas/tutor-centro/me
+**Acceso**: TUTOR_CENTRO
+**Descripción**: Lista las prácticas donde el tutor del centro autenticado está asignado.
+**Respuesta 200**: `List<PracticaResponse>`
+
 ### GET /practicas/{id}
 **Acceso**: cualquier usuario autenticado
 **Respuesta 200**: `PracticaResponse`

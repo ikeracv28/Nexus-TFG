@@ -49,7 +49,16 @@ public interface PracticaService {
 
     /**
      * Devuelve la práctica ACTIVA del alumno autenticado actualmente.
-     * Se usa en el endpoint /me para que el alumno no tenga que conocer su ID.
      */
     PracticaResponse obtenerPracticaActivaDelAlumno();
+
+    /**
+     * Lista las prácticas donde el tutor de empresa autenticado está asignado.
+     */
+    List<PracticaResponse> listarMisPracticasComoTutorEmpresa();
+
+    /**
+     * Lista las prácticas donde el tutor del centro autenticado está asignado.
+     */
+    List<PracticaResponse> listarMisPracticasComoTutorCentro();
 }

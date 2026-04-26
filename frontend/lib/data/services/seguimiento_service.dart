@@ -25,10 +25,6 @@ class SeguimientoService {
     }
   }
 
-  /**
-   * Registra un nuevo parte de seguimiento para el alumno autenticado.
-   * Endpoint: POST /api/v1/seguimientos
-   */
   Future<Seguimiento> registrar({
     required int practicaId,
     required DateTime fechaRegistro,
@@ -46,6 +42,33 @@ class SeguimientoService {
       return Seguimiento.fromJson(response.data);
     } on DioException catch (e) {
       throw Exception('Error al registrar seguimiento: ${e.message}');
+    }
+  }
+
+  /// Primera validación por el tutor de empresa.
+  /// [nuevoEstado] debe ser PENDIENTE_CENTRO o RECHAZADO.
+  /// [motivo] es obligatorio si nuevoEstado == RECHAZADO.
+  Future<Seguimiento> validarEmpresa(int id, String nuevoEstado, {String? motivo}) async {
+    try {
+      final params = <String, dynamic>{'nuevoEstado': nuevoEstado};
+      if (motivo != null && motivo.isNotEmpty) params['motivo'] = motivo;
+      final response = await _apiClient.dio.patch(
+        '/seguimientos/$id/validar-empresa',
+        queryParameters: params,
+      );
+      return Seguimiento.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception('Error al validar parte: ${e.message}');
+    }
+  }
+
+  /// Segunda y definitiva validación por el tutor del centro.
+  Future<Seguimiento> validarCentro(int id) async {
+    try {
+      final response = await _apiClient.dio.patch('/seguimientos/$id/validar-centro');
+      return Seguimiento.fromJson(response.data);
+    } on DioException catch (e) {
+      throw Exception('Error al completar parte: ${e.message}');
     }
   }
 }

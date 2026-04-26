@@ -4,6 +4,22 @@ Este documento registra las implementaciones técnicas realizadas a lo largo del
 
 ---
 
+## [26/04/2026] — Bloque 3: go_router + pantalla tutor empresa + endpoints /me por rol
+
+### Backend
+- **GET /practicas/tutor-empresa/me**: nuevo endpoint para que el tutor de empresa obtenga sus prácticas asignadas. Sigue el patrón de `/practicas/me` del alumno.
+- **GET /practicas/tutor-centro/me**: ídem para el tutor del centro.
+
+### Flutter
+- **go_router configurado**: `_AppWithRouter` crea el router una vez con la referencia al `AuthProvider`. El `refreshListenable` hace que el router reevalúe el guard en cada cambio de sesión.
+- **Guards por rol**: tras login, el router redirige automáticamente a `/dashboard` (ALUMNO), `/tutor-empresa` (TUTOR_EMPRESA) o `/tutor-centro` (TUTOR_CENTRO).
+- **PanelTutorEmpresaScreen**: pantalla minimalista de firma de partes. Carga los partes en PENDIENTE_EMPRESA, permite validar con confirmación y rechazar con motivo obligatorio via modal. El rechazo genera incidencia automática en el backend.
+- **PanelTutorCentroScreen**: placeholder listo para el Bloque 4.
+- **TutorEmpresaProvider**: gestiona la carga y validación de partes pendientes.
+- **SeguimientoService**: añadidos `validarEmpresa()` y `validarCentro()`.
+- **IncidenciaService**: añadido `actualizarEstado()`.
+- **Corrección**: fallback de estado en `seguimiento_model.dart` corregido a `PENDIENTE_EMPRESA`.
+
 ## [26/04/2026] — Verificación de correcciones del Hito 2 + arranque Hito 3
 
 ### Correcciones verificadas (Bloque 1)

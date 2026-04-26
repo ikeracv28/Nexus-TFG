@@ -126,15 +126,30 @@ public class PracticaServiceImpl implements PracticaService {
     @Override
     @Transactional(readOnly = true)
     public PracticaResponse obtenerPracticaActivaDelAlumno() {
-        // Obtenemos el email del alumno autenticado desde el JWT ya validado
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-
         var alumno = usuarioRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado"));
-
         return practicaRepository
                 .findFirstByAlumnoIdAndEstado(alumno.getId(), "ACTIVA")
                 .map(practicaMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("No tienes ninguna práctica activa en este momento"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PracticaResponse> listarMisPracticasComoTutorEmpresa() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var tutor = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado"));
+        return practicaMapper.toResponseList(practicaRepository.findByTutorEmpresaId(tutor.getId()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PracticaResponse> listarMisPracticasComoTutorCentro() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        var tutor = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado"));
+        return practicaMapper.toResponseList(practicaRepository.findByTutorCentroId(tutor.getId()));
     }
 }

@@ -378,6 +378,7 @@ class _Sidebar extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 12),
+          // Logo Nexus
           Container(
             width: 28, height: 28,
             decoration: BoxDecoration(
@@ -386,33 +387,46 @@ class _Sidebar extends StatelessWidget {
             ),
             child: const Icon(Icons.star_outline, size: 14, color: Colors.white),
           ),
-          const SizedBox(height: 8),
-          Container(
-            width: 34, height: 34,
-            decoration: BoxDecoration(
-              color: NexusColors.successLight,
-              borderRadius: BorderRadius.circular(8),
+          const SizedBox(height: 10),
+          // Icono partes (único, activo)
+          Tooltip(
+            message: 'Partes pendientes',
+            child: Container(
+              width: 34, height: 34,
+              decoration: BoxDecoration(
+                color: NexusColors.successLight,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.list_alt_outlined, size: 17, color: NexusColors.success),
             ),
-            child: const Icon(Icons.list_alt_outlined, size: 17, color: NexusColors.success),
           ),
           const Spacer(),
-          GestureDetector(
-            onTap: () => auth.logout(),
-            child: Tooltip(
-              message: 'Cerrar sesión',
-              child: CircleAvatar(
-                radius: 15,
-                backgroundColor: NexusColors.successLight,
-                child: Text(
-                  initials,
-                  style: const TextStyle(
-                    fontSize: 11, fontWeight: FontWeight.w600, color: NexusColors.successText,
-                  ),
+          // Avatar (solo informativo)
+          Tooltip(
+            message: auth.user?.nombreCompleto ?? '',
+            child: CircleAvatar(
+              radius: 15,
+              backgroundColor: NexusColors.successLight,
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.w600, color: NexusColors.successText,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
+          // Logout explícito
+          Tooltip(
+            message: 'Cerrar sesión',
+            child: IconButton(
+              onPressed: () => auth.logout(),
+              icon: const Icon(Icons.logout_outlined, size: 18, color: NexusColors.inkSecondary),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );

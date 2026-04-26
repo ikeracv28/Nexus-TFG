@@ -45,6 +45,12 @@ class _AppWithRouterState extends State<_AppWithRouter> {
   }
 
   @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Nexus',

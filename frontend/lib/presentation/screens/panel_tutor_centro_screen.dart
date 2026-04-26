@@ -29,7 +29,7 @@ class PanelTutorCentroScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.supervisor_account_outlined,
-                size: 64, color: NexusColors.primary.withOpacity(0.5)),
+                size: 64, color: Color.fromRGBO(24, 95, 165, 0.5)),
             const SizedBox(height: NexusSizes.spaceLG),
             Text('Panel en construcción', style: NexusText.heading2),
             const SizedBox(height: NexusSizes.spaceSM),

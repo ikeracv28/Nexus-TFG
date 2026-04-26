@@ -74,7 +74,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(Icons.check_circle_outline,
-                size: 64, color: NexusColors.success.withOpacity(0.6)),
+                size: 64, color: Color.fromRGBO(59, 109, 17, 0.6)),
             const SizedBox(height: NexusSizes.spaceLG),
             Text('Sin partes pendientes', style: NexusText.heading2),
             const SizedBox(height: NexusSizes.spaceSM),
@@ -134,7 +134,8 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
     final motivoController = TextEditingController();
     final formKey = GlobalKey<FormState>();
 
-    await showModalBottomSheet(
+    try {
+      await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: NexusColors.surface,
@@ -212,7 +213,10 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
           ),
         ),
       ),
-    );
+      );
+    } finally {
+      motivoController.dispose();
+    }
   }
 }
 
@@ -334,7 +338,7 @@ class _Badge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
           horizontal: NexusSizes.spaceSM, vertical: NexusSizes.spaceXS),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
       ),
       child: Text(label,

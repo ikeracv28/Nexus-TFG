@@ -4,6 +4,26 @@ Este documento registra las implementaciones técnicas realizadas a lo largo del
 
 ---
 
+## [28/04/2026] — Seguridad OWASP Bloque 2: A03 + A07 logout + A02 passwords + A06 audit
+
+### Backend (Spring Boot)
+
+- **[A03] Validación de estado en PracticaServiceImpl**: `cambiarEstado()` valida el parámetro `nuevoEstado` contra un `Set.of("BORRADOR","ACTIVA","FINALIZADA")` antes de persistir. Antes se aceptaba cualquier String libre. Lanza `BusinessRuleException` con listado explícito de valores permitidos.
+- **[A07] Logout server-side con blacklist JTI**: `JwtUtils.generateToken()` incluye `.id(UUID.randomUUID().toString())` en cada token (claim `jti`). Nuevo `TokenBlacklistService` con `ConcurrentHashMap<String, Boolean>` que almacena los JTIs revocados. `JwtAuthenticationFilter` verifica la blacklist antes de autenticar. `AuthController` expone `POST /auth/logout` (`@PreAuthorize("isAuthenticated()")`), que extrae el JTI del header Bearer y lo invalida en el servidor. El logout era antes solo local (delete del storage Flutter).
+- **[A02] Contraseñas de usuarios de prueba OWASP-compliant**: Migración Flyway V6 actualiza los hashes BCrypt de los 4 usuarios de prueba. Contraseñas nuevas: `Admin@Nexus2026`, `Tutor@Nexus2026`, `Alumno@Nexus2026`, `Empresa@Nexus2026` (12+ chars, mayúscula + minúscula + número + símbolo). No se modificó V3 (Flyway checksum). Los hashes se generaron registrando usuarios temporales en el backend en ejecución y consultando la BD; V6 los aplica y elimina los temporales.
+- **[A06] OWASP Dependency-Check**: Plugin `dependency-check-maven:10.0.3` añadido al `pom.xml`. `failBuildOnCVSS=7` detiene el build si hay CVE de severidad alta o crítica. Genera reportes HTML+JSON en `target/dependency-check/`.
+
+### Frontend (Flutter)
+
+- **[A07] Logout invoca backend antes de limpiar storage**: `AuthService.logout()` lee el token local, llama `POST /api/v1/auth/logout` con el header Bearer para revocar el JTI en servidor, y solo entonces elimina el storage local. Si el backend falla (red caída, token ya expirado), el bloque `finally` garantiza la limpieza local igualmente.
+
+### Tests nuevos
+
+- `JwtUtilsOwaspTest`: 2 tests añadidos — `generated_token_contains_non_null_jti` y `two_tokens_have_different_jtis`. Verifican que el JTI está presente y es único por token (necesario para que la blacklist funcione).
+- `AuthControllerTest`: test `should_logout_and_return_204` con `@WithMockUser`. Se añade `@MockBean TokenBlacklistService` para que el contexto `@WebMvcTest` arranque con el nuevo filtro.
+
+---
+
 ## [28/04/2026] — Seguridad OWASP Bloque 1 + fixes Flutter storage/dashboard
 
 ### Backend (Spring Boot)

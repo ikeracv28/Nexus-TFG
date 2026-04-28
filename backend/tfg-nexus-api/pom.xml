@@ -139,6 +139,20 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <!-- [A06] OWASP Dependency-Check: auditoría de vulnerabilidades en dependencias -->
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>10.0.3</version>
+                <configuration>
+                    <failBuildOnCVSS>7</failBuildOnCVSS>
+                    <formats>HTML,JSON</formats>
+                    <outputDirectory>${project.build.directory}/dependency-check</outputDirectory>
+                    <suppressionFile>dependency-check-suppressions.xml</suppressionFile>
+                    <skipProvidedScope>true</skipProvidedScope>
+                    <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

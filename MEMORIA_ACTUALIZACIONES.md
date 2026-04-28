@@ -140,6 +140,22 @@ Como resultado de esta revisión, el sistema cuenta ahora con una batería de tr
 
 ---
 
+## BLOQUE — Hito 3: Seguridad OWASP Bloque 2 — logout server-side, validación de entradas y auditoría de dependencias
+**Sección destino en memoria**: Capítulo 4.2 (Seguridad) — ampliar el apartado existente
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+En una segunda iteración de seguridad apliqué cuatro mejoras adicionales que complementan las implementadas en el Bloque 1.
+
+La primera mejora afecta a la validación de entradas (A03). El método `cambiarEstado()` de `PracticaServiceImpl` aceptaba cualquier cadena de texto como nuevo estado de una práctica. Aunque los estados son un concepto cerrado del dominio (`BORRADOR`, `ACTIVA`, `FINALIZADA`), no existía ninguna comprobación que impidiese valores arbitrarios como `"ELIMINADA"` o `"ADMIN"`. La corrección fue introducir un `Set.of()` inmutable con los valores permitidos y lanzar `BusinessRuleException` si el valor recibido no pertenece al conjunto. Este patrón evita la inyección de estados incoherentes sin necesidad de convertir el campo a un enum Java, que requeriría una migración de esquema.
+
+La segunda mejora cierra un hueco importante en la gestión de sesiones (A07). Hasta este punto, el logout era puramente local: eliminar el token del almacenamiento seguro del dispositivo. Sin embargo, si un atacante hubiera obtenido el token durante la sesión, seguía siendo válido hasta su expiración natural (24 horas). Para invalidar tokens de forma inmediata implementé una blacklist de identificadores de token en el servidor. Cada JWT generado incluye ahora un claim `jti` (JWT ID) con un UUID único. Al hacer logout, el servidor registra ese `jti` en un `ConcurrentHashMap` en memoria. El filtro de autenticación verifica la blacklist antes de aceptar cualquier token. La desventaja conocida y aceptada para el contexto del TFG es que la blacklist no persiste entre reinicios del servidor; en producción se sustituiría por Redis con TTL. En el cliente Flutter, `AuthService.logout()` llama primero a `POST /auth/logout` para revocar el token en el servidor y solo entonces elimina el almacenamiento local, garantizando que ambos lados queden limpios incluso si la conexión falla (el bloque `finally` garantiza la limpieza local).
+
+La tercera mejora refuerza la política de contraseñas (A02). Los usuarios de prueba creados en la migración V3 tenían contraseñas débiles de seis caracteres. Dado que Flyway no permite modificar migraciones ya aplicadas sin romper el historial, apliqué la corrección en una nueva migración V6 que actualiza los hashes BCrypt directamente. Las nuevas contraseñas cumplen la política OWASP de doce caracteres mínimo con mayúscula, minúscula, número y símbolo.
+
+La cuarta mejora es la incorporación del plugin `dependency-check-maven` de OWASP (A06), que analiza las dependencias del proyecto en busca de vulnerabilidades conocidas (CVE). La configuración establecida falla el build si se detecta alguna con puntuación CVSS mayor o igual a 7, equivalente a severidad alta o crítica, y genera informes en formato HTML y JSON para su revisión.
+
+---
+
 ## BLOQUE 004 — [RESERVADO para Hito 3]
 **Sección destino en memoria**: Capítulo 5 (Incidencias y Chat)
 **Estado**: [PENDIENTE — se generará al completar las features]

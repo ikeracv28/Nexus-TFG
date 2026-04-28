@@ -35,10 +35,19 @@ class AuthService {
   }
 
   /**
-   * Cierra la sesión eliminando el token.
+   * Cierra la sesión: revoca el token en el servidor (A07) y elimina el almacenamiento local.
    */
   Future<void> logout() async {
-    await _storage.delete(key: 'jwt_token');
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token != null) {
+        await _apiClient.dio.post('/auth/logout');
+      }
+    } catch (_) {
+      // Si el backend falla, continuamos con el logout local igualmente
+    } finally {
+      try { await _storage.deleteAll(); } catch (_) {}
+    }
   }
 
   /**

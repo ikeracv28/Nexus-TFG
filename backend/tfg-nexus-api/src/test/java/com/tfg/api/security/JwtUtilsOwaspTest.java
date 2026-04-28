@@ -83,4 +83,30 @@ class JwtUtilsOwaspTest {
         assertThatThrownBy(() -> utils.generateToken(user))
                 .isInstanceOf(Exception.class);
     }
+
+    @Test
+    @DisplayName("[A07] Token generado incluye JTI único no nulo (necesario para blacklist de logout)")
+    void generated_token_contains_non_null_jti() {
+        JwtUtils utils = buildJwtUtils(SECRET_BASE64_VALIDO);
+        UserDetails user = User.withUsername("alumno@nexus.edu")
+                .password("hash").authorities(Collections.emptyList()).build();
+
+        String token = utils.generateToken(user);
+        String jti = utils.extractJti(token);
+
+        assertThat(jti).isNotBlank();
+    }
+
+    @Test
+    @DisplayName("[A07] Dos tokens distintos tienen JTIs distintos (no reutilizables)")
+    void two_tokens_have_different_jtis() {
+        JwtUtils utils = buildJwtUtils(SECRET_BASE64_VALIDO);
+        UserDetails user = User.withUsername("alumno@nexus.edu")
+                .password("hash").authorities(Collections.emptyList()).build();
+
+        String jti1 = utils.extractJti(utils.generateToken(user));
+        String jti2 = utils.extractJti(utils.generateToken(user));
+
+        assertThat(jti1).isNotEqualTo(jti2);
+    }
 }

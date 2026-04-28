@@ -27,6 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
     private final UserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     /**
      * Lógica principal del filtro.
@@ -54,8 +55,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 4. Extraer el email del usuario usando nuestra utilidad JWT
             final String userEmail = jwtUtils.extractUsername(jwt);
 
-            // 5. Si hay email y el usuario aún no está autenticado en el contexto de seguridad
-            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            // 5. Si hay email, el token no está revocado y el usuario no está autenticado
+            String jti = jwtUtils.extractJti(jwt);
+            if (userEmail != null
+                    && !tokenBlacklistService.estaRevocado(jti)
+                    && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 // Cargamos los detalles del usuario desde la BD
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);

@@ -126,10 +126,10 @@ automáticamente si la lectura falla — el usuario simplemente tendrá que volv
 ### Usuarios de prueba
 | Email | Contraseña | Rol |
 |-------|-----------|-----|
-| admin@nexus.edu | admin123 | ADMIN |
-| tutor@nexus.edu | 123456 | TUTOR_CENTRO |
-| alumno@nexus.edu | 123456 | ALUMNO |
-| tutorempresa@nexus.edu | 123456 | TUTOR_EMPRESA |
+| admin@nexus.edu | Admin@Nexus2026 | ADMIN |
+| tutor@nexus.edu | Tutor@Nexus2026 | TUTOR_CENTRO |
+| alumno@nexus.edu | Alumno@Nexus2026 | ALUMNO |
+| tutorempresa@nexus.edu | Empresa@Nexus2026 | TUTOR_EMPRESA |
 
 ---
 

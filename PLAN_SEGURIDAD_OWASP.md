@@ -132,8 +132,8 @@ Orden de implementacion obligatorio: resolver primero los CRITICOS antes de pasa
   )
   String password
   ```
-- [ ] Actualizar los usuarios de prueba en las migraciones Flyway para que cumplan la nueva politica.
-- [ ] Actualizar `CLAUDE.md` — seccion usuarios de prueba — con las nuevas contrasenas.
+- [x] Migracion Flyway V6 actualiza hashes BCrypt de 4 usuarios de prueba a politica 12+ chars (Admin@Nexus2026, Tutor@Nexus2026, Alumno@Nexus2026, Empresa@Nexus2026). (28/04/2026)
+- [x] `CLAUDE.md` — tabla usuarios de prueba — actualizada con las nuevas contrasenas. (28/04/2026)
 
 ---
 
@@ -145,12 +145,7 @@ Orden de implementacion obligatorio: resolver primero los CRITICOS antes de pasa
 
 **Por que es un problema:** `@RequestParam String nuevoEstado` acepta cualquier cadena. Si el servicio no valida estrictamente, podria insertarse un estado arbitrario en la BD.
 
-- [ ] Crear enum `EstadoPractica` en `models/entity/` con los valores validos: `BORRADOR`, `ACTIVA`, `FINALIZADA`.
-- [ ] Cambiar el parametro del endpoint a usar el enum:
-  ```java
-  public ResponseEntity<PracticaResponse> cambiarEstado(@PathVariable Long id, @RequestParam EstadoPractica nuevoEstado)
-  ```
-- [ ] Spring convertira automaticamente el String al enum y devolvera 400 si el valor no es valido.
+- [x] Validar `nuevoEstado` contra `Set.of("BORRADOR","ACTIVA","FINALIZADA")` en `PracticaServiceImpl.cambiarEstado()`. Lanza `BusinessRuleException` con valores permitidos si el String no esta en el conjunto. (Implementado 28/04/2026 — sin enum para evitar migración de esquema)
 - [ ] Hacer lo mismo con `nuevoEstado` en `SeguimientoController` (PENDIENTE_EMPRESA, PENDIENTE_CENTRO, RECHAZADO, COMPLETADO) — crear enum `EstadoSeguimiento`.
 
 ---
@@ -245,21 +240,12 @@ Orden de implementacion obligatorio: resolver primero los CRITICOS antes de pasa
 
 **Por que es un problema:** Al hacer logout, el cliente borra el token localmente pero el token sigue siendo valido en el servidor hasta su expiracion (24h). Un atacante que obtenga el token puede seguir usandolo.
 
-- [ ] Crear tabla `token_revocado` en una nueva migracion Flyway `V6__Token_Revocacion.sql`:
-  ```sql
-  CREATE TABLE token_revocado (
-      id BIGSERIAL PRIMARY KEY,
-      token_hash VARCHAR(255) NOT NULL UNIQUE,
-      revocado_en TIMESTAMP NOT NULL DEFAULT NOW(),
-      expira_en TIMESTAMP NOT NULL
-  );
-  CREATE INDEX idx_token_revocado_hash ON token_revocado(token_hash);
-  ```
-- [ ] Crear `TokenRevocadoRepository` y `TokenRevocadoService` con metodos `revocar(String token)` e `isRevocado(String token)`.
-- [ ] En `JwtAuthenticationFilter.doFilterInternal()`: despues de validar el token, comprobar si esta en la lista de revocados. Si lo esta, limpiar el contexto y continuar sin autenticar.
-- [ ] Crear endpoint `POST /api/v1/auth/logout` con `@PreAuthorize("isAuthenticated()")` que revoque el token del header Authorization.
-- [ ] En `ApiClient` de Flutter: al hacer logout, llamar al endpoint antes de borrar el token local.
-- [ ] Job programado (o TTL en BD): limpiar tokens expirados de la tabla para evitar crecimiento indefinido.
+- [x] Cada token JWT incluye claim `jti` (UUID) generado en `JwtUtils.generateToken()`. (28/04/2026)
+- [x] `TokenBlacklistService` con `ConcurrentHashMap<String,Boolean>` en memoria — metodos `revocar(jti)` e `estaRevocado(jti)`. (Alternativa sin BD — limitacion conocida: no persiste entre reinicios; aceptable para TFG, en produccion usar Redis con TTL). (28/04/2026)
+- [x] `JwtAuthenticationFilter`: verifica `tokenBlacklistService.estaRevocado(jti)` antes de autenticar. (28/04/2026)
+- [x] Endpoint `POST /api/v1/auth/logout` con `@PreAuthorize("isAuthenticated()")` en `AuthController`. (28/04/2026)
+- [x] `AuthService.logout()` en Flutter llama al endpoint antes de limpiar el storage local. `finally` garantiza limpieza local si el backend falla. (28/04/2026)
+- [ ] (Opcional post-TFG) Migrar blacklist a Redis con TTL igual a la expiracion del token para persistencia entre reinicios.
 
 ---
 
@@ -388,6 +374,7 @@ Ejecutar `/owasp-security` sobre cada archivo antes de cerrar la tarea.
 
 ### Dependencias y actualizacion de versiones
 
+- [x] Plugin `dependency-check-maven:10.0.3` configurado en `pom.xml`: `failBuildOnCVSS=7`, reportes HTML+JSON en `target/dependency-check/`. Ejecutar con `./mvnw dependency-check:check`. (28/04/2026)
 - [ ] Ejecutar `./mvnw versions:display-dependency-updates` y revisar actualizaciones de seguridad.
 - [ ] Ejecutar `flutter pub outdated` en el frontend y actualizar dependencias con vulnerabilidades conocidas.
 

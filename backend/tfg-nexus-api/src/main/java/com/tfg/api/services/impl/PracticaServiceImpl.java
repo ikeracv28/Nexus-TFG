@@ -113,13 +113,20 @@ public class PracticaServiceImpl implements PracticaService {
         practicaRepository.delete(practica);
     }
 
+    private static final java.util.Set<String> ESTADOS_PRACTICA =
+            java.util.Set.of("BORRADOR", "ACTIVA", "FINALIZADA");
+
     @Override
     @Transactional
     public PracticaResponse cambiarEstado(Long id, String nuevoEstado) {
+        String estado = nuevoEstado.toUpperCase();
+        if (!ESTADOS_PRACTICA.contains(estado)) {
+            throw new BusinessRuleException(
+                "Estado no válido. Los estados permitidos son: BORRADOR, ACTIVA, FINALIZADA");
+        }
         Practica practica = practicaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Práctica no encontrada"));
-
-        practica.setEstado(nuevoEstado.toUpperCase());
+        practica.setEstado(estado);
         return practicaMapper.toResponse(practicaRepository.save(practica));
     }
 

@@ -14,6 +14,7 @@ import com.tfg.api.models.mapper.UsuarioMapper;
 import com.tfg.api.models.repository.RolRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
 import com.tfg.api.security.JwtUtils;
+import com.tfg.api.security.TokenBlacklistService;
 import com.tfg.api.security.UserDetailsServiceImpl;
 import com.tfg.api.services.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
+    private final TokenBlacklistService tokenBlacklistService;
     private final AuthenticationManager authenticationManager;
     private final UsuarioMapper usuarioMapper;
     private final UserDetailsServiceImpl userDetailsService;
@@ -95,6 +97,21 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtUtils.generateToken(userDetails);
         
         return usuarioMapper.toAuthResponse(usuario, token);
+    }
+
+    /**
+     * [A07] Invalida el token activo añadiendo su JTI a la blacklist.
+     * El cliente debe borrar el token de su almacenamiento local tras esta llamada.
+     */
+    @Override
+    public void logout(String token) {
+        try {
+            String jti = jwtUtils.extractJti(token);
+            tokenBlacklistService.revocar(jti);
+            log.info("LOGOUT_EXITOSO jti={}", jti);
+        } catch (Exception e) {
+            log.warn("LOGOUT_TOKEN_INVALIDO motivo={}", e.getMessage());
+        }
     }
 
     private void validarUnicidad(RegisterRequest request) {

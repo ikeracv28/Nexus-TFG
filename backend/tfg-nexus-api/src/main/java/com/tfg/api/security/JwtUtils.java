@@ -13,6 +13,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,6 +50,7 @@ public class JwtUtils {
         return Jwts.builder()
                 .claims(claims)
                 .subject(subject)
+                .id(UUID.randomUUID().toString())   // jti — identifica el token individualmente
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())
@@ -62,6 +64,10 @@ public class JwtUtils {
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractJti(String token) {
+        return extractClaim(token, Claims::getId);
     }
 
     public Date extractExpiration(String token) {

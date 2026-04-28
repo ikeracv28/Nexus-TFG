@@ -16,7 +16,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/incidencias")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class IncidenciaController {
 
     private final IncidenciaService incidenciaService;

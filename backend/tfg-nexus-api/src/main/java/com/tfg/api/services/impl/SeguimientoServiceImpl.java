@@ -15,6 +15,8 @@ import com.tfg.api.models.repository.SeguimientoRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
 import com.tfg.api.services.SeguimientoService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SeguimientoServiceImpl implements SeguimientoService {
+
+    private static final Logger log = LoggerFactory.getLogger(SeguimientoServiceImpl.class);
 
     private final SeguimientoRepository seguimientoRepository;
     private final PracticaRepository practicaRepository;
@@ -79,7 +83,10 @@ public class SeguimientoServiceImpl implements SeguimientoService {
         seguimiento.setComentarioTutor(motivo);
 
         if ("RECHAZADO".equals(nuevoEstado)) {
+            log.info("SEGUIMIENTO_RECHAZADO id={} por_tutor={} motivo={}", id, emailTutor, motivo);
             crearIncidenciaRechazo(seguimiento.getPractica(), tutorEmpresa, motivo);
+        } else {
+            log.info("SEGUIMIENTO_VALIDADO_EMPRESA id={} por_tutor={}", id, emailTutor);
         }
 
         return seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
@@ -102,6 +109,7 @@ public class SeguimientoServiceImpl implements SeguimientoService {
 
         seguimiento.setEstado("COMPLETADO");
         seguimiento.setValidadoPor(tutorCentro);
+        log.info("SEGUIMIENTO_COMPLETADO id={} por_tutor={}", id, emailTutor);
 
         return seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
     }

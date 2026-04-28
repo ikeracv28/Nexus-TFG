@@ -4,6 +4,35 @@ Este documento registra las implementaciones técnicas realizadas a lo largo del
 
 ---
 
+## [28/04/2026] — Seguridad OWASP Bloque 1 + fixes Flutter storage/dashboard
+
+### Backend (Spring Boot)
+
+- **[A01] CORS sin wildcard**: `SecurityConfig` reemplaza `@CrossOrigin(origins = "*")` en todos los controllers por una configuración centralizada con orígenes explícitos (`http://localhost:3000`, `http://localhost:8080`). Se añade `setAllowCredentials(true)` y se expone solo el header `Authorization`. El wildcard se elimina de `AuthController`, `PracticaController`, `SeguimientoController` e `IncidenciaController`.
+- **[A01] SpEL roto en PracticaController**: Los dos `@PreAuthorize` que usaban `.principal.id` (inválido sobre `UserDetails`) se reescriben para delegar en métodos de servicio: `@practicaService.esParticipante(#id, authentication.name)` y `@practicaService.perteneceAlAlumnoAutenticado(#alumnoId, authentication.name)`. Se añaden ambos métodos a `PracticaService` e `PracticaServiceImpl` con `@Transactional(readOnly = true)`.
+- **[A02] JWT con Decoders.BASE64**: `JwtUtils.getSigningKey()` cambia de `secret.getBytes()` (inseguro) a `Decoders.BASE64.decode(secret)` (correcto). El algoritmo resultante pasa de HS512 a HS256 porque la clave real son 40 bytes (320 bits). Todos los tokens anteriores quedan invalidados al reconstruir.
+- **[A04] RateLimitFilter**: Nuevo filtro `@Component @Order(1)` que limita a 10 peticiones/minuto por IP en endpoints `/api/v1/auth/`. Implementado con `ConcurrentHashMap<String, long[]>` (ventana deslizante) sin dependencias externas. Devuelve HTTP 429 con body JSON.
+- **[A05] Cabeceras HTTP de seguridad**: `SecurityConfig` añade `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `X-XSS-Protection` y `HSTS` en todas las respuestas.
+- **[A07] Account enumeration eliminada**: `AuthServiceImpl.validarUnicidad()` comprueba email y DNI con una sola expresión y lanza siempre el mismo mensaje genérico. El login lanza `BadCredentialsException` genérica en lugar de revelar si el email existe.
+- **[A09] Logs de seguridad**: `AuthServiceImpl`, `GlobalExceptionHandler` y `SeguimientoServiceImpl` loguean eventos de seguridad (login fallido, acceso denegado, cambios de estado) con nivel WARN/INFO. Sin datos personales en los logs — solo IDs y roles.
+- **Tests**: 35 tests, todos pasan. Nuevas clases: `JwtUtilsOwaspTest` (5), `RateLimitFilterTest` (6), `AuthServiceOwaspTest` (5), `PracticaOwnershipTest` (10), `SecurityHeadersAndCorsTest` (9).
+
+### Frontend (Flutter)
+
+- **ApiClient — storage resistente**: El interceptor envuelve `_storage.read()` en try/catch. Si Web Crypto no puede descifrar (datos corruptos tras rebuild Docker), limpia el storage y trata al usuario como no autenticado. Sin este fix el error se propagaba como `"invalid argument (index): 'message'"` bloqueando incluso el login.
+- **isAuthenticated resistente**: Mismo try/catch en `AuthService.isAuthenticated()`.
+- **Dashboard — _ErrorCard**: Cuando `practica.errorMessage != null` se muestra una tarjeta de error con mensaje y botón "Reintentar", en lugar del estado vacío "Sin práctica asignada" que ocultaba el problema real.
+
+### Causa raíz de fallos recurrentes — documentado para no repetirlo
+
+Los fallos de "la app no refleja los cambios" se producen por dos motivos acumulados:
+1. **Contenedores Docker con código antiguo**: siempre usar `docker-compose build --no-cache backend frontend` tras cambios de código, luego `docker-compose up -d`.
+2. **Caché del browser**: el browser cachea el JS de Flutter y sirve el build antiguo aunque el contenedor haya cambiado. Solución obligatoria tras cualquier rebuild: **Ctrl+Shift+R** en Chrome.
+
+Ver procedimiento completo en la sección "Workflow de actualización" de `CLAUDE.md`.
+
+---
+
 ## [26/04/2026] - Hito 3: Doble Validación y Paneles de Tutor
 
 ### Backend (Spring Boot)

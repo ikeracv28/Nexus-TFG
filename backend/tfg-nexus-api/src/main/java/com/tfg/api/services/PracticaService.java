@@ -61,4 +61,14 @@ public interface PracticaService {
      * Lista las prácticas donde el tutor del centro autenticado está asignado.
      */
     List<PracticaResponse> listarMisPracticasComoTutorCentro();
+
+    /**
+     * Usado en SpEL: devuelve true si el alumno con alumnoId tiene el email del usuario autenticado.
+     */
+    boolean perteneceAlAlumnoAutenticado(Long alumnoId, String email);
+
+    /**
+     * Usado en SpEL: devuelve true si el usuario (por email) es alumno, tutor centro o tutor empresa de la práctica.
+     */
+    boolean esParticipante(Long practicaId, String email);
 }

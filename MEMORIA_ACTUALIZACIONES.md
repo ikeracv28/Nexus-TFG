@@ -120,6 +120,26 @@ La pestaña de incidencias permite reportar un problema directamente desde la ap
 
 La cuarta pestaña muestra una pantalla informativa que anuncia la función de chat en tiempo real prevista para el siguiente hito. Esta decisión de incluir un placeholder visible en la demo cumple dos propósitos: comunica al evaluador que la arquitectura de navegación está completa y anticipa la integración del módulo de mensajería con WebSocket.
 
+## BLOQUE — Hito 3: Seguridad OWASP aplicada al backend y al cliente Flutter
+**Sección destino en memoria**: Capítulo 4.2 (Seguridad) o nuevo apartado dentro del capítulo de arquitectura
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+Durante el desarrollo del tercer hito realicé una revisión sistemática de seguridad siguiendo el estándar OWASP Top 10 (2021). El objetivo era identificar y corregir vulnerabilidades antes de la entrega, no como un paso posterior al desarrollo sino como parte del proceso. A continuación describo las decisiones más relevantes.
+
+La primera categoría revisada fue el control de acceso (A01). Detecté que varios controladores REST usaban la anotación `@CrossOrigin(origins = "*")`, que permite peticiones desde cualquier origen. Esto es especialmente problemático en una API con autenticación, porque anula la protección que CORS ofrece. La solución fue eliminar estas anotaciones y centralizar la configuración CORS en `SecurityConfig`, especificando solo los orígenes permitidos (`localhost:3000` y `localhost:8080`) y activando el soporte de credenciales. También corregí dos expresiones SpEL en `@PreAuthorize` que referenciaban `.principal.id`, una propiedad inexistente sobre el objeto `UserDetails` de Spring Security. Las sustituí por llamadas a métodos de servicio que comprueban si el usuario autenticado es participante de la práctica solicitada, una verificación de propiedad real que previene el acceso entre recursos de distintos alumnos.
+
+En la categoría de fallos criptográficos (A02) encontré que el método de firma de JWT usaba `secret.getBytes()` para obtener la clave de firma a partir del secreto configurado en las variables de entorno. Este secreto es una cadena en Base64, por lo que `getBytes()` trata los caracteres Base64 literales como bytes de la clave, no los bytes reales que representan. La corrección es usar `Decoders.BASE64.decode(secret)`, que decodifica correctamente la cadena y obtiene los bytes reales. La consecuencia práctica es que los tokens generados con el método antiguo son incompatibles con los generados con el método correcto, lo que obligó a invalidar las sesiones existentes durante el despliegue del fix.
+
+Para la categoría de diseño inseguro (A04) implementé un filtro de rate limiting sobre los endpoints de autenticación. El filtro, registrado con prioridad máxima en la cadena de filtros, mantiene un contador por dirección IP dentro de una ventana deslizante de un minuto. Al superar las diez peticiones, el servidor devuelve HTTP 429 con un mensaje JSON. Este límite protege contra ataques de fuerza bruta sin requerir dependencias externas, usando solo las estructuras concurrentes de la biblioteca estándar de Java.
+
+En el apartado de fallos de autenticación (A07) identifiqué un problema de enumeración de cuentas. El endpoint de registro lanzaba mensajes de error distintos según si el campo que ya existía era el email o el DNI, permitiendo a un atacante determinar qué datos de una persona están registrados en el sistema. La corrección fue unificar la comprobación de unicidad y lanzar siempre el mismo mensaje genérico, sin revelar qué campo causó el conflicto. El endpoint de login también se corrigió para no exponer si un email existe en el sistema cuando las credenciales son incorrectas.
+
+Finalmente, en el apartado de registro y monitorización (A09) añadí logs estructurados para los eventos de seguridad más relevantes: intentos de login fallidos (registrando IP y User-Agent, sin datos personales), accesos denegados y cambios de estado en los seguimientos. Estos registros permiten detectar patrones de ataque en producción sin comprometer la privacidad de los usuarios.
+
+Como resultado de esta revisión, el sistema cuenta ahora con una batería de treinta y cinco tests automatizados que verifican el comportamiento correcto de cada control de seguridad implementado, incluyendo tests de cabeceras HTTP, comportamiento CORS, rate limiting, enumeración de cuentas y verificación de propiedad de recursos.
+
+---
+
 ## BLOQUE 004 — [RESERVADO para Hito 3]
 **Sección destino en memoria**: Capítulo 5 (Incidencias y Chat)
 **Estado**: [PENDIENTE — se generará al completar las features]

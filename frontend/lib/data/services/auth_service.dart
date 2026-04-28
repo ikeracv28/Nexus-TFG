@@ -43,9 +43,15 @@ class AuthService {
 
   /**
    * Verifica si el usuario tiene una sesión activa.
+   * Si el storage está corrupto, lo limpia y devuelve false.
    */
   Future<bool> isAuthenticated() async {
-    final token = await _storage.read(key: 'jwt_token');
-    return token != null;
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      return token != null;
+    } catch (_) {
+      try { await _storage.deleteAll(); } catch (_) {}
+      return false;
+    }
   }
 }

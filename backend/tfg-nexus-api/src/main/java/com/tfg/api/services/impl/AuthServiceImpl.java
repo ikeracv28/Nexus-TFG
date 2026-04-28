@@ -2,6 +2,9 @@ package com.tfg.api.services.impl;
 
 import com.tfg.api.exceptions.BusinessRuleException;
 import com.tfg.api.exceptions.ResourceNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.BadCredentialsException;
 import com.tfg.api.models.dto.AuthResponse;
 import com.tfg.api.models.dto.LoginRequest;
 import com.tfg.api.models.dto.RegisterRequest;
@@ -29,6 +32,8 @@ import java.util.Collections;
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
@@ -63,6 +68,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Persistencia
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
+        log.info("USUARIO_REGISTRADO id={} rol=ALUMNO", usuarioGuardado.getId());
 
         // CARGA DE USERDETAILS PARA JWT (Corrección de tipo)
         UserDetails userDetails = userDetailsService.loadUserByUsername(usuarioGuardado.getEmail());
@@ -82,7 +88,7 @@ public class AuthServiceImpl implements AuthService {
         );
 
         Usuario usuario = usuarioRepository.findByEmail(request.email())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con el email: " + request.email()));
+                .orElseThrow(() -> new BadCredentialsException("Credenciales de acceso inválidas"));
 
         // CARGA DE USERDETAILS PARA JWT (Corrección de tipo)
         UserDetails userDetails = userDetailsService.loadUserByUsername(usuario.getEmail());
@@ -92,11 +98,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private void validarUnicidad(RegisterRequest request) {
-        if (usuarioRepository.existsByEmail(request.email())) {
-            throw new BusinessRuleException("El correo electrónico ya se encuentra registrado en Nexus");
-        }
-        if (usuarioRepository.existsByDni(request.dni())) {
-            throw new BusinessRuleException("El DNI introducido ya existe en nuestro sistema");
+        if (usuarioRepository.existsByEmail(request.email()) || usuarioRepository.existsByDni(request.dni())) {
+            throw new BusinessRuleException("Los datos introducidos no están disponibles. Comprueba el formulario.");
         }
     }
 }

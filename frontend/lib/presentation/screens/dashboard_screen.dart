@@ -160,6 +160,11 @@ class _InicioTab extends StatelessWidget {
             const SizedBox(height: NexusSizes.space2XL),
             if (practica.isLoading)
               const _LoadingCard()
+            else if (practica.errorMessage != null)
+              _ErrorCard(
+                message: practica.errorMessage!,
+                onRetry: () => practica.cargarDashboard(),
+              )
             else if (practica.practicaActiva != null)
               _PracticaCard(practica: practica.practicaActiva!)
             else
@@ -636,6 +641,46 @@ class _EmptyState extends StatelessWidget {
             'Contacta con tu tutor del centro para que te asigne una practica.',
             style: NexusText.caption,
             textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Tarjeta de error de API
+
+class _ErrorCard extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorCard({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    final msg = message.replaceFirst(RegExp(r'^Exception: '), '');
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(NexusSizes.space2XL),
+      decoration: BoxDecoration(
+        color: NexusColors.surface,
+        border: Border.all(color: NexusColors.dangerLight, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.cloud_off_outlined, size: 36, color: NexusColors.danger),
+          const SizedBox(height: NexusSizes.spaceMD),
+          Text(
+            'No se pudo cargar la práctica',
+            style: NexusText.small.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: NexusSizes.spaceXS),
+          Text(msg, style: NexusText.caption, textAlign: TextAlign.center),
+          const SizedBox(height: NexusSizes.spaceLG),
+          OutlinedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Reintentar'),
           ),
         ],
       ),

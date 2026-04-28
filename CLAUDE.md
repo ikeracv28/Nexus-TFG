@@ -33,6 +33,7 @@
 ```
 TFG/
 ├── CLAUDE.md                        ← este archivo (leer siempre al iniciar)
+├── PLAN_SEGURIDAD_OWASP.md          ← plan de seguridad OWASP con checkboxes (leer antes de implementar)
 ├── DESIGN_SYSTEM.md                 ← sistema visual Flutter completo
 ├── MEMORIA_ACTUALIZACIONES.md       ← fragmentos listos para copiar en la memoria Word
 ├── HISTORIAL_CAMBIOS.md             ← bitácora técnica de decisiones
@@ -94,14 +95,41 @@ docker-compose down             # Parar todo
 docker-compose logs -f backend  # Logs del backend en tiempo real
 ```
 
-### Usuarios de prueba (seed V3)
+### WORKFLOW OBLIGATORIO tras cualquier cambio de código
+
+> Este problema ha ocurrido tres veces. Seguir este procedimiento siempre.
+
+Cuando se modifique código en backend o frontend y se quiera ver el resultado en localhost:3000:
+
+```powershell
+# 1. Reconstruir las imágenes con el nuevo código (sin caché)
+docker-compose build --no-cache backend frontend
+
+# 2. Parar contenedores viejos y arrancar los nuevos
+docker rm -f nexus-db nexus-api nexus-web
+docker-compose up -d
+```
+
+```
+3. En Chrome con localhost:3000 abierto:
+   Ctrl + Shift + R   ← hard refresh obligatorio (borra caché del JS de Flutter)
+```
+
+**Por qué es necesario el paso 3**: Nginx sirve el bundle JS de Flutter sin cabeceras
+`Cache-Control: no-cache`. El browser puede tener el JS antiguo en caché y servirlo
+aunque el contenedor haya cambiado. Sin el hard refresh el usuario ve el build viejo.
+
+**Nota sobre tokens JWT**: al reconstruir el backend, todos los JWT anteriores quedan
+invalidados (cambio de clave de firma). El ApiClient de Flutter limpia el storage
+automáticamente si la lectura falla — el usuario simplemente tendrá que volver a hacer login.
+
+### Usuarios de prueba
 | Email | Contraseña | Rol |
 |-------|-----------|-----|
 | admin@nexus.edu | admin123 | ADMIN |
 | tutor@nexus.edu | 123456 | TUTOR_CENTRO |
 | alumno@nexus.edu | 123456 | ALUMNO |
-
-> Pendiente: añadir usuario de prueba para TUTOR_EMPRESA en migración V4 o V5.
+| tutorempresa@nexus.edu | 123456 | TUTOR_EMPRESA |
 
 ---
 
@@ -160,35 +188,7 @@ La migración V4 actualiza el campo `estado` en `seguimientos`:
 3. Tutor del centro revisa el parte (ya validado por empresa) y da el visto bueno.
    Estado pasa a `COMPLETADO`. Las horas se suman al progreso de la práctica.
 
-### Reglas de negocio en el servicio (nunca en el controller)
-
-```java
-// validarEmpresa(): solo actúa sobre PENDIENTE_EMPRESA
-if (!seguimiento.getEstado().equals("PENDIENTE_EMPRESA")) {
-    throw new BusinessRuleException("Este parte ya fue procesado por la empresa");
-}
-
-// validarCentro(): solo actúa sobre PENDIENTE_CENTRO
-if (!seguimiento.getEstado().equals("PENDIENTE_CENTRO")) {
-    throw new BusinessRuleException(
-        "El parte debe ser validado por la empresa antes de que el centro actúe"
-    );
-}
-
-// Al rechazar: crear incidencia automática
-if (nuevoEstado.equals("RECHAZADO")) {
-    Incidencia incidencia = Incidencia.builder()
-        .practica(seguimiento.getPractica())
-        .creadaPor(tutorEmpresa)
-        .tipo("RECHAZO_PARTE")
-        .descripcion("Parte rechazado. Motivo: " + motivo)
-        .estado("ABIERTA")
-        .build();
-    incidenciaRepository.save(incidencia);
-}
-```
-
-### Endpoints nuevos en SeguimientoController
+### Endpoints de validacion en SeguimientoController
 
 ```
 PATCH /api/v1/seguimientos/{id}/validar-empresa
@@ -197,50 +197,16 @@ PATCH /api/v1/seguimientos/{id}/validar-empresa
 
 PATCH /api/v1/seguimientos/{id}/validar-centro
   @PreAuthorize("hasRole('TUTOR_CENTRO')")
-  Params: ninguno (solo puede completar, no rechazar en esta fase)
+  Params: ninguno (solo completa, no puede rechazar en esta fase)
 ```
 
-### Orden de implementación obligatorio
-
-1. Migración V4 (estados nuevos en BD + seed tutor empresa prueba).
-2. IncidenciaRepository e IncidenciaService básico (necesario para el rechazo automático).
-3. Refactorizar SeguimientoServiceImpl: separar en validarEmpresa() y validarCentro().
-4. Actualizar SeguimientoController con los dos nuevos endpoints.
-5. Tests de los cuatro casos de negocio (validar empresa, rechazar empresa, validar centro, saltarse el orden).
-6. Flutter: pantalla tutor empresa (validacion_empresa_screen.dart).
-7. Flutter: actualizar pantalla tutor centro con segunda fase de validación.
+Implementacion completa en `SeguimientoServiceImpl.java` (validarEmpresa, validarCentro, crearIncidenciaRechazo).
 
 ---
 
 ## Estado Actual del Proyecto
 
-### Hito 2 (50%) — Completado
-
-- [x] Autenticación JWT completa (registro, login, token con roles en claims)
-- [x] CRUD completo de Prácticas con estados (BORRADOR / ACTIVA / FINALIZADA)
-- [x] Sistema de Seguimientos base (registro, validación simple — refactorizar en Hito 3)
-- [x] Entidades JPA completas: Usuario, Practica, Seguimiento, Incidencia, Mensaje, Notificacion
-- [x] Seguridad por roles con @PreAuthorize en todos los endpoints
-- [x] Tests de integración: AuthController, PracticaController, SeguimientoService
-- [x] Flutter: LoginScreen funcional conectada a la API
-- [x] Flutter: DashboardScreen con datos reales de la práctica activa
-- [x] Flutter: Navegación funcional con IndexedStack (NavigationRail web + BottomNav móvil)
-- [x] Flutter: SeguimientosScreen con lista completa y FAB para nuevo parte
-- [x] Flutter: IncidenciasScreen con listado y bottom sheet para reportar
-- [x] Flutter: ChatPlaceholderScreen (placeholder Hito 3)
-- [x] Flutter: Widgets compartidos SeguimientoTile e IncidenciaTile en presentation/widgets/
-- [x] Backend: POST /api/v1/incidencias — el alumno reporta incidencias desde la app
-- [x] Docker Compose con healthcheck y red interna
-
-### CORRECCIONES PREVIAS A LA ENTREGA DEL HITO 2
-> Completadas y verificadas el 26/04/2026.
-
-- [x] FIX-1: JWT Secret — clave real en .env (base64 64 chars). Fallback queda como CAMBIAR_EN_PRODUCCION.
-- [x] FIX-2: Rol.java — usa @Getter + @Setter + @EqualsAndHashCode(of = "id"). Javadoc corregido.
-- [x] FIX-3: PracticaServiceImpl — usa BusinessRuleException y ResourceNotFoundException. Sin RuntimeException genérica.
-- [x] FIX-4: BBDD-TFG.sql — cabecera de referencia histórica presente.
-- [x] FIX-5: Perfiles Spring — application-dev.properties y application-prod.properties creados.
-- [x] FIX-6: PracticaController.listarTodas() — retorna Page<PracticaResponse> con @PageableDefault(size=20).
+> Hito 2 (50%): completado el 21/04/2026.
 
 ### Completado — Hito 3 (parcial, en curso)
 
@@ -263,6 +229,51 @@ PATCH /api/v1/seguimientos/{id}/validar-centro
 - [ ] [FLUTTER] Verificar endpoints getMisPracticasComoTutorCentro y getMisPracticasComoTutorEmpresa en backend
 - [ ] [FLUTTER] Pantalla de incidencias del alumno (mejora — actualmente lista básica, sin gestión de estado)
 - [ ] [FLUTTER] Pantalla de chat (WebSocket — placeholder implementado, funcionalidad real en Hito 4)
+
+---
+
+## Seguridad OWASP — Regla Obligatoria
+
+> Referencia: https://skills.sh/hoodini/ai-agents-skills/owasp-security
+> Plan detallado: PLAN_SEGURIDAD_OWASP.md (leer antes de implementar cualquier feature)
+
+**OBLIGATORIO antes de cerrar cualquier tarea de código:**
+1. Ejecutar `/owasp-security` sobre todos los archivos modificados.
+2. Resolver cualquier hallazgo CRITICO o ALTO antes del commit.
+3. Confirmar en el commit message que se ejecutó la revisión OWASP.
+
+### Reglas OWASP que aplican a TODO el código nuevo
+
+**Control de Acceso (A01):**
+- Nunca usar `@CrossOrigin(origins = "*")` en ningún controller. La config CORS global en `SecurityConfig` es la única fuente de verdad.
+- Todo endpoint debe tener `@PreAuthorize` con roles explícitos. Prohibido usar solo `isAuthenticated()` sin justificación documentada.
+- Verificar propiedad de recursos en el servicio, no solo en el controller. Un alumno solo puede acceder a sus propias entidades.
+- Usar `@practicaService.esParticipante()` u otro método de verificación de propiedad en expresiones SpEL cuando el acceso depende de la relación con el recurso.
+
+**Criptografía (A02):**
+- Los JWT secret se leen desde variables de entorno y se decodifican desde Base64 (`Decoders.BASE64.decode()`). Nunca `secret.getBytes()` directamente.
+- La URL base de la API en Flutter usa `String.fromEnvironment()`, no una constante literal.
+- Las contraseñas de usuarios de prueba deben cumplir la política: 10+ caracteres, mayúscula, minúscula y número.
+
+**Injection (A03):**
+- Los parámetros de estado (`nuevoEstado`, tipo de incidencia, etc.) siempre son enums Java, nunca Strings libres.
+- Prohibido concatenar strings en queries JPA. Solo métodos derivados o `@Query` con parámetros nombrados.
+
+**Diseño seguro (A04):**
+- Los endpoints de autenticación (`/auth/login`, `/auth/register`) están bajo rate limiting. Todo endpoint nuevo de autenticación debe añadirse al `RateLimitFilter`.
+- Los formularios Flutter validan en cliente Y el backend valida independientemente. No confiar en la validación del cliente.
+
+**Configuración (A05):**
+- `spring.jpa.show-sql=false` y `logging.level=WARN` son los valores por defecto. Los overrides de DEV solo van en `application-dev.properties`.
+- Los headers HTTP de seguridad (`X-Frame-Options`, `X-Content-Type-Options`, HSTS) están configurados en `SecurityConfig` y en Nginx.
+
+**Autenticación (A07):**
+- Los mensajes de error de autenticación son genéricos. Nunca revelar si el email existe, si el DNI está tomado, ni detalles internos.
+- El logout siempre llama al endpoint `POST /auth/logout` del backend para revocar el token en servidor.
+
+**Logging (A09):**
+- Los eventos de seguridad (login fallido, acceso denegado, cambios de estado de seguimientos) se loguean con nivel WARN/INFO.
+- Los logs nunca contienen datos personales (emails, nombres, contraseñas). Solo IDs y roles.
 
 ---
 
@@ -341,30 +352,23 @@ Adaptativo web/móvil con LayoutBuilder. Todo centralizado en app_theme.dart par
 ### Nuevo endpoint REST (backend)
 1. Migración Flyway si hay cambios en BD.
 2. Entidad JPA si es nueva.
-3. DTOs Request y Response.
+3. DTOs Request y Response con validaciones Bean Validation (@NotBlank, @Size, @Min, @Max, enums para estados).
 4. Mapper MapStruct.
 5. Repository extendiendo JpaRepository.
-6. Interfaz Service e implementación en impl/.
-7. Controller con @PreAuthorize en cada método.
-8. Tests cubriendo casos de negocio (no solo el happy path).
+6. Interfaz Service e implementación en impl/. Verificar propiedad del recurso en el servicio.
+7. Controller con `@PreAuthorize` explicito en cada método. Sin `@CrossOrigin`. Sin `isAuthenticated()` sin justificación.
+8. Tests cubriendo casos de negocio (happy path + acceso denegado + propietario incorrecto).
 9. Actualizar ARQUITECTURA_API.md.
+10. **Ejecutar `/owasp-security` sobre los archivos del endpoint. Resolver issues antes del commit.**
 
 ### Nueva pantalla Flutter
 1. Consultar DESIGN_SYSTEM.md.
 2. Model en data/models/ sincronizado con el DTO.
-3. Service en data/services/ usando ApiClient.
+3. Service en data/services/ usando ApiClient. Manejar 401 (redirect a login), 403 (error UI), 429 (rate limit).
 4. Provider en presentation/providers/ extendiendo ChangeNotifier.
-5. Screen en presentation/screens/ usando NexusColors.
+5. Screen en presentation/screens/ usando NexusColors. Validar inputs en cliente antes de enviar.
 6. Ruta en go_router con guard de rol si aplica.
-
-### Implementar el flujo de doble validación (orden obligatorio)
-1. Migración V4 primero.
-2. IncidenciaRepository e IncidenciaService básico.
-3. Refactorizar SeguimientoServiceImpl.
-4. Actualizar SeguimientoController.
-5. Tests de los 4 casos.
-6. Flutter pantalla tutor empresa.
-7. Flutter pantalla tutor centro actualizada.
+7. **Ejecutar `/owasp-security` sobre los archivos de la pantalla. Resolver issues antes del commit.**
 
 ---
 
@@ -409,10 +413,7 @@ Sin archivos de IA, sin conductor/, sin CLAUDE.md.
 | Defensa tribunal | 2-5 junio | Presentación oral |
 
 ### Vídeo de demo — qué mostrar en cada hito
-**Hito 2 (21 abril)**: Login funcional con JWT, Dashboard con datos reales,
-endpoints en Postman (prácticas, seguimientos, seguridad por roles), Docker levantando todo.
-
-**Hito 3 (5 mayo)**: Todo lo anterior + pantallas Flutter funcionales (seguimientos,
-incidencias, panel tutor), demo del flujo de doble validación.
+**Hito 3 (5 mayo)**: Todo lo del Hito 2 + pantallas Flutter funcionales (seguimientos,
+incidencias, panel tutor empresa y centro), demo del flujo de doble validación.
 
 **Hito 4 (19 mayo)**: Demo completa de la app, todos los roles, chat en tiempo real.

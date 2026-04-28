@@ -22,7 +22,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/practicas")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class PracticaController {
 
     private final PracticaService practicaService;
@@ -72,7 +71,7 @@ public class PracticaController {
      * Acceso: Cualquier usuario autenticado (la lógica de servicio podría filtrar más adelante).
      */
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('ADMIN','TUTOR_CENTRO','TUTOR_EMPRESA') or @practicaService.esParticipante(#id, authentication.name)")
     public ResponseEntity<PracticaResponse> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(practicaService.obtenerPorId(id));
     }
@@ -82,7 +81,7 @@ public class PracticaController {
      * Acceso: ADMIN, TUTORES y el propio ALUMNO.
      */
     @GetMapping("/alumno/{alumnoId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR_CENTRO', 'TUTOR_EMPRESA') or #alumnoId == authentication.principal.id")
+    @PreAuthorize("hasAnyRole('ADMIN','TUTOR_CENTRO','TUTOR_EMPRESA') or @practicaService.perteneceAlAlumnoAutenticado(#alumnoId, authentication.name)")
     public ResponseEntity<List<PracticaResponse>> listarPorAlumno(@PathVariable Long alumnoId) {
         return ResponseEntity.ok(practicaService.listarPorAlumno(alumnoId));
     }

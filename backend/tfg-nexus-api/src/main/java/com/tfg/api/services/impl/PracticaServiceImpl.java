@@ -152,4 +152,22 @@ public class PracticaServiceImpl implements PracticaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario autenticado no encontrado"));
         return practicaMapper.toResponseList(practicaRepository.findByTutorCentroId(tutor.getId()));
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean perteneceAlAlumnoAutenticado(Long alumnoId, String email) {
+        return usuarioRepository.findByEmail(email)
+                .map(u -> u.getId().equals(alumnoId))
+                .orElse(false);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean esParticipante(Long practicaId, String email) {
+        return practicaRepository.findById(practicaId)
+                .map(p -> email.equals(p.getAlumno().getEmail())
+                        || email.equals(p.getTutorCentro().getEmail())
+                        || email.equals(p.getTutorEmpresa().getEmail()))
+                .orElse(false);
+    }
 }

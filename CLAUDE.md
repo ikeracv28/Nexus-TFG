@@ -1,18 +1,11 @@
-# Nexus TFG — Gestión de Prácticas Académicas
-# Configuración para Claude Code — Iker Acevedo Donate / CampusFP
+# Nexus TFG — Claude Code
+
+**Autor**: Iker Acevedo Donate | **Institución**: CampusFP | **Entrega final**: 19 mayo 2026
+**Propósito**: Plataforma centralizada para gestión del ciclo de prácticas académicas (FCT).
 
 ---
 
-## Identidad del Proyecto
-
-- **Autor**: Iker Acevedo Donate
-- **Institución**: CampusFP
-- **Propósito**: TFG — Plataforma centralizada para gestión del ciclo de prácticas académicas (FCT).
-- **Problema**: Sustituir correos, Excel y llamadas por una app única con chat real, seguimiento de horas, gestión de incidencias y paneles por rol.
-
----
-
-## Stack Tecnológico
+## Stack
 
 | Capa | Tecnología |
 |------|-----------|
@@ -20,110 +13,84 @@
 | Seguridad | Spring Security + JWT (jjwt 0.12.5) |
 | Persistencia | PostgreSQL + Hibernate (JPA) + Flyway |
 | Mapeo | MapStruct 1.6.3 + Lombok |
-| Frontend | Flutter (Dart) — SDK ^3.11.4 |
-| Estado Flutter | Provider 6.1.1 |
-| HTTP Flutter | Dio 5.4.0 + flutter_secure_storage |
-| Navegación | go_router 13.2.0 |
+| Frontend | Flutter (Dart) SDK ^3.11.4 + Provider + Dio + go_router |
 | Infraestructura | Docker Compose (db + backend + frontend/Nginx) |
 
 ---
 
-## Estructura del Repositorio
+## Archivos de referencia
 
-```
-TFG/
-├── CLAUDE.md                        ← este archivo (leer siempre al iniciar)
-├── PLAN_SEGURIDAD_OWASP.md          ← plan de seguridad OWASP con checkboxes (leer antes de implementar)
-├── DESIGN_SYSTEM.md                 ← sistema visual Flutter completo
-├── MEMORIA_ACTUALIZACIONES.md       ← fragmentos listos para copiar en la memoria Word
-├── HISTORIAL_CAMBIOS.md             ← bitácora técnica de decisiones
-├── ARQUITECTURA_API.md              ← contrato REST completo
-├── docker-compose.yml
-├── conductor/
-│   ├── tracks/                      ← planes de implementación por fase
-│   ├── product.md
-│   ├── tech-stack.md
-│   └── workflow.md
-├── backend/tfg-nexus-api/
-│   └── src/main/java/com/tfg/api/
-│       ├── controllers/             ← Auth, Practica, Seguimiento, Centro, Empresa, Usuario
-│       ├── services/impl/
-│       ├── models/entity/           ← Usuario, Practica, Seguimiento, Incidencia, Mensaje, Notificacion
-│       ├── models/dto/
-│       ├── models/mapper/           ← MapStruct
-│       ├── models/repository/
-│       ├── security/                ← JwtUtils, Filter, UserDetailsServiceImpl
-│       ├── config/                  ← SecurityConfig
-│       └── exceptions/
-└── frontend/lib/
-    ├── core/
-    │   ├── config/api_client.dart
-    │   └── theme/app_theme.dart     ← sistema de colores y estilos (crear en Hito 3)
-    ├── data/models/
-    ├── data/services/
-    ├── presentation/providers/
-    └── presentation/screens/
-```
+| Archivo | Cuándo leer |
+|---------|-------------|
+| `planes/roles-y-validacion.md` | Antes de tocar seguimientos, incidencias o permisos |
+| `planes/estado-hitos.md` | Para saber qué está hecho y qué queda pendiente |
+| `planes/patrones-codigo.md` | Checklist al crear endpoint nuevo o pantalla Flutter |
+| `planes/decisiones-tecnicas.md` | Antes de proponer alternativas de arquitectura |
+| `planes/repositorios-y-entregas.md` | Al sincronizar el repo de entrega al profesor |
+| `PLAN_SEGURIDAD_OWASP.md` | Antes de implementar cualquier feature nueva |
+| `ARQUITECTURA_API.md` | Contrato REST completo — documentar endpoint antes de implementarlo |
+| `DESIGN_SYSTEM.md` | Antes de implementar cualquier pantalla Flutter |
+| `HISTORIAL_CAMBIOS.md` | Bitácora técnica — registrar cada sesión de cambios |
+| `MEMORIA_ACTUALIZACIONES.md` | Bloques para copiar en la memoria Word del TFG |
 
 ---
 
-## Comandos Esenciales
+## Skills disponibles
 
-### Backend
-```bash
-# Desde backend/tfg-nexus-api/
-./mvnw spring-boot:run          # Arrancar API en :8080
-./mvnw clean install            # Compilar y empaquetar
-./mvnw test                     # Ejecutar todos los tests
-./mvnw flyway:info              # Ver estado de migraciones
+Invocar con `/nombre-skill`. Ejecutar SIEMPRE `/owasp-security` al final de cualquier sesión de código.
+
+| Skill | Cuándo invocar |
+|-------|---------------|
+| `/owasp-security` | Al terminar cualquier tarea de código. Obligatorio antes de commit. |
+| `/java-springboot` | Al diseñar endpoints, configurar Spring Security, Flyway, JPA. |
+| `/java-expert` | Patrones avanzados Java 21 (records, sealed classes, streams). |
+| `/java-junit` | Al escribir tests de integración o tests de seguridad. |
+| `/frontend-design` | Al diseñar o mejorar pantallas Flutter (consultar también DESIGN_SYSTEM.md). |
+| `/mermaid-diagram-specialist` | Al crear diagramas de flujo, ER, secuencia para la memoria del TFG. |
+| `/documentation-writer` | Al redactar bloques para MEMORIA_ACTUALIZACIONES.md. |
+| `/docker-compose-orchestration` | Al modificar docker-compose.yml o configurar redes/volúmenes. |
+| `/multi-stage-dockerfile` | Al modificar los Dockerfiles de backend o frontend. |
+| `/gitignore-gen` | Si se añaden nuevas herramientas al proyecto. |
+| `/agents-md-creator` | Si hay que regenerar este CLAUDE.md desde cero. |
+
+---
+
+## Engram — Memoria persistente
+
+Engram da memoria entre sesiones a Claude Code vía MCP (SQLite local).
+**Binario instalado** en `C:\Users\ikera\go\bin\engram.exe` pero aún no configurado como plugin.
+
+Para activarlo: ejecutar en la terminal del usuario (no disponible desde aquí):
+```
+claude plugin marketplace add Gentleman-Programming/engram
+claude plugin install engram
 ```
 
-### Frontend
+Una vez configurado, engram recordará contexto entre sesiones sin necesidad de releer todos los archivos.
+
+---
+
+## Comandos críticos
+
+### Rebuild tras cualquier cambio de código
+
+> Este problema ha ocurrido varias veces. Seguir siempre este orden.
+
 ```bash
-# Desde frontend/
-flutter pub get                 # Instalar dependencias
-flutter run -d chrome           # Ejecutar en web
-flutter run                     # Ejecutar en emulador/dispositivo
-flutter test                    # Tests
-```
-
-### Docker (entorno completo)
-```bash
-# Desde TFG/
-docker-compose up -d            # Levantar todo (BD + API + Web)
-docker-compose down             # Parar todo
-docker-compose logs -f backend  # Logs del backend en tiempo real
-```
-
-### WORKFLOW OBLIGATORIO tras cualquier cambio de código
-
-> Este problema ha ocurrido tres veces. Seguir este procedimiento siempre.
-
-Cuando se modifique código en backend o frontend y se quiera ver el resultado en localhost:3000:
-
-```powershell
-# 1. Reconstruir las imágenes con el nuevo código (sin caché)
+# 1. Reconstruir sin caché
 docker-compose build --no-cache backend frontend
 
-# 2. Parar contenedores viejos y arrancar los nuevos
+# 2. Reemplazar contenedores
 docker rm -f nexus-db nexus-api nexus-web
 docker-compose up -d
 ```
 
-```
-3. En Chrome con localhost:3000 abierto:
-   Ctrl + Shift + R   ← hard refresh obligatorio (borra caché del JS de Flutter)
-```
+Después: **Ctrl+Shift+R** en Chrome (el browser cachea el JS de Flutter independientemente del contenedor).
 
-**Por qué es necesario el paso 3**: Nginx sirve el bundle JS de Flutter sin cabeceras
-`Cache-Control: no-cache`. El browser puede tener el JS antiguo en caché y servirlo
-aunque el contenedor haya cambiado. Sin el hard refresh el usuario ve el build viejo.
-
-**Nota sobre tokens JWT**: al reconstruir el backend, todos los JWT anteriores quedan
-invalidados (cambio de clave de firma). El ApiClient de Flutter limpia el storage
-automáticamente si la lectura falla — el usuario simplemente tendrá que volver a hacer login.
+Si solo cambia el backend: `docker-compose build --no-cache backend` + `docker rm -f nexus-api` + `docker-compose up -d backend`.
 
 ### Usuarios de prueba
+
 | Email | Contraseña | Rol |
 |-------|-----------|-----|
 | admin@nexus.edu | Admin@Nexus2026 | ADMIN |
@@ -131,289 +98,32 @@ automáticamente si la lectura falla — el usuario simplemente tendrá que volv
 | alumno@nexus.edu | Alumno@Nexus2026 | ALUMNO |
 | tutorempresa@nexus.edu | Empresa@Nexus2026 | TUTOR_EMPRESA |
 
----
+### Comandos habituales
 
-## Roles del Sistema — Lógica Completa
+```bash
+# Backend (desde backend/tfg-nexus-api/)
+./mvnw test                     # Ejecutar todos los tests
+./mvnw flyway:info              # Ver estado de migraciones
 
-| Rol | Propósito real | Pantalla principal |
-|-----|---------------|--------------------|
-| ROLE_ALUMNO | El estudiante en prácticas | Dashboard con progreso, seguimientos, incidencias, chat |
-| ROLE_TUTOR_CENTRO | Tutor del instituto — supervisa lo académico | Panel con lista de alumnos, validación final, incidencias, chat |
-| ROLE_TUTOR_EMPRESA | Responsable en la empresa — valida el trabajo real | Pantalla minimalista solo para firmar partes semanales |
-| ROLE_ADMIN | Administrador del centro educativo | CRUD completo de prácticas, usuarios, empresas, centros |
+# Frontend (desde frontend/)
+flutter pub get && flutter run -d chrome
 
-### Distinción crítica entre los dos tutores
-
-**TUTOR_EMPRESA** — valida el trabajo real (equivale a la firma en papel actual):
-- Recibe aviso cuando el alumno registra un parte semanal.
-- Puede validar o rechazar (rechazo requiere motivo obligatorio).
-- Su pantalla es minimalista: lista de partes pendientes de firma + botones.
-- NO tiene acceso a chat, incidencias, ni historial académico.
-- Es la primera validación. Sin ella, el tutor del centro no puede actuar.
-
-**TUTOR_CENTRO** — supervisa el proceso formativo global:
-- Solo ve los partes que ya pasaron por el tutor de empresa.
-- Da el visto bueno final (segunda y definitiva validación).
-- Tiene acceso completo a incidencias y chat con el alumno.
-- Es el interlocutor del alumno cuando hay un problema con la empresa.
-- Recibe notificación automática si el tutor de empresa rechaza un parte.
-
----
-
-## Lógica de Validación de Seguimientos — DISEÑO DEFINITIVO
-
-Acordado el 18/04/2025. Reemplaza el flujo anterior de validación simple.
-
-### Estados del seguimiento
-
-```
-PENDIENTE_EMPRESA  → Alumno registró el parte. Esperando firma del tutor de empresa.
-PENDIENTE_CENTRO   → Tutor de empresa lo validó. Esperando visto bueno del tutor del centro.
-COMPLETADO         → Ambos tutores validaron. Horas contabilizadas en el progreso.
-RECHAZADO          → Tutor de empresa lo rechazó. Se crea incidencia automática.
+# Docker
+docker-compose logs -f backend  # Logs en tiempo real
 ```
 
-La migración V4 actualiza el campo `estado` en `seguimientos`:
-- `PENDIENTE` existente pasa a ser `PENDIENTE_EMPRESA`.
-- `VALIDADO` existente pasa a ser `COMPLETADO`.
-
-### Flujo paso a paso
-
-1. Alumno registra un parte (fecha, horas, descripción). Estado: `PENDIENTE_EMPRESA`.
-2. Tutor de empresa recibe aviso y decide:
-   - **Valida**: estado pasa a `PENDIENTE_CENTRO`. Tutor del centro recibe aviso.
-   - **Rechaza** (motivo obligatorio): estado pasa a `RECHAZADO`. Se crea automáticamente
-     una Incidencia de tipo `RECHAZO_PARTE` vinculada a la práctica. El tutor del centro
-     la ve en su panel. El alumno corrige y reenvía el parte.
-3. Tutor del centro revisa el parte (ya validado por empresa) y da el visto bueno.
-   Estado pasa a `COMPLETADO`. Las horas se suman al progreso de la práctica.
-
-### Endpoints de validacion en SeguimientoController
-
-```
-PATCH /api/v1/seguimientos/{id}/validar-empresa
-  @PreAuthorize("hasRole('TUTOR_EMPRESA')")
-  Params: nuevoEstado (PENDIENTE_CENTRO | RECHAZADO), motivo (obligatorio si RECHAZADO)
-
-PATCH /api/v1/seguimientos/{id}/validar-centro
-  @PreAuthorize("hasRole('TUTOR_CENTRO')")
-  Params: ninguno (solo completa, no puede rechazar en esta fase)
-```
-
-Implementacion completa en `SeguimientoServiceImpl.java` (validarEmpresa, validarCentro, crearIncidenciaRechazo).
-
 ---
 
-## Estado Actual del Proyecto
+## Reglas de Oro
 
-> Hito 2 (50%): completado el 21/04/2026.
+**Backend**: Flyway para todo cambio de esquema. DTOs en controllers (nunca entidades JPA). MapStruct para mapeos. Validar transiciones de estado en el servicio. Documentar endpoint en ARQUITECTURA_API.md antes de implementarlo.
 
-### Completado — Hito 3 (parcial, en curso)
+**Flutter**: Todos los colores de `NexusColors`. Adaptativo con `LayoutBuilder` (>600px = sidebar). Validar en cliente Y en backend independientemente.
 
-- [x] [BACKEND] Migración Flyway V5: estados PENDIENTE_EMPRESA / PENDIENTE_CENTRO / COMPLETADO / RECHAZADO
-- [x] [BACKEND] Seed tutor empresa (V4: tutorempresa@nexus.edu / 123456)
-- [x] [BACKEND] IncidenciaController + IncidenciaService completos (CRUD + cambio de estado)
-- [x] [BACKEND] Refactorizar SeguimientoServiceImpl: validarEmpresa() + validarCentro() + incidencia automática al rechazar
-- [x] [BACKEND] Tests del nuevo flujo: 5 tests (4 casos de negocio + flujo completo) — todos pasan
-- [x] [FLUTTER] Crear core/theme/app_theme.dart con NexusColors y NexusSizes
-- [x] [FLUTTER] Configurar go_router con rutas por rol y guards de autenticación
-- [x] [FLUTTER] Navegación adaptativa: sidebar 52px en web, BottomNavigationBar en móvil
-- [x] [FLUTTER] Pantalla de validación del tutor de empresa (PanelTutorEmpresaScreen — sidebar verde, stats, lista de partes con firma)
-- [x] [FLUTTER] Panel del tutor del centro (PanelTutorCentroScreen — 3 columnas, sidebar con 4 modos funcionales, lista alumnos, detalle con progreso FCT)
-- [x] [FLUTTER] Contador visual de horas (barra de progreso FCT con % en DetailPanel del tutor centro)
+**Seguridad**: Sin `@CrossOrigin(origins = "*")`. `@PreAuthorize` explícito en cada endpoint. Parámetros de estado siempre enums o conjuntos cerrados. Logs sin datos personales. `/owasp-security` antes de cada commit.
 
-### Pendiente — Hito 3
+**Git**: Commits por bloque funcional completo. Mensajes en español explicando el por qué. Push antes de terminar sesión.
 
-- [ ] [BACKEND] WebSocket/STOMP para chat en tiempo real
-- [ ] [FLUTTER] Pantalla de registro de seguimiento del alumno (FAB → formulario → POST /seguimientos)
-- [ ] [FLUTTER] Verificar endpoints getMisPracticasComoTutorCentro y getMisPracticasComoTutorEmpresa en backend
-- [ ] [FLUTTER] Pantalla de incidencias del alumno (mejora — actualmente lista básica, sin gestión de estado)
-- [ ] [FLUTTER] Pantalla de chat (WebSocket — placeholder implementado, funcionalidad real en Hito 4)
+**Memoria del TFG**: Cada feature completada → bloque en `MEMORIA_ACTUALIZACIONES.md`. Tono académico en primera persona, cada decisión justificada.
 
----
-
-## Seguridad OWASP — Regla Obligatoria
-
-> Referencia: https://skills.sh/hoodini/ai-agents-skills/owasp-security
-> Plan detallado: PLAN_SEGURIDAD_OWASP.md (leer antes de implementar cualquier feature)
-
-**OBLIGATORIO antes de cerrar cualquier tarea de código:**
-1. Ejecutar `/owasp-security` sobre todos los archivos modificados.
-2. Resolver cualquier hallazgo CRITICO o ALTO antes del commit.
-3. Confirmar en el commit message que se ejecutó la revisión OWASP.
-
-### Reglas OWASP que aplican a TODO el código nuevo
-
-**Control de Acceso (A01):**
-- Nunca usar `@CrossOrigin(origins = "*")` en ningún controller. La config CORS global en `SecurityConfig` es la única fuente de verdad.
-- Todo endpoint debe tener `@PreAuthorize` con roles explícitos. Prohibido usar solo `isAuthenticated()` sin justificación documentada.
-- Verificar propiedad de recursos en el servicio, no solo en el controller. Un alumno solo puede acceder a sus propias entidades.
-- Usar `@practicaService.esParticipante()` u otro método de verificación de propiedad en expresiones SpEL cuando el acceso depende de la relación con el recurso.
-
-**Criptografía (A02):**
-- Los JWT secret se leen desde variables de entorno y se decodifican desde Base64 (`Decoders.BASE64.decode()`). Nunca `secret.getBytes()` directamente.
-- La URL base de la API en Flutter usa `String.fromEnvironment()`, no una constante literal.
-- Las contraseñas de usuarios de prueba deben cumplir la política: 10+ caracteres, mayúscula, minúscula y número.
-
-**Injection (A03):**
-- Los parámetros de estado (`nuevoEstado`, tipo de incidencia, etc.) siempre son enums Java, nunca Strings libres.
-- Prohibido concatenar strings en queries JPA. Solo métodos derivados o `@Query` con parámetros nombrados.
-
-**Diseño seguro (A04):**
-- Los endpoints de autenticación (`/auth/login`, `/auth/register`) están bajo rate limiting. Todo endpoint nuevo de autenticación debe añadirse al `RateLimitFilter`.
-- Los formularios Flutter validan en cliente Y el backend valida independientemente. No confiar en la validación del cliente.
-
-**Configuración (A05):**
-- `spring.jpa.show-sql=false` y `logging.level=WARN` son los valores por defecto. Los overrides de DEV solo van en `application-dev.properties`.
-- Los headers HTTP de seguridad (`X-Frame-Options`, `X-Content-Type-Options`, HSTS) están configurados en `SecurityConfig` y en Nginx.
-
-**Autenticación (A07):**
-- Los mensajes de error de autenticación son genéricos. Nunca revelar si el email existe, si el DNI está tomado, ni detalles internos.
-- El logout siempre llama al endpoint `POST /auth/logout` del backend para revocar el token en servidor.
-
-**Logging (A09):**
-- Los eventos de seguridad (login fallido, acceso denegado, cambios de estado de seguimientos) se loguean con nivel WARN/INFO.
-- Los logs nunca contienen datos personales (emails, nombres, contraseñas). Solo IDs y roles.
-
----
-
-## Reglas de Oro (Iron Rules)
-
-### Código
-- Entidad nueva en backend siempre con migración Flyway VN__Descripcion.sql.
-- Endpoint nuevo siempre documentado en ARQUITECTURA_API.md antes de implementar.
-- Los DTOs protegen siempre las entidades JPA. Nunca exponer entidades en controllers.
-- Los mapeos van en MapStruct. Nunca mapear a mano en el servicio.
-- Las transiciones de estado se validan en el servicio, no en el controller.
-- El orden empresa-primero-centro-después es una regla de negocio inviolable en el servicio.
-
-### Diseño Visual Flutter
-- Todos los colores vienen de NexusColors en app_theme.dart. Nunca hardcodear colores en pantallas.
-- Verde para validado/éxito, ámbar para pendiente, rojo para rechazado/incidencia, azul para activo.
-- Pantallas adaptativas con LayoutBuilder (ancho > 600px = web con NavigationRail).
-- Consultar DESIGN_SYSTEM.md antes de implementar cualquier pantalla nueva.
-
-### Git
-- Commits por bloques funcionales completos (no por archivo, no acumulando semanas).
-- Commit tras completar: endpoint + servicio + test (backend); pantalla conectada a API (Flutter).
-- Push tras cada commit de feature completa y siempre antes de terminar sesión.
-- Mensajes en español explicando el por qué, no el qué.
-
-### Memoria del TFG
-- Cada feature completada genera bloque listo para copiar en MEMORIA_ACTUALIZACIONES.md.
-- Primera persona, tono académico cercano, cada decisión con su justificación.
-
-### Rol Pedagógico
-- Flutter: explicar el concepto antes del código. Iker no tiene experiencia con Flutter.
-- Cambios arquitectónicos: explicar el por qué con diagrama antes de implementar.
-- Las explicaciones van ANTES del código, nunca después.
-
-### Comunicación
-- Español técnico. Sin raya larga (em dash). Actitud crítica. Voz activa. Sin rellenos.
-
----
-
-## Contexto del Evaluador
-
-El tutor corrige con dos IAs: una local entrenada por él y Claude en la nube.
-
-Valora: arquitectura por capas limpia, JWT funcional con roles, decisiones justificadas por escrito,
-tests reales con casos de negocio, coherencia doc/código, sin secretos en repo.
-
-Penaliza: inconsistencias doc/código, excepciones genéricas con info interna,
-features en la memoria inexistentes en el código, código sin tests.
-
----
-
-## Decisiones Técnicas Registradas
-
-**Flyway sobre ddl-auto=update**: Control total y auditable. update puede destruir datos en producción.
-
-**MapStruct sobre mapeo manual**: Genera código en compilación sin reflection. Errores en compilación, no en runtime.
-
-**@EqualsAndHashCode(of = "id") sobre @Data**: @Data rompe JPA con relaciones lazy y provoca StackOverflowError.
-
-**Provider sobre Riverpod**: Suficiente para el TFG, más sencillo de justificar en la memoria.
-
-**WebSocket/STOMP para el chat**: REST con polling tiene latencia inaceptable. STOMP es el estándar en Spring Boot.
-
-**Doble validación de seguimientos (18/04/2025)**: La validación simple no refleja la realidad de las FCT.
-Existe una firma semanal del tutor de empresa (valida el trabajo real) y una supervisión académica del
-tutor del centro (valida lo formativo). Son responsabilidades distintas. El rechazo genera incidencia
-automática para proteger al alumno sin que tenga que reportarlo manualmente.
-
-**Sistema visual Nexus (18/04/2025)**: Diseño limpio estilo Notion/Linear. Color semántico obligatorio.
-Adaptativo web/móvil con LayoutBuilder. Todo centralizado en app_theme.dart para coherencia y mantenimiento.
-
----
-
-## Patrones de Código Establecidos
-
-### Nuevo endpoint REST (backend)
-1. Migración Flyway si hay cambios en BD.
-2. Entidad JPA si es nueva.
-3. DTOs Request y Response con validaciones Bean Validation (@NotBlank, @Size, @Min, @Max, enums para estados).
-4. Mapper MapStruct.
-5. Repository extendiendo JpaRepository.
-6. Interfaz Service e implementación en impl/. Verificar propiedad del recurso en el servicio.
-7. Controller con `@PreAuthorize` explicito en cada método. Sin `@CrossOrigin`. Sin `isAuthenticated()` sin justificación.
-8. Tests cubriendo casos de negocio (happy path + acceso denegado + propietario incorrecto).
-9. Actualizar ARQUITECTURA_API.md.
-10. **Ejecutar `/owasp-security` sobre los archivos del endpoint. Resolver issues antes del commit.**
-
-### Nueva pantalla Flutter
-1. Consultar DESIGN_SYSTEM.md.
-2. Model en data/models/ sincronizado con el DTO.
-3. Service en data/services/ usando ApiClient. Manejar 401 (redirect a login), 403 (error UI), 429 (rate limit).
-4. Provider en presentation/providers/ extendiendo ChangeNotifier.
-5. Screen en presentation/screens/ usando NexusColors. Validar inputs en cliente antes de enviar.
-6. Ruta en go_router con guard de rol si aplica.
-7. **Ejecutar `/owasp-security` sobre los archivos de la pantalla. Resolver issues antes del commit.**
-
----
-
-## Estrategia de Repositorios
-
-### El problema
-Los archivos de configuración de IA (CLAUDE.md, DESIGN_SYSTEM.md, conductor/, etc.)
-no deben aparecer en el repositorio que ve el profesor. La solución adoptada es mantener
-dos repositorios separados.
-
-### Repositorio de trabajo (privado/personal)
-Contiene todo: código, archivos de IA, conductor/, CLAUDE.md, DESIGN_SYSTEM.md, etc.
-Aquí es donde trabajamos con Claude Code.
-
-### Repositorio de entrega (público, para el profesor)
-URL: https://github.com/ikeracv28/TFG-Seguimiento
-Contiene solo: código fuente limpio, memoria, README, diagramas.
-Sin archivos de IA, sin conductor/, sin CLAUDE.md.
-
-### Flujo de trabajo
-1. Desarrollar y commitear en el repositorio de trabajo.
-2. Antes de cada entrega de hito, sincronizar el código limpio al repositorio de entrega.
-3. El repositorio de entrega es el que se incluye en el vídeo demo y se entrega al profesor.
-
-### Qué NO debe aparecer en el repositorio de entrega
-- CLAUDE.md
-- DESIGN_SYSTEM.md
-- MEMORIA_ACTUALIZACIONES.md
-- HISTORIAL_CAMBIOS_NEXUS.md
-- conductor/ (toda la carpeta)
-- skills-lock.json
-- Cualquier archivo .md de configuración de agentes IA
-
-### Calendario de entregas
-| Hito | Fecha | Requisitos |
-|------|-------|-----------|
-| 25% | 7 abril | Entregado |
-| 50% | 21 abril | Memoria + repo limpio + vídeo 5min |
-| 75% | 5 mayo | Memoria + repo limpio + vídeo 5min |
-| 100% | 19 mayo | Memoria + repo limpio + vídeo 5min |
-| Memoria defensa | 26 mayo | Memoria definitiva |
-| Defensa tribunal | 2-5 junio | Presentación oral |
-
-### Vídeo de demo — qué mostrar en cada hito
-**Hito 3 (5 mayo)**: Todo lo del Hito 2 + pantallas Flutter funcionales (seguimientos,
-incidencias, panel tutor empresa y centro), demo del flujo de doble validación.
-
-**Hito 4 (19 mayo)**: Demo completa de la app, todos los roles, chat en tiempo real.
+**Comunicación**: Español técnico. Actitud crítica. Explicar el concepto antes del código (Iker no tiene experiencia previa con Flutter).

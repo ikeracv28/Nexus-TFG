@@ -87,6 +87,25 @@ Ver procedimiento completo en la sección "Workflow de actualización" de `CLAUD
 
 ---
 
+## [19/04/2026] — Hito 2: datos de prueba, endpoint /me, dashboard real, SeguimientoScreen
+
+### Backend
+
+- **Migración V4__Datos_Prueba_Hito2.sql**: nueva empresa EjemploTech S.L., usuario `tutorempresa@nexus.edu`, práctica activa FCT-2025-001 para el alumno (240h, 02/04-01/11/2025), 3 seguimientos con estados distintos y 1 incidencia abierta — suficiente para mostrar el flujo completo en la demo.
+- **GET /api/v1/practicas/me**: nuevo endpoint exclusivo para ROLE_ALUMNO. El servicio obtiene el email del JWT mediante `SecurityContextHolder` en lugar de recibir `alumnoId` como parámetro. Añadido `findFirstByAlumnoIdAndEstado()` al `PracticaRepository`.
+- **IncidenciaController básico**: `GET /incidencias/practica/{id}` y `GET /incidencias/{id}`. El mapeo se hace inline sin MapStruct (se formaliza en Hito 3 cuando el módulo esté completo).
+
+### Flutter
+
+- **PracticaProvider refactorizado**: `cargarPracticas(alumnoId)` sustituido por `cargarDashboard()` sin parámetros. Las tres llamadas (práctica activa, seguimientos, incidencias) se ejecutan en paralelo con `Future.wait()` para minimizar la latencia percibida.
+- **Modelos y servicios nuevos**: `seguimiento_model.dart`, `incidencia_model.dart`, `seguimiento_service.dart`, `incidencia_service.dart`, `practica_service.dart` con `getPracticaActiva()`.
+- **Dashboard con datos reales**: barra de progreso conectada a `horasCompletadas` (solo seguimientos COMPLETADO). Cards de seguimientos e incidencias muestran los primeros 3 items reales con color semántico.
+- **SeguimientoScreen**: formulario con DatePicker (fecha ≤ hoy), horas (1-24), descripción. POST /seguimientos y actualización local del provider. SnackBar de confirmación.
+- **Fix DatePicker**: el picker aparecía en blanco por pasar `locale: Locale('es','ES')` sin `flutter_localizations` configurado. Solución: añadir `flutter_localizations` al `pubspec.yaml` y configurar `localizationsDelegates` y `supportedLocales` en `main.dart`.
+- **Tests**: 10/10 pasando. NOTA: `JAVA_HOME` del sistema apunta a Java 11 — para correr tests desde terminal: `JAVA_HOME="C:/Program Files/Eclipse Adoptium/jdk-21.0.10.7-hotspot" ./mvnw test`.
+
+---
+
 ## [19/04/2026] — Navegación funcional del Dashboard + POST incidencias
 
 ### Backend (Spring Boot)
@@ -127,6 +146,14 @@ Ver procedimiento completo en la sección "Workflow de actualización" de `CLAUD
 ### Documentación y Seguimiento
 - **Memoria de Seguimiento**: Actualización del plan operativo en `conductor/` marcando la Tarea 4 (Gestión de Prácticas) como completada.
 - **Bitácora**: Unificación de registros en este documento (`HISTORIAL_CAMBIOS.md`) para simplificar la futura redacción de la memoria del TFG.
+
+---
+
+## [18/04/2026] — Decisión: sistema de diseño visual centralizado
+
+Antes de implementar más pantallas Flutter se definió un sistema de diseño centralizado en `app_theme.dart`. Los colores estaban hardcodeados directamente en los widgets, lo que hacía imposible mantener coherencia visual a medida que creciera la app. El momento óptimo para definirlo es con una sola pantalla implementada: con ninguna no hay referencia real, con más habría que refactorizar todo.
+
+**Decisiones**: `NexusColors` (semántico: azul=activo, verde=validado, ámbar=pendiente, rojo=incidencia/rechazado) y `NexusSizes` (espaciados y radios consistentes). Navegación adaptativa con `LayoutBuilder` — `NavigationRail` en web, `BottomNavigationBar` en móvil. Referencia completa en `DESIGN_SYSTEM.md`.
 
 ---
 

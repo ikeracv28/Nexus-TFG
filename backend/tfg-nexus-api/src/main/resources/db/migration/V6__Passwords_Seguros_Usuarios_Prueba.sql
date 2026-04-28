@@ -15,5 +15,6 @@ WHERE email = 'alumno@nexus.edu';
 UPDATE usuarios SET password_hash = '$2a$10$coluRGpwNE/aDvxFUaMv5.AdNKOfhBDenvxh2Okrk284Gp5apSJmS'
 WHERE email = 'tutorempresa@nexus.edu';
 
--- Eliminar usuarios temporales creados para generar los hashes
+-- Eliminar usuarios temporales creados para generar los hashes (primero la tabla intermedia por FK)
+DELETE FROM usuario_roles WHERE usuario_id IN (SELECT id FROM usuarios WHERE email LIKE 'tmp%');
 DELETE FROM usuarios WHERE email LIKE 'tmp%';

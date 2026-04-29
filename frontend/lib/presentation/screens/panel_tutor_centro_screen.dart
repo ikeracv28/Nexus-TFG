@@ -8,7 +8,7 @@ import '../../data/models/seguimiento_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tutor_centro_provider.dart';
 
-enum _Mode { alumnos, partes, incidencias, chat }
+enum _Mode { dashboard, alumnos, partes, incidencias, chat }
 
 class PanelTutorCentroScreen extends StatefulWidget {
   const PanelTutorCentroScreen({super.key});
@@ -19,7 +19,7 @@ class PanelTutorCentroScreen extends StatefulWidget {
 }
 
 class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
-  _Mode _mode = _Mode.alumnos;
+  _Mode _mode = _Mode.dashboard;
 
   @override
   void initState() {
@@ -90,6 +90,8 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
 
   Widget _buildWidePanel(TutorCentroProvider provider) {
     switch (_mode) {
+      case _Mode.dashboard:
+        return _VistaDashboard(provider: provider);
       case _Mode.partes:
         return _AllPartesPanel(provider: provider, onValidar: _confirmarValidar);
       case _Mode.incidencias:
@@ -104,6 +106,8 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
 
   Widget _buildMobileBody(TutorCentroProvider provider, AuthProvider auth) {
     switch (_mode) {
+      case _Mode.dashboard:
+        return _VistaDashboard(provider: provider);
       case _Mode.partes:
         return _AllPartesPanel(provider: provider, onValidar: _confirmarValidar);
       case _Mode.incidencias:
@@ -285,6 +289,14 @@ class _Sidebar extends StatelessWidget {
                 const Icon(Icons.star_outline, size: 13, color: Colors.white),
           ),
           const SizedBox(height: 10),
+          _NavBtn(
+            icon: Icons.dashboard_outlined,
+            activeIcon: Icons.dashboard,
+            tooltip: 'Dashboard',
+            isActive: mode == _Mode.dashboard,
+            onTap: () => onChangeMode(_Mode.dashboard),
+          ),
+          const SizedBox(height: 4),
           _NavBtn(
             icon: Icons.people_outlined,
             activeIcon: Icons.people,
@@ -1701,6 +1713,13 @@ class _MobileBottomNav extends StatelessWidget {
       child: Row(
         children: [
           _BottomItem(
+            icon: Icons.dashboard_outlined,
+            activeIcon: Icons.dashboard,
+            label: 'Inicio',
+            isActive: mode == _Mode.dashboard,
+            onTap: () => onChangeMode(_Mode.dashboard),
+          ),
+          _BottomItem(
             icon: Icons.people_outlined,
             activeIcon: Icons.people,
             label: 'Alumnos',
@@ -2039,6 +2058,437 @@ class _EmptyState extends StatelessWidget {
                 textAlign: TextAlign.center),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────────
+
+class _VistaDashboard extends StatelessWidget {
+  final TutorCentroProvider provider;
+  const _VistaDashboard({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final activas =
+        provider.practicas.where((p) => p.estado == 'ACTIVA').length;
+    final convenios =
+        provider.practicas.map((p) => p.empresaNombre).toSet().length;
+    final incAbiertas =
+        provider.todasIncidencias.where((i) => i.estaAbierta).length;
+    final partesValidar = provider.todosPendientesCentro.length;
+    final incRecientes = provider.todasIncidencias.take(4).toList();
+
+    if (provider.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return RefreshIndicator(
+      onRefresh: () => context.read<TutorCentroProvider>().cargar(),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Panel del Centro Educativo',
+                          style: NexusText.heading2
+                              .copyWith(letterSpacing: -0.3)),
+                      const SizedBox(height: 2),
+                      Text(
+                        'CampusFP · ${auth.user?.nombreCompleto ?? ''} · Tutor FCT',
+                        style: NexusText.body
+                            .copyWith(color: NexusColors.inkSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          'Las prácticas se crean desde el panel de administración'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Nueva práctica'),
+                  style: OutlinedButton.styleFrom(
+                    textStyle: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w500),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Stat cards
+            Row(
+              children: [
+                _DashStatCard(
+                    valor: activas,
+                    label: 'Alumnos activos',
+                    color: NexusColors.success),
+                const SizedBox(width: 12),
+                _DashStatCard(
+                    valor: convenios,
+                    label: 'Convenios activos',
+                    color: NexusColors.primary),
+                const SizedBox(width: 12),
+                _DashStatCard(
+                    valor: incAbiertas,
+                    label: 'Incidencias abiertas',
+                    color: NexusColors.danger),
+                const SizedBox(width: 12),
+                _DashStatCard(
+                    valor: partesValidar,
+                    label: 'Partes por validar',
+                    color: NexusColors.warning),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Two-column layout
+            LayoutBuilder(
+              builder: (ctx, constraints) {
+                if (constraints.maxWidth > 680) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                          flex: 3,
+                          child: _AlumnosYCarga(provider: provider)),
+                      const SizedBox(width: 16),
+                      Expanded(
+                          flex: 2,
+                          child: _IncidenciasRecientes(
+                              incidencias: incRecientes,
+                              provider: provider)),
+                    ],
+                  );
+                }
+                return Column(
+                  children: [
+                    _AlumnosYCarga(provider: provider),
+                    const SizedBox(height: 16),
+                    _IncidenciasRecientes(
+                        incidencias: incRecientes, provider: provider),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DashStatCard extends StatelessWidget {
+  final int valor;
+  final String label;
+  final Color color;
+  const _DashStatCard(
+      {required this.valor, required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: NexusColors.surface,
+          border: Border.all(
+              color: NexusColors.border, width: NexusSizes.borderWidth),
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withAlpha(5),
+                blurRadius: 4,
+                offset: const Offset(0, 1))
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '$valor',
+              style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                  letterSpacing: -0.5),
+            ),
+            const SizedBox(height: 4),
+            Text(label,
+                style:
+                    NexusText.caption.copyWith(color: NexusColors.inkSecondary),
+                maxLines: 2),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AlumnosYCarga extends StatelessWidget {
+  final TutorCentroProvider provider;
+  const _AlumnosYCarga({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final practicas = provider.practicas;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: NexusColors.surface,
+        border: Border.all(
+            color: NexusColors.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withAlpha(5),
+              blurRadius: 4,
+              offset: const Offset(0, 1))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Text('ALUMNOS Y CARGA',
+                style: NexusText.label
+                    .copyWith(color: NexusColors.inkTertiary, letterSpacing: 1.0)),
+          ),
+          const Divider(
+              height: 1,
+              thickness: NexusSizes.borderWidth,
+              color: NexusColors.border),
+          if (practicas.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text('Sin alumnos asignados',
+                  style:
+                      NexusText.body.copyWith(color: NexusColors.inkSecondary)),
+            )
+          else
+            ...practicas.asMap().entries.map((e) {
+              final p = e.value;
+              final isLast = e.key == practicas.length - 1;
+              final horas = provider.horasCompletadasDe(p.id);
+              final total = p.horasTotales ?? 240;
+              final progreso =
+                  total > 0 ? (horas / total).clamp(0.0, 1.0) : 0.0;
+              final initials = _initials(p.alumnoNombre);
+
+              return Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  border: isLast
+                      ? null
+                      : const Border(
+                          bottom: BorderSide(
+                              color: NexusColors.border,
+                              width: NexusSizes.borderWidth)),
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundColor: NexusColors.primaryLight,
+                      child: Text(initials,
+                          style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: NexusColors.primaryText)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(p.alumnoNombre,
+                              style: NexusText.small
+                                  .copyWith(fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis),
+                          Text(
+                            '${p.empresaNombre} · ${horas}/${total}h',
+                            style: NexusText.caption.copyWith(
+                                color: NexusColors.inkSecondary),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          LinearProgressIndicator(
+                            value: progreso,
+                            backgroundColor: NexusColors.border,
+                            color: progreso > 0.8
+                                ? NexusColors.success
+                                : NexusColors.primary,
+                            minHeight: 4,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
+      ),
+    );
+  }
+
+  String _initials(String nombre) {
+    final parts =
+        nombre.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts[0][0].toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+}
+
+class _IncidenciasRecientes extends StatelessWidget {
+  final List<Incidencia> incidencias;
+  final TutorCentroProvider provider;
+  const _IncidenciasRecientes(
+      {required this.incidencias, required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: NexusColors.surface,
+        border: Border.all(
+            color: NexusColors.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withAlpha(5),
+              blurRadius: 4,
+              offset: const Offset(0, 1))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Text('INCIDENCIAS RECIENTES',
+                style: NexusText.label
+                    .copyWith(color: NexusColors.inkTertiary, letterSpacing: 1.0)),
+          ),
+          const Divider(
+              height: 1,
+              thickness: NexusSizes.borderWidth,
+              color: NexusColors.border),
+          if (incidencias.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text('Sin incidencias recientes',
+                  style:
+                      NexusText.body.copyWith(color: NexusColors.inkSecondary)),
+            )
+          else
+            ...incidencias.asMap().entries.map((e) {
+              final isLast = e.key == incidencias.length - 1;
+              final inc = e.value;
+              final practica = provider.practicaDe(inc.practicaId);
+              final alumnoNombre = practica?.alumnoNombre ?? 'Alumno';
+              final fecha =
+                  DateFormat('d/MM', 'es_ES').format(inc.fechaCreacion);
+
+              Color badgeBg;
+              Color badgeText;
+              String badgeLabel;
+              switch (inc.estado) {
+                case 'ABIERTA':
+                  badgeBg = NexusColors.dangerLight;
+                  badgeText = NexusColors.dangerText;
+                  badgeLabel = 'Abierta';
+                  break;
+                case 'EN_PROCESO':
+                  badgeBg = NexusColors.primaryLight;
+                  badgeText = NexusColors.primaryText;
+                  badgeLabel = 'Proceso';
+                  break;
+                case 'RESUELTA':
+                  badgeBg = NexusColors.successLight;
+                  badgeText = NexusColors.successText;
+                  badgeLabel = 'Resuelta';
+                  break;
+                default:
+                  badgeBg = const Color(0xFFF1EFE8);
+                  badgeText = NexusColors.neutralText;
+                  badgeLabel = 'Cerrada';
+              }
+
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 11),
+                decoration: BoxDecoration(
+                  border: isLast
+                      ? null
+                      : const Border(
+                          bottom: BorderSide(
+                              color: NexusColors.border,
+                              width: NexusSizes.borderWidth)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      margin: const EdgeInsets.only(top: 4, right: 10),
+                      decoration: BoxDecoration(
+                        color: inc.estaAbierta
+                            ? NexusColors.danger
+                            : NexusColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '$alumnoNombre — ${inc.descripcion}',
+                            style: NexusText.small
+                                .copyWith(fontWeight: FontWeight.w500),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '$fecha · ${practica?.tutorCentroNombre ?? ''}',
+                            style: NexusText.caption.copyWith(
+                                color: NexusColors.inkSecondary, fontSize: 10),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    nexusEstadoBadge(badgeLabel,
+                        bg: badgeBg, textColor: badgeText),
+                  ],
+                ),
+              );
+            }),
+        ],
       ),
     );
   }

@@ -1,3 +1,8 @@
+## Memory
+You have access to Engram persistent memory via MCP tools (mem_save, mem_search, mem_session_summary, etc.).
+Save proactively after significant work — don't wait to be asked.
+After any compaction or context reset, call mem_context to recover session state before continuing.
+
 # Nexus TFG — Claude Code
 
 **Autor**: Iker Acevedo Donate | **Institución**: CampusFP | **Entrega final**: 19 mayo 2026
@@ -60,11 +65,7 @@ Invocar con `/nombre-skill`. Ejecutar SIEMPRE `/owasp-security` al final de cual
 Engram da memoria entre sesiones a Claude Code vía MCP (SQLite local).
 **Binario instalado** en `C:\Users\ikera\go\bin\engram.exe` pero aún no configurado como plugin.
 
-Para activarlo: ejecutar en la terminal del usuario (no disponible desde aquí):
-```
-claude plugin marketplace add Gentleman-Programming/engram
-claude plugin install engram
-```
+
 
 Una vez configurado, engram recordará contexto entre sesiones sin necesidad de releer todos los archivos.
 

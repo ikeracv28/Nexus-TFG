@@ -4,6 +4,20 @@ Este documento registra las implementaciones técnicas realizadas a lo largo del
 
 ---
 
+## [29/04/2026] — Dashboard Tutor Centro + Mobile Nav Admin + Nginx Cache Fix
+
+### Frontend (Flutter)
+
+- **PanelTutorCentroScreen — modo Dashboard**: Se añade `dashboard` al enum `_Mode` como vista inicial por defecto. La vista `_VistaDashboard` muestra 4 tarjetas de estadísticas (prácticas activas, convenios/empresas, incidencias abiertas, partes por validar) calculadas desde `TutorCentroProvider`, un panel `_AlumnosYCarga` con barra de progreso por alumno y un panel `_IncidenciasRecientes` con las 4 últimas incidencias y badge de estado coloreado. Layout de dos columnas en pantallas >600px mediante `LayoutBuilder`. Iconos actualizados en sidebar y bottom nav.
+- **PanelAdminScreen — navbar móvil**: El método `build()` bifurca en dos Scaffolds según `constraints.maxWidth < 600`. En móvil se construye un `Scaffold` con `AppBar` (fondo `NexusColors.ink`, título dinámico por modo) y `BottomNavigationBar` personalizado (`_MobileBottomNavAdmin`) con 3 tabs: Inicio, Alumnos/Prácticas, Empresas. Sin esta corrección la versión móvil mostraba el contenido sin forma de cambiar de sección.
+
+### Infraestructura (Nginx + Docker)
+
+- **nginx.conf — Cache-Control para Flutter web**: Nuevo archivo de configuración Nginx con tres políticas de caché: `no-store, no-cache, must-revalidate` para `index.html`, `flutter_service_worker.js` y `flutter_bootstrap.js`; `no-cache` (ETag) para `main.dart.js`; `max-age=1y, immutable` para assets con hash en el nombre. Soluciona el problema recurrente de que el browser servía el bundle JS antiguo después de rebuilds Docker.
+- **Dockerfile frontend**: Se añade `COPY nginx.conf /etc/nginx/conf.d/default.conf` en la etapa Nginx (etapa 2) para que la política de caché se aplique automáticamente en cada despliegue.
+
+---
+
 ## [28/04/2026] — Seguridad OWASP Bloque 2: A03 + A07 logout + A02 passwords + A06 audit
 
 ### Backend (Spring Boot)

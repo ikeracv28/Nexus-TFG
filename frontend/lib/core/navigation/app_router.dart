@@ -4,6 +4,7 @@ import '../../presentation/screens/login_screen.dart';
 import '../../presentation/screens/dashboard_screen.dart';
 import '../../presentation/screens/panel_tutor_empresa_screen.dart';
 import '../../presentation/screens/panel_tutor_centro_screen.dart';
+import '../../presentation/screens/panel_admin_screen.dart';
 
 GoRouter buildRouter(AuthProvider auth) => GoRouter(
       initialLocation: '/login',
@@ -34,10 +35,15 @@ GoRouter buildRouter(AuthProvider auth) => GoRouter(
           path: '/tutor-centro',
           builder: (_, __) => const PanelTutorCentroScreen(),
         ),
+        GoRoute(
+          path: '/admin',
+          builder: (_, __) => const PanelAdminScreen(),
+        ),
       ],
     );
 
 String _homeForRoles(List<String> roles) {
+  if (roles.contains('ROLE_ADMIN')) return '/admin';
   if (roles.contains('ROLE_TUTOR_EMPRESA')) return '/tutor-empresa';
   if (roles.contains('ROLE_TUTOR_CENTRO')) return '/tutor-centro';
   return '/dashboard';

@@ -94,6 +94,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGlobalException(Exception ex) {
+        log.error("UNHANDLED_EXCEPTION type={} message={}", ex.getClass().getName(), ex.getMessage());
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Ha ocurrido un error inesperado en el sistema. Por favor, contacte con el soporte técnico."

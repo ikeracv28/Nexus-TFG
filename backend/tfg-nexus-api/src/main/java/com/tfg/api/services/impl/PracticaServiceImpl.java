@@ -24,7 +24,7 @@ import java.util.List;
  * Implementación del servicio de Prácticas.
  * Gestiona la lógica de negocio y las validaciones de integridad.
  */
-@Service
+@Service("practicaService")
 @RequiredArgsConstructor
 public class PracticaServiceImpl implements PracticaService {
 

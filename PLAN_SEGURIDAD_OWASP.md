@@ -62,7 +62,7 @@ Orden de implementacion obligatorio: resolver primero los CRITICOS antes de pasa
   @PreAuthorize("hasAnyRole('ADMIN','TUTOR_CENTRO','TUTOR_EMPRESA') or @practicaService.perteneceAlAlumnoAutenticado(#alumnoId, authentication.name)")
   ```
 - [x] En `PracticaServiceImpl.java`: implementar el metodo `perteneceAlAlumnoAutenticado(Long alumnoId, String email)` que comprueba si el alumno con ese ID tiene el email del usuario autenticado.
-- [ ] Anadir test de integracion: alumno A no puede ver practicas de alumno B por este endpoint.
+- [x] Anadir test de integracion: alumno A no puede ver practicas de alumno B por este endpoint. (A01AccessControlTest — 8/8 pasan, 01/05/2026)
 
 #### 1.3 Endpoint GET /practicas/{id} sin restriccion de propiedad [ALTO]
 
@@ -75,7 +75,8 @@ Orden de implementacion obligatorio: resolver primero los CRITICOS antes de pasa
   @PreAuthorize("hasAnyRole('ADMIN','TUTOR_CENTRO','TUTOR_EMPRESA') or @practicaService.esParticipante(#id, authentication.name)")
   ```
 - [x] Implementar `esParticipante(Long practicaId, String email)` en `PracticaServiceImpl`: devuelve true si el usuario es el alumno, tutor centro o tutor empresa de esa practica.
-- [ ] Test: alumno sin practica asignada no puede ver practica ajena.
+- [x] Test: alumno sin practica asignada no puede ver practica ajena. (A01AccessControlTest — 8/8 pasan, 01/05/2026)
+- [x] Fix: @Service("practicaService") en PracticaServiceImpl — el bean estaba registrado como "practicaServiceImpl" y el SpEL no encontraba "practicaService". Causaba 500 en cualquier acceso de alumno por ID. (01/05/2026)
 
 ---
 
@@ -408,7 +409,7 @@ Ejecutar esta lista antes de hacer push al repositorio de entrega:
 
 | OWASP | Descripcion | Estado en Nexus | Prioridad |
 |-------|-------------|-----------------|-----------|
-| A01 | Broken Access Control | CORS wildcard + SpEL roto | CRITICO |
+| A01 | Broken Access Control | ✅ CORS, SpEL, IDOR tests A01.2+A01.3 | OK |
 | A02 | Cryptographic Failures | getBytes() JWT + HTTP + contrasena debil | CRITICO |
 | A03 | Injection | nuevoEstado sin enum | ALTO |
 | A04 | Insecure Design | Sin rate limiting en auth | CRITICO |

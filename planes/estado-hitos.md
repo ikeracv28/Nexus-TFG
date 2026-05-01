@@ -44,8 +44,9 @@ Actualizado: 01/05/2026
 
 - [ ] [BACKEND] WebSocket/STOMP para chat en tiempo real (puede quedar en Hito 4 si no da tiempo)
 - [ ] [FLUTTER] ChatScreen funcional con WebSocket (placeholder ya existe en DashboardScreen y TutorCentroScreen)
-- [ ] [TEST] Test OWASP A01.2: alumno A no puede ver prácticas de alumno B
-- [ ] [TEST] Test OWASP A01.3: alumno sin práctica asignada no puede acceder a práctica ajena
+- [x] [TEST] Test OWASP A01.2: alumno A no puede ver prácticas de alumno B — 8/8 pasan (01/05/2026)
+- [x] [TEST] Test OWASP A01.3: alumno sin práctica asignada no puede acceder a práctica ajena — 8/8 pasan (01/05/2026)
+- [x] [BUGFIX] @Service("practicaService") en PracticaServiceImpl — bean name correcto para SpEL en @PreAuthorize (01/05/2026)
 - [ ] [DOC] Actualizar ARQUITECTURA_API.md con los endpoints ya implementados
 - [ ] [DOC] Grabar vídeo demo Hito 3
 
@@ -75,8 +76,8 @@ Actualizado: 01/05/2026
 | Logout server-side con JTI blacklist | ✅ |
 | Cache-Control Nginx correcto | ✅ |
 
-### Problema conocido pendiente de revisar
-- **TutorCentroScreen dashboard**: solo se ven las horas totales, los paneles "_AlumnosYCarga" e "_IncidenciasRecientes" no son visibles. El backend devuelve datos correctamente (confirmado con curl + DB). Causa probable: `LayoutBuilder` dentro de `SingleChildScrollView` con constraints infinitas que colapsa la altura de los paneles inferiores. Pendiente de investigar y corregir.
+### Problemas conocidos
+- (ninguno activo)
 
 ---
 

@@ -8,7 +8,7 @@ import '../../data/models/seguimiento_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tutor_centro_provider.dart';
 
-enum _Mode { dashboard, alumnos, partes, incidencias, chat }
+enum _Mode { alumnos, partes, incidencias, chat }
 
 class PanelTutorCentroScreen extends StatefulWidget {
   const PanelTutorCentroScreen({super.key});
@@ -19,7 +19,7 @@ class PanelTutorCentroScreen extends StatefulWidget {
 }
 
 class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
-  _Mode _mode = _Mode.dashboard;
+  _Mode _mode = _Mode.alumnos;
 
   @override
   void initState() {
@@ -90,8 +90,6 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
 
   Widget _buildWidePanel(TutorCentroProvider provider) {
     switch (_mode) {
-      case _Mode.dashboard:
-        return _VistaDashboard(provider: provider);
       case _Mode.partes:
         return _AllPartesPanel(provider: provider, onValidar: _confirmarValidar);
       case _Mode.incidencias:
@@ -106,8 +104,6 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
 
   Widget _buildMobileBody(TutorCentroProvider provider, AuthProvider auth) {
     switch (_mode) {
-      case _Mode.dashboard:
-        return _VistaDashboard(provider: provider);
       case _Mode.partes:
         return _AllPartesPanel(provider: provider, onValidar: _confirmarValidar);
       case _Mode.incidencias:
@@ -289,14 +285,6 @@ class _Sidebar extends StatelessWidget {
                 const Icon(Icons.star_outline, size: 13, color: Colors.white),
           ),
           const SizedBox(height: 10),
-          _NavBtn(
-            icon: Icons.dashboard_outlined,
-            activeIcon: Icons.dashboard,
-            tooltip: 'Dashboard',
-            isActive: mode == _Mode.dashboard,
-            onTap: () => onChangeMode(_Mode.dashboard),
-          ),
-          const SizedBox(height: 4),
           _NavBtn(
             icon: Icons.people_outlined,
             activeIcon: Icons.people,
@@ -1712,13 +1700,6 @@ class _MobileBottomNav extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _BottomItem(
-            icon: Icons.dashboard_outlined,
-            activeIcon: Icons.dashboard,
-            label: 'Inicio',
-            isActive: mode == _Mode.dashboard,
-            onTap: () => onChangeMode(_Mode.dashboard),
-          ),
           _BottomItem(
             icon: Icons.people_outlined,
             activeIcon: Icons.people,

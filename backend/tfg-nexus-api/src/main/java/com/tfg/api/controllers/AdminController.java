@@ -20,19 +20,19 @@ public class AdminController {
     private final AdminService adminService;
 
     @GetMapping("/usuarios")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UsuarioResponse>> listarUsuarios() {
         return ResponseEntity.ok(adminService.listarUsuarios());
     }
 
     @PostMapping("/usuarios")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UsuarioResponse> crearUsuario(@Valid @RequestBody CreateUsuarioRequest request) {
         return new ResponseEntity<>(adminService.crearUsuario(request), HttpStatus.CREATED);
     }
 
     @PatchMapping("/usuarios/{id}/toggle-activo")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UsuarioResponse> toggleActivo(@PathVariable Long id) {
         return ResponseEntity.ok(adminService.toggleActivo(id));
     }

@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import '../../data/models/usuario_model.dart';
 import '../../data/models/practica_model.dart';
 import '../../data/models/empresa_model.dart';
+import '../../data/models/incidencia_model.dart';
 import '../../data/services/admin_service.dart';
+import '../../data/services/incidencia_service.dart';
 
 class AdminProvider extends ChangeNotifier {
   final AdminService _service = AdminService();
+  final IncidenciaService _incidenciaService = IncidenciaService();
 
-  // Usuarios
   List<UsuarioModel> _usuarios = [];
-  // Prácticas
   List<Practica> _practicas = [];
-  // Empresas
   List<EmpresaModel> _empresas = [];
+  List<Incidencia> _incidencias = [];
 
   bool _cargando = false;
   String? _error;
@@ -20,16 +21,16 @@ class AdminProvider extends ChangeNotifier {
   List<UsuarioModel> get usuarios => _usuarios;
   List<Practica> get practicas => _practicas;
   List<EmpresaModel> get empresas => _empresas;
+  List<Incidencia> get incidencias => _incidencias;
   bool get cargando => _cargando;
   String? get error => _error;
 
-  // Stats calculados desde las prácticas
   int get totalPracticas => _practicas.length;
   int get practicasActivas => _practicas.where((p) => p.estado == 'ACTIVA').length;
   int get practicasBorrador => _practicas.where((p) => p.estado == 'BORRADOR').length;
   int get practicasFinalizadas => _practicas.where((p) => p.estado == 'FINALIZADA').length;
+  int get incidenciasAbiertas => _incidencias.where((i) => i.estaAbierta).length;
 
-  // Filtros por rol para los dropdowns de creación de práctica
   List<UsuarioModel> get alumnos =>
       _usuarios.where((u) => u.roles.contains('ROLE_ALUMNO')).toList();
   List<UsuarioModel> get tutoresCentro =>
@@ -50,6 +51,15 @@ class AdminProvider extends ChangeNotifier {
       _usuarios = results[0] as List<UsuarioModel>;
       _practicas = results[1] as List<Practica>;
       _empresas = results[2] as List<EmpresaModel>;
+
+      // Cargar incidencias de todas las prácticas
+      final incLists = await Future.wait(
+        _practicas.map((p) => _incidenciaService
+            .getIncidenciasPorPractica(p.id)
+            .catchError((_) => <Incidencia>[])),
+      );
+      _incidencias = incLists.expand((l) => l).toList()
+        ..sort((a, b) => b.fechaCreacion.compareTo(a.fechaCreacion));
     } catch (e) {
       _error = e.toString();
     } finally {

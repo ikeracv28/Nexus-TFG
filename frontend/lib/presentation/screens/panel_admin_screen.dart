@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../data/models/usuario_model.dart';
 import '../../data/models/practica_model.dart';
 import '../../data/models/empresa_model.dart';
+import '../../data/models/incidencia_model.dart';
 import '../providers/admin_provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -189,114 +190,358 @@ class _VistaDashboard extends StatelessWidget {
       if (admin.cargando) {
         return const Center(child: CircularProgressIndicator());
       }
-      return SingleChildScrollView(
-        padding: const EdgeInsets.all(NexusSizes.space2XL),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Panel de Administración', style: NexusText.heading2),
-            const SizedBox(height: NexusSizes.space2XL),
-            _GridStats(admin: admin),
-            const SizedBox(height: NexusSizes.space2XL),
-            const Text('Prácticas recientes', style: NexusText.heading3),
-            const SizedBox(height: NexusSizes.spaceLG),
-            if (admin.practicas.isEmpty)
-              const Text('No hay prácticas registradas.',
-                  style: TextStyle(color: NexusColors.inkSecondary))
-            else
-              ...admin.practicas.take(5).map((p) => Padding(
-                    padding:
-                        const EdgeInsets.only(bottom: NexusSizes.spaceSM),
-                    child: _PracticaCard(practica: p, compacta: true),
-                  )),
-          ],
+
+      final practicasActivas =
+          admin.practicas.where((p) => p.estado == 'ACTIVA').toList();
+      final incRecientes = admin.incidencias.take(4).toList();
+
+      return RefreshIndicator(
+        onRefresh: () => context.read<AdminProvider>().cargarTodo(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Panel de Administración',
+                            style: NexusText.heading2
+                                .copyWith(letterSpacing: -0.3)),
+                        const SizedBox(height: 2),
+                        Text(
+                          'CampusFP · Administración General',
+                          style: NexusText.body
+                              .copyWith(color: NexusColors.inkSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Stat cards
+              Row(
+                children: [
+                  _DashStatCard(
+                      valor: admin.practicasActivas,
+                      label: 'Prácticas activas',
+                      color: NexusColors.success),
+                  const SizedBox(width: 12),
+                  _DashStatCard(
+                      valor: admin.empresas.length,
+                      label: 'Empresas colaboradoras',
+                      color: NexusColors.primary),
+                  const SizedBox(width: 12),
+                  _DashStatCard(
+                      valor: admin.incidenciasAbiertas,
+                      label: 'Incidencias abiertas',
+                      color: NexusColors.danger),
+                  const SizedBox(width: 12),
+                  _DashStatCard(
+                      valor: admin.alumnos.length,
+                      label: 'Alumnos registrados',
+                      color: NexusColors.warning),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Two-column layout
+              LayoutBuilder(
+                builder: (ctx, constraints) {
+                  if (constraints.maxWidth > 680) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                            flex: 3,
+                            child: _PracticasEnCurso(
+                                practicas: practicasActivas)),
+                        const SizedBox(width: 16),
+                        Expanded(
+                            flex: 2,
+                            child: _IncidenciasRecientes(
+                                incidencias: incRecientes,
+                                admin: admin)),
+                      ],
+                    );
+                  }
+                  return Column(
+                    children: [
+                      _PracticasEnCurso(practicas: practicasActivas),
+                      const SizedBox(height: 16),
+                      _IncidenciasRecientes(
+                          incidencias: incRecientes, admin: admin),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       );
     });
   }
 }
 
-class _GridStats extends StatelessWidget {
-  final AdminProvider admin;
-
-  const _GridStats({required this.admin});
+class _DashStatCard extends StatelessWidget {
+  final int valor;
+  final String label;
+  final Color color;
+  const _DashStatCard(
+      {required this.valor, required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: NexusSizes.spaceLG,
-      runSpacing: NexusSizes.spaceLG,
-      children: [
-        _StatCard(
-            label: 'Prácticas activas',
-            value: admin.practicasActivas.toString(),
-            color: NexusColors.success,
-            icon: Icons.play_circle_outline),
-        _StatCard(
-            label: 'En borrador',
-            value: admin.practicasBorrador.toString(),
-            color: NexusColors.warning,
-            icon: Icons.edit_outlined),
-        _StatCard(
-            label: 'Finalizadas',
-            value: admin.practicasFinalizadas.toString(),
-            color: NexusColors.neutral,
-            icon: Icons.check_circle_outline),
-        _StatCard(
-            label: 'Usuarios registrados',
-            value: admin.usuarios.length.toString(),
-            color: NexusColors.primary,
-            icon: Icons.people_outline),
-      ],
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: NexusColors.surface,
+          border: Border.all(
+              color: NexusColors.border, width: NexusSizes.borderWidth),
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withAlpha(5),
+                blurRadius: 4,
+                offset: const Offset(0, 1))
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '$valor',
+              style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                  letterSpacing: -0.5),
+            ),
+            const SizedBox(height: 4),
+            Text(label,
+                style:
+                    NexusText.caption.copyWith(color: NexusColors.inkSecondary),
+                maxLines: 2),
+          ],
+        ),
+      ),
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  final IconData icon;
-
-  const _StatCard(
-      {required this.label,
-      required this.value,
-      required this.color,
-      required this.icon});
+class _PracticasEnCurso extends StatelessWidget {
+  final List<Practica> practicas;
+  const _PracticasEnCurso({required this.practicas});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 180,
-      padding: const EdgeInsets.all(NexusSizes.spaceLG),
       decoration: BoxDecoration(
         color: NexusColors.surface,
-        border: Border(left: BorderSide(color: color, width: 3)),
+        border: Border.all(
+            color: NexusColors.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withAlpha(5),
               blurRadius: 4,
               offset: const Offset(0, 1))
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(width: NexusSizes.spaceMD),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(value,
-                  style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
-                      color: color)),
-              Text(label,
-                  style: const TextStyle(
-                      fontSize: 11, color: NexusColors.inkSecondary)),
-            ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Text('PRÁCTICAS EN CURSO',
+                style: NexusText.caption.copyWith(
+                    color: NexusColors.inkSecondary,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.6)),
           ),
+          if (practicas.isEmpty)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text('No hay prácticas activas.',
+                  style: TextStyle(color: NexusColors.inkSecondary)),
+            )
+          else
+            ...practicas.map((p) {
+              final initials = p.alumnoNombre
+                  .trim()
+                  .split(' ')
+                  .where((w) => w.isNotEmpty)
+                  .take(2)
+                  .map((w) => w[0].toUpperCase())
+                  .join();
+              return Column(
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 17,
+                          backgroundColor: NexusColors.primaryLight,
+                          child: Text(initials,
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: NexusColors.primaryText)),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(p.alumnoNombre,
+                                  style: NexusText.small.copyWith(
+                                      fontWeight: FontWeight.w600)),
+                              Text(
+                                '${p.empresaNombre} · ${p.codigo}',
+                                style: NexusText.caption.copyWith(
+                                    color: NexusColors.inkSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: NexusColors.successLight,
+                            borderRadius:
+                                BorderRadius.circular(NexusSizes.radiusSM),
+                          ),
+                          child: Text('Activa',
+                              style: NexusText.caption.copyWith(
+                                  color: NexusColors.successText,
+                                  fontWeight: FontWeight.w600)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (p != practicas.last)
+                    const Divider(height: 1, color: NexusColors.border),
+                ],
+              );
+            }),
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+}
+
+class _IncidenciasRecientes extends StatelessWidget {
+  final List<Incidencia> incidencias;
+  final AdminProvider admin;
+  const _IncidenciasRecientes(
+      {required this.incidencias, required this.admin});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: NexusColors.surface,
+        border: Border.all(
+            color: NexusColors.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withAlpha(5),
+              blurRadius: 4,
+              offset: const Offset(0, 1))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Text('INCIDENCIAS RECIENTES',
+                style: NexusText.caption.copyWith(
+                    color: NexusColors.inkSecondary,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.6)),
+          ),
+          if (incidencias.isEmpty)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text('Sin incidencias recientes.',
+                  style: TextStyle(color: NexusColors.inkSecondary)),
+            )
+          else
+            ...incidencias.map((inc) {
+              final practica = admin.practicas
+                  .where((p) => p.id == inc.practicaId)
+                  .firstOrNull;
+              final color =
+                  inc.estado == 'ABIERTA' ? NexusColors.danger : NexusColors.warning;
+              final label =
+                  inc.estado == 'ABIERTA' ? 'Abierta' : 'En proceso';
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      margin: const EdgeInsets.only(top: 5),
+                      decoration: BoxDecoration(
+                          color: color, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${inc.creadaPorNombre} — ${inc.descripcion}',
+                            style: NexusText.small,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            practica != null
+                                ? '${practica.codigo} · ${inc.creadaPorNombre}'
+                                : inc.creadaPorNombre,
+                            style: NexusText.caption.copyWith(
+                                color: NexusColors.inkSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: color.withAlpha(20),
+                        borderRadius:
+                            BorderRadius.circular(NexusSizes.radiusSM),
+                      ),
+                      child: Text(label,
+                          style: NexusText.caption.copyWith(
+                              color: color, fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          const SizedBox(height: 4),
         ],
       ),
     );
@@ -858,13 +1103,100 @@ class _ListaUsuarios extends StatelessWidget {
               style: TextStyle(color: NexusColors.inkSecondary)),
         );
       }
-      return ListView.separated(
+
+      final grupos = [
+        (
+          'Alumnos',
+          admin.alumnos,
+          NexusColors.neutral,
+          Icons.school_outlined,
+        ),
+        (
+          'Tutores de Centro',
+          admin.tutoresCentro,
+          NexusColors.primary,
+          Icons.account_balance_outlined,
+        ),
+        (
+          'Tutores de Empresa',
+          admin.tutoresEmpresa,
+          NexusColors.warning,
+          Icons.business_center_outlined,
+        ),
+        (
+          'Administradores',
+          admin.usuarios
+              .where((u) => u.roles.contains('ROLE_ADMIN'))
+              .toList(),
+          NexusColors.danger,
+          Icons.admin_panel_settings_outlined,
+        ),
+      ];
+
+      return ListView(
         padding: const EdgeInsets.all(NexusSizes.space2XL),
-        itemCount: admin.usuarios.length,
-        separatorBuilder: (_, __) => const SizedBox(height: NexusSizes.spaceSM),
-        itemBuilder: (_, i) => _UsuarioCard(usuario: admin.usuarios[i]),
+        children: [
+          for (final grupo in grupos)
+            if (grupo.$2.isNotEmpty) ...[
+              _SeccionHeader(
+                label: grupo.$1,
+                count: grupo.$2.length,
+                color: grupo.$3,
+                icon: grupo.$4,
+              ),
+              const SizedBox(height: NexusSizes.spaceSM),
+              ...grupo.$2.map((u) => Padding(
+                    padding:
+                        const EdgeInsets.only(bottom: NexusSizes.spaceSM),
+                    child: _UsuarioCard(usuario: u),
+                  )),
+              const SizedBox(height: NexusSizes.spaceLG),
+            ],
+        ],
       );
     });
+  }
+}
+
+class _SeccionHeader extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  final IconData icon;
+
+  const _SeccionHeader({
+    required this.label,
+    required this.count,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 6),
+        Text(label,
+            style: NexusText.small.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color,
+                letterSpacing: 0.2)),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+          decoration: BoxDecoration(
+            color: color.withAlpha(20),
+            borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+          ),
+          child: Text('$count',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color)),
+        ),
+      ],
+    );
   }
 }
 

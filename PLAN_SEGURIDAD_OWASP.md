@@ -125,11 +125,11 @@ Orden de implementacion obligatorio: resolver primero los CRITICOS antes de pasa
 
 **Por que es un problema:** El minimo de 8 caracteres sin restricciones de complejidad permite contrasenas triviales como `12345678`.
 
-- [ ] En `RegisterRequest.java`: anadir validacion de complejidad con un patron regex:
+- [x] En `RegisterRequest.java`: anadir validacion de complejidad con un patron regex (mayuscula + minuscula + numero + especial, min 10 chars). (01/05/2026)
   ```java
   @Pattern(
-      regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{10,}$",
-      message = "La contrasena debe tener al menos 10 caracteres, una mayuscula, una minuscula y un numero"
+      regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{10,}$",
+      message = "La contrasena debe tener al menos una mayuscula, una minuscula, un numero y un caracter especial"
   )
   String password
   ```
@@ -167,8 +167,8 @@ Orden de implementacion obligatorio: resolver primero los CRITICOS antes de pasa
 
 **Archivo:** `SeguimientoServiceImpl.java`
 
-- [ ] En el metodo que crea un seguimiento: verificar que el alumno no tiene mas de 1 seguimiento en estado `PENDIENTE_EMPRESA` para la misma semana.
-- [ ] Lanzar `BusinessRuleException` si ya existe uno pendiente para esa semana.
+- [x] En el metodo que crea un seguimiento: verificar que el alumno no tiene mas de 1 seguimiento en estado `PENDIENTE_EMPRESA` para la misma semana ISO (lunes-domingo). (01/05/2026)
+- [x] Lanzar `BusinessRuleException` si ya existe uno pendiente para esa semana. (01/05/2026)
 
 ---
 
@@ -207,13 +207,7 @@ Orden de implementacion obligatorio: resolver primero los CRITICOS antes de pasa
       .xssProtection(Customizer.withDefaults())
   );
   ```
-- [ ] En el `nginx.conf` del frontend: anadir los mismos headers para las respuestas estaticas:
-  ```nginx
-  add_header X-Frame-Options "DENY";
-  add_header X-Content-Type-Options "nosniff";
-  add_header Referrer-Policy "strict-origin-when-cross-origin";
-  add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';";
-  ```
+- [x] En el `nginx.conf` del frontend: anadir headers de seguridad para respuestas estaticas (X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy, X-XSS-Protection, CSP). (01/05/2026)
 
 ---
 
@@ -381,12 +375,7 @@ Ejecutar `/owasp-security` sobre cada archivo antes de cerrar la tarea.
 
 ### Validacion de tamano de payload [MEDIO]
 
-- [ ] En `application.properties`: limitar el tamano maximo de request:
-  ```properties
-  spring.servlet.multipart.max-file-size=5MB
-  spring.servlet.multipart.max-request-size=5MB
-  server.tomcat.max-http-form-post-size=1MB
-  ```
+- [x] En `application.properties`: limitar el tamano maximo de request (multipart 5MB, form post 1MB). (01/05/2026)
 
 ---
 
@@ -410,10 +399,10 @@ Ejecutar esta lista antes de hacer push al repositorio de entrega:
 | OWASP | Descripcion | Estado en Nexus | Prioridad |
 |-------|-------------|-----------------|-----------|
 | A01 | Broken Access Control | ✅ CORS, SpEL, IDOR tests A01.2+A01.3 | OK |
-| A02 | Cryptographic Failures | getBytes() JWT + HTTP + contrasena debil | CRITICO |
-| A03 | Injection | nuevoEstado sin enum | ALTO |
-| A04 | Insecure Design | Sin rate limiting en auth | CRITICO |
-| A05 | Security Misconfiguration | SQL logs + sin headers HTTP | ALTO |
+| A02 | Cryptographic Failures | ✅ JWT Base64 + BCrypt12 + @Pattern password | Pendiente: HTTPS prod |
+| A03 | Injection | nuevoEstado validado en servicio (Set cerrado) | Pendiente: enum SeguimientoEstado |
+| A04 | Insecure Design | ✅ RateLimit auth + limite 1 parte/semana | Pendiente: test 429 |
+| A05 | Security Misconfiguration | ✅ headers nginx + payload limits | Pendiente: SQL logs prod |
 | A06 | Vulnerable Components | Stack actualizado | OK |
 | A07 | Auth Failures | Account enum + logout inefectivo | ALTO |
 | A08 | Software Integrity | Flyway + multi-stage Docker | OK |

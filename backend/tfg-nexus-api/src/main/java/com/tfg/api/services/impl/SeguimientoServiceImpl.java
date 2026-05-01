@@ -21,6 +21,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,6 +43,15 @@ public class SeguimientoServiceImpl implements SeguimientoService {
     public SeguimientoResponse registrar(SeguimientoRequest request) {
         Practica practica = practicaRepository.findById(request.practicaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Práctica no encontrada"));
+
+        // A04: máximo 1 parte pendiente por semana ISO (lunes-domingo)
+        LocalDate lunes = request.fechaRegistro().with(DayOfWeek.MONDAY);
+        LocalDate domingo = request.fechaRegistro().with(DayOfWeek.SUNDAY);
+        if (seguimientoRepository.existsByPracticaIdAndEstadoAndFechaRegistroBetween(
+                request.practicaId(), "PENDIENTE_EMPRESA", lunes, domingo)) {
+            throw new BusinessRuleException(
+                "Ya tienes un parte pendiente de validación para esta semana. Espera a que sea procesado antes de registrar otro.");
+        }
 
         Seguimiento seguimiento = seguimientoMapper.toEntity(request);
         seguimiento.setPractica(practica);

@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import '../../core/config/api_client.dart';
 import '../models/ausencia_model.dart';
@@ -32,6 +33,31 @@ class AusenciaService {
       return Ausencia.fromJson(response.data);
     } on DioException catch (e) {
       final msg = e.response?.data?['message'] ?? e.message ?? 'Error al registrar ausencia';
+      throw Exception(msg);
+    }
+  }
+
+  Future<Ausencia> adjuntarJustificante({
+    required int id,
+    required Uint8List bytes,
+    required String filename,
+    required String mimeType,
+  }) async {
+    try {
+      final formData = FormData.fromMap({
+        'fichero': MultipartFile.fromBytes(
+          bytes,
+          filename: filename,
+          contentType: DioMediaType.parse(mimeType),
+        ),
+      });
+      final response = await _apiClient.dio.patch(
+        '/ausencias/$id/justificante',
+        data: formData,
+      );
+      return Ausencia.fromJson(response.data);
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? e.message ?? 'Error al adjuntar justificante';
       throw Exception(msg);
     }
   }

@@ -34,8 +34,8 @@ public class Ausencia {
     @Builder.Default
     private String tipo = "PENDIENTE";
 
-    @Lob
-    @Column(name = "justificante")
+    // @Lob mapea a oid en Hibernate 6 / PostgreSQL — usar columnDefinition="bytea" para bytea real
+    @Column(name = "justificante", columnDefinition = "bytea")
     private byte[] justificante;
 
     @Column(name = "nombre_fichero", length = 255)

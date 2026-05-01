@@ -537,7 +537,7 @@ class _AusenciasCard extends StatelessWidget {
         final ausencias = provider.ausencias;
         return _SectionCard(
           title: 'Ausencias',
-          icon: Icons.event_busy_outlined,
+          icon: Icons.date_range_outlined,
           action: practica != null ? 'Ver todas' : null,
           onActionTap: onVerAusencias,
           child: practica == null
@@ -808,8 +808,8 @@ class _NexusRail extends StatelessWidget {
           label: Text('Incidencias'),
         ),
         NavigationRailDestination(
-          icon: Icon(Icons.event_busy_outlined),
-          selectedIcon: Icon(Icons.event_busy),
+          icon: Icon(Icons.date_range_outlined),
+          selectedIcon: Icon(Icons.date_range),
           label: Text('Ausencias'),
         ),
         NavigationRailDestination(
@@ -850,7 +850,7 @@ class _NexusBottomNav extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'Inicio'),
           BottomNavigationBarItem(icon: Icon(Icons.list_alt_outlined), activeIcon: Icon(Icons.list_alt), label: 'Seguimientos'),
           BottomNavigationBarItem(icon: Icon(Icons.warning_amber_outlined), activeIcon: Icon(Icons.warning_amber), label: 'Incidencias'),
-          BottomNavigationBarItem(icon: Icon(Icons.event_busy_outlined), activeIcon: Icon(Icons.event_busy), label: 'Ausencias'),
+          BottomNavigationBarItem(icon: Icon(Icons.date_range_outlined), activeIcon: Icon(Icons.date_range), label: 'Ausencias'),
           BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), activeIcon: Icon(Icons.chat_bubble), label: 'Chat'),
         ],
       ),

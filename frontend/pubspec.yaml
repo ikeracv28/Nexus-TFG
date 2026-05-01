@@ -51,6 +51,9 @@ dependencies:
   # Internacionalización y formato de fechas/números
   intl: ^0.20.2
 
+  # Selector de ficheros (justificante ausencias) — funciona en web, móvil y escritorio
+  file_picker: ^8.0.7
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

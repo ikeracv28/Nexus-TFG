@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/ausencia_model.dart';
@@ -39,13 +40,17 @@ class AusenciasScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: ausencias.asMap().entries.map((entry) {
+                        final ausencia = entry.value;
                         final isLast = entry.key == ausencias.length - 1;
                         return Column(
                           children: [
                             AusenciaTile(
-                              ausencia: entry.value,
-                              onEliminar: entry.value.estaPendiente
-                                  ? () => _confirmarEliminar(context, entry.value.id, provider)
+                              ausencia: ausencia,
+                              onEliminar: ausencia.estaPendiente
+                                  ? () => _confirmarEliminar(context, ausencia.id, provider)
+                                  : null,
+                              onAdjuntarFichero: ausencia.estaPendiente && !ausencia.tieneJustificante
+                                  ? () => _adjuntarJustificante(context, ausencia.id, provider)
                                   : null,
                             ),
                             if (!isLast)
@@ -66,6 +71,53 @@ class AusenciasScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _adjuntarJustificante(
+      BuildContext context, int ausenciaId, PracticaProvider provider) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+
+    final file = result.files.first;
+    if (file.bytes == null) return;
+
+    final mime = _mimeType(file.extension ?? '');
+    if (!context.mounted) return;
+
+    try {
+      final actualizado = await AusenciaService().adjuntarJustificante(
+        id: ausenciaId,
+        bytes: file.bytes!,
+        filename: file.name,
+        mimeType: mime,
+      );
+      provider.actualizarAusencia(actualizado);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Justificante adjuntado correctamente')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    }
+  }
+
+  String _mimeType(String ext) {
+    switch (ext.toLowerCase()) {
+      case 'pdf': return 'application/pdf';
+      case 'jpg':
+      case 'jpeg': return 'image/jpeg';
+      case 'png': return 'image/png';
+      default: return 'application/octet-stream';
+    }
+  }
+
   Future<void> _confirmarEliminar(
       BuildContext context, int ausenciaId, PracticaProvider provider) async {
     final confirmar = await showDialog<bool>(
@@ -77,7 +129,7 @@ class AusenciasScreen extends StatelessWidget {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Eliminar', style: TextStyle(color: NexusColors.danger)),
+            child: const Text('Eliminar', style: TextStyle(color: NexusColors.danger)),
           ),
         ],
       ),
@@ -149,6 +201,8 @@ class _RegistrarAusenciaSheet extends StatefulWidget {
 class _RegistrarAusenciaSheetState extends State<_RegistrarAusenciaSheet> {
   DateTime _fechaSeleccionada = DateTime.now();
   final _motivoController = TextEditingController();
+  // Fichero opcional seleccionado antes de enviar
+  PlatformFile? _ficheroSeleccionado;
   bool _enviando = false;
   String? _error;
 
@@ -192,9 +246,17 @@ class _RegistrarAusenciaSheetState extends State<_RegistrarAusenciaSheet> {
           const SizedBox(height: NexusSizes.spaceSM),
           TextFormField(
             controller: _motivoController,
-            maxLines: 4,
+            maxLines: 3,
             decoration: _inputDecoration(hint: 'Explica el motivo de la ausencia...'),
             style: NexusText.small,
+          ),
+          const SizedBox(height: NexusSizes.spaceLG),
+          Text('Justificante (opcional)', style: NexusText.caption),
+          const SizedBox(height: NexusSizes.spaceSM),
+          _SelectorFichero(
+            fichero: _ficheroSeleccionado,
+            onSeleccionado: (f) => setState(() => _ficheroSeleccionado = f),
+            onEliminado: () => setState(() => _ficheroSeleccionado = null),
           ),
           if (_error != null) ...[
             const SizedBox(height: NexusSizes.spaceMD),
@@ -255,11 +317,24 @@ class _RegistrarAusenciaSheetState extends State<_RegistrarAusenciaSheet> {
     }
     setState(() { _enviando = true; _error = null; });
     try {
-      final ausencia = await AusenciaService().registrar(
+      // 1. Registrar ausencia
+      Ausencia ausencia = await AusenciaService().registrar(
         practicaId: widget.practicaId,
         fecha: _fechaSeleccionada,
         motivo: motivo,
       );
+
+      // 2. Si hay fichero, adjuntarlo inmediatamente
+      if (_ficheroSeleccionado != null && _ficheroSeleccionado!.bytes != null) {
+        final ext = _ficheroSeleccionado!.extension ?? '';
+        ausencia = await AusenciaService().adjuntarJustificante(
+          id: ausencia.id,
+          bytes: _ficheroSeleccionado!.bytes!,
+          filename: _ficheroSeleccionado!.name,
+          mimeType: _mimeType(ext),
+        );
+      }
+
       if (mounted) {
         Navigator.pop(context);
         widget.onRegistrada(ausencia);
@@ -270,6 +345,94 @@ class _RegistrarAusenciaSheetState extends State<_RegistrarAusenciaSheet> {
         _error = e.toString().replaceFirst('Exception: ', '');
       });
     }
+  }
+
+  String _mimeType(String ext) {
+    switch (ext.toLowerCase()) {
+      case 'pdf': return 'application/pdf';
+      case 'jpg':
+      case 'jpeg': return 'image/jpeg';
+      case 'png': return 'image/png';
+      default: return 'application/octet-stream';
+    }
+  }
+}
+
+class _SelectorFichero extends StatelessWidget {
+  final PlatformFile? fichero;
+  final ValueChanged<PlatformFile> onSeleccionado;
+  final VoidCallback onEliminado;
+
+  const _SelectorFichero({
+    required this.fichero,
+    required this.onSeleccionado,
+    required this.onEliminado,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (fichero != null) {
+      return Container(
+        padding: const EdgeInsets.all(NexusSizes.spaceMD),
+        decoration: BoxDecoration(
+          color: NexusColors.successLight,
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+          border: Border.all(color: NexusColors.success, width: NexusSizes.borderWidth),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.attach_file, size: 16, color: NexusColors.success),
+            const SizedBox(width: NexusSizes.spaceSM),
+            Expanded(
+              child: Text(
+                fichero!.name,
+                style: NexusText.small.copyWith(color: NexusColors.successText),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            GestureDetector(
+              onTap: onEliminado,
+              child: const Icon(Icons.close, size: 16, color: NexusColors.inkSecondary),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () async {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+          withData: true,
+        );
+        if (result != null && result.files.isNotEmpty) {
+          onSeleccionado(result.files.first);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(NexusSizes.spaceMD),
+        decoration: BoxDecoration(
+          color: NexusColors.surfaceAlt,
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+          border: Border.all(
+            color: NexusColors.border,
+            width: NexusSizes.borderWidth,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.upload_file_outlined, size: 16, color: NexusColors.inkSecondary),
+            const SizedBox(width: NexusSizes.spaceSM),
+            Text(
+              'Adjuntar PDF, JPG o PNG (max. 5 MB)',
+              style: NexusText.caption,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

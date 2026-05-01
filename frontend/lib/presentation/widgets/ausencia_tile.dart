@@ -5,8 +5,14 @@ import '../../data/models/ausencia_model.dart';
 class AusenciaTile extends StatelessWidget {
   final Ausencia ausencia;
   final VoidCallback? onEliminar;
+  final VoidCallback? onAdjuntarFichero;
 
-  const AusenciaTile({super.key, required this.ausencia, this.onEliminar});
+  const AusenciaTile({
+    super.key,
+    required this.ausencia,
+    this.onEliminar,
+    this.onAdjuntarFichero,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +65,24 @@ class AusenciaTile extends StatelessWidget {
                 bg: _bgTipo(ausencia.tipo),
                 textColor: _textTipo(ausencia.tipo),
               ),
+              if (ausencia.estaPendiente && onAdjuntarFichero != null && !ausencia.tieneJustificante)
+                GestureDetector(
+                  onTap: onAdjuntarFichero,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: NexusSizes.spaceXS),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.attach_file, size: 11, color: NexusColors.primary),
+                        const SizedBox(width: 2),
+                        Text(
+                          'Adjuntar',
+                          style: NexusText.caption.copyWith(color: NexusColors.primary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               if (ausencia.estaPendiente && onEliminar != null)
                 GestureDetector(
                   onTap: onEliminar,

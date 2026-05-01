@@ -101,4 +101,9 @@ class PracticaProvider extends ChangeNotifier {
     _ausencias = _ausencias.where((a) => a.id != id).toList();
     notifyListeners();
   }
+
+  void actualizarAusencia(Ausencia actualizada) {
+    _ausencias = _ausencias.map((a) => a.id == actualizada.id ? actualizada : a).toList();
+    notifyListeners();
+  }
 }

@@ -271,7 +271,79 @@
 
 ---
 
-## H. Pendiente (Hito 4 — 19 mayo 2026)
+## H. Ausencias
+
+> **Implementado Hito 4 (01/05/2026).** V8 Flyway migration, justificante en bytea (PDF/JPG/PNG ≤5 MB).
+
+### POST /ausencias
+**Acceso**: ALUMNO
+**Body**:
+```json
+{
+  "practicaId": 1,
+  "fecha": "2025-04-22",
+  "motivo": "Cita médica — parte de baja adjunta."
+}
+```
+**Respuesta 201**: `AusenciaResponse` con `tipo: "PENDIENTE"`
+**Respuesta 403**: el alumno no es propietario de esa práctica
+**Respuesta 409**: ya existe una ausencia registrada para esa fecha en esa práctica
+
+### GET /ausencias/practica/{practicaId}
+**Acceso**: ADMIN, TUTOR_CENTRO, TUTOR_EMPRESA, ALUMNO
+**Respuesta 200**: `List<AusenciaResponse>` ordenadas por fecha descendente
+
+### GET /ausencias/{id}
+**Acceso**: ADMIN, TUTOR_CENTRO, TUTOR_EMPRESA, ALUMNO
+**Respuesta 200**: `AusenciaResponse`
+
+### PATCH /ausencias/{id}/revisar
+**Acceso**: TUTOR_CENTRO
+**Query**: `nuevoTipo=JUSTIFICADA|INJUSTIFICADA`, `comentario` (opcional)
+**Respuesta 200**: `AusenciaResponse` con el nuevo tipo
+**Respuesta 409**: la ausencia ya fue revisada
+
+### PATCH /ausencias/{id}/justificante
+**Acceso**: ALUMNO (solo el que registró la ausencia)
+**Content-Type**: `multipart/form-data`
+**Field**: `fichero` (PDF, JPG o PNG, ≤5 MB)
+**Respuesta 200**: `AusenciaResponse` con `tieneJustificante: true`
+**Respuesta 409**: ausencia ya revisada — no se permite modificar
+
+### DELETE /ausencias/{id}
+**Acceso**: ALUMNO (solo el que registró la ausencia)
+**Regla de negocio**: solo eliminable si `tipo == PENDIENTE`
+**Respuesta 204**
+
+**Estados posibles**:
+| Tipo | Significado |
+|------|-------------|
+| `PENDIENTE` | Registrada por el alumno, sin revisar. |
+| `JUSTIFICADA` | Revisada por el tutor del centro — documentada y aceptada. |
+| `INJUSTIFICADA` | Revisada por el tutor del centro — no aceptada o sin justificación válida. |
+
+**Response example**:
+```json
+{
+  "id": 1,
+  "practicaId": 1,
+  "fecha": "2025-04-22",
+  "motivo": "Cita médica — parte de baja adjunta.",
+  "tipo": "PENDIENTE",
+  "tieneJustificante": false,
+  "nombreFichero": null,
+  "registradaPorId": 3,
+  "registradaPorNombre": "Carlos Pérez Moreno",
+  "revisadaPorId": null,
+  "revisadaPorNombre": null,
+  "comentarioRevision": null,
+  "fechaCreacion": "2026-05-01T14:00:00"
+}
+```
+
+---
+
+## I. Pendiente (Hito 4 — 19 mayo 2026)
 
 | Endpoint | Descripción |
 |----------|-------------|

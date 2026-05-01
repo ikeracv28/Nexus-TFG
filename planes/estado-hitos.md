@@ -55,7 +55,9 @@ Actualizado: 01/05/2026
 ## Hito 4 (100%) — 19 mayo 2026
 
 - [ ] [BACKEND] WebSocket/STOMP chat entre alumno, tutor centro y tutor empresa
-- [ ] [BACKEND] Módulo ausencias: tabla separada con anexo en bytea (subir fichero justificante)
+- [x] [BACKEND] Módulo ausencias: V8 migration + entidad + service + controller (01/05/2026)
+  - Endpoints: POST /ausencias, GET /practica/{id}, GET /{id}, PATCH /{id}/revisar, PATCH /{id}/justificante, DELETE /{id}
+  - OWASP A01 ownership checks, A04 sin duplicados por fecha, justificante bytea (PDF/JPG/PNG ≤5 MB)
 - [ ] [FLUTTER] ChatScreen real — mensajes en tiempo real
 - [ ] [FLUTTER] Pantalla ausencias del alumno
 - [ ] [FLUTTER] Pulido visual final, pruebas cross-device

@@ -59,7 +59,7 @@ Actualizado: 01/05/2026
   - Endpoints: POST /ausencias, GET /practica/{id}, GET /{id}, PATCH /{id}/revisar, PATCH /{id}/justificante, DELETE /{id}
   - OWASP A01 ownership checks, A04 sin duplicados por fecha, justificante bytea (PDF/JPG/PNG ≤5 MB)
 - [ ] [FLUTTER] ChatScreen real — mensajes en tiempo real
-- [ ] [FLUTTER] Pantalla ausencias del alumno
+- [x] [FLUTTER] Pantalla ausencias del alumno — AusenciasScreen + AusenciaTile + AusenciaService + tab en dashboard (01/05/2026)
 - [ ] [FLUTTER] Pulido visual final, pruebas cross-device
 
 ---

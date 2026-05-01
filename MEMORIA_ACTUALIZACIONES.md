@@ -345,3 +345,45 @@ La pantalla del tutor de empresa (`PanelTutorEmpresaScreen`) sigue una filosofí
 La pantalla del tutor del centro (`PanelTutorCentroScreen`) responde a un rol más complejo mediante un layout de tres columnas en web: una barra lateral de iconos funcionales, una lista de alumnos con indicadores de estado, y un panel de detalle del alumno seleccionado. La barra lateral tiene cuatro modos: vista de alumno individual (con su progreso FCT, partes pendientes e incidencias abiertas), vista global de todos los partes pendientes, vista de incidencias agrupadas por estado, y placeholder de chat para el Hito 4. En dispositivos móviles se adapta a un patrón de navegación inferior con las mismas cuatro secciones.
 
 La barra de progreso FCT en el panel de detalle es un indicador clave para el tutor del centro: muestra en todo momento cuántas horas ha completado el alumno del total acordado en la práctica, permitiendo detectar retrasos antes de que se conviertan en un problema.
+
+---
+
+## BLOQUE — Módulo de ausencias: origen, diseño e implementación
+**Sección destino en memoria**: Capítulo 4.1 (Backend — módulos funcionales) + Capítulo 5 (Interfaz del alumno)
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+### Para el capítulo del Backend (4.1)
+
+La implementación del módulo de ausencias surgió a raíz de una observación del tutor durante el seguimiento académico del proyecto: al revisar las funcionalidades del sistema, se preguntó si la plataforma gestionaba también las ausencias de los alumnos durante el periodo de prácticas. La ausencia es un evento diferente al seguimiento semanal: no describe trabajo realizado, sino una falta documentada que requiere justificación formal y que tiene consecuencias sobre el cómputo total de horas del alumno. Ninguno de los módulos existentes capturaba este concepto de forma explícita.
+
+Para no mezclar semánticas distintas en la misma entidad, diseñé una tabla independiente `ausencias` mediante la migración Flyway V8. La decisión de usar una tabla propia, en lugar de añadir un flag `esAusencia` en la tabla de seguimientos, responde a una razón de diseño de datos: una ausencia no tiene horas realizadas, no tiene descripción de tareas y tiene un campo que los seguimientos no tienen: un fichero adjunto de justificante. Mezclar ambos conceptos en una sola tabla habría generado columnas nulas obligatorias, señal clara de un modelo incorrecto.
+
+El flujo de estados es más sencillo que el de los seguimientos. El alumno registra la ausencia indicando la fecha y el motivo, y el estado queda en `PENDIENTE`. El tutor del centro, que es quien tiene la responsabilidad académica, revisa la justificación y la marca como `JUSTIFICADA` o `INJUSTIFICADA`, pudiendo añadir un comentario. No interviene el tutor de empresa porque la gestión de faltas es una responsabilidad exclusiva del centro educativo. Esta distinción de responsabilidades es coherente con el modelo de doble validación de seguimientos, donde cada actor actúa dentro de su ámbito.
+
+El sistema permite adjuntar un fichero justificante (partes médicos, comunicados oficiales) en formatos PDF, JPG o PNG con un tamaño máximo de 5 MB. El fichero se almacena como `bytea` en PostgreSQL, vinculado directamente al registro de la ausencia, evitando la complejidad de gestionar un sistema de ficheros externo para el alcance de este proyecto. La respuesta JSON incluye un campo `tieneJustificante` de tipo booleano: el cliente Flutter puede saber si existe un justificante sin necesidad de descargar los datos binarios del fichero hasta que el usuario lo solicite explícitamente.
+
+Desde el punto de vista de la seguridad, el servicio aplica dos controles adicionales. Primero, verificación de propiedad: el alumno solo puede registrar ausencias en prácticas que le pertenecen, previniendo la manipulación de registros ajenos. Segundo, control de duplicados por fecha: no puede existir más de una ausencia registrada para la misma práctica y la misma fecha, lo que evita que el alumno genere entradas redundantes o inconsistentes en el historial.
+
+### Para el capítulo del Frontend (5 — Panel del alumno)
+
+En el cliente Flutter se añadió una pestaña dedicada de Ausencias al dashboard del alumno, accesible tanto desde el NavigationRail lateral (web y tablet) como desde el BottomNavigationBar inferior (móvil). La pestaña de Chat se desplazó a la última posición, dado que es la función de menor urgencia para el alumno durante el día a día de las prácticas.
+
+La pantalla muestra la lista de ausencias ordenada por fecha descendente. Cada elemento indica visualmente su estado mediante un código de color coherente con el sistema de diseño Nexus: ámbar para las ausencias pendientes de revisión, verde para las justificadas y rojo para las injustificadas. Si el alumno tiene un fichero adjunto, se muestra el nombre del archivo bajo el motivo.
+
+El formulario de registro se presenta como un bottom sheet que incluye un selector de fecha con calendario nativo de Flutter. El selector está limitado para no permitir fechas futuras, alineando la validación del cliente con la restricción `@PastOrPresent` del backend. El motivo requiere un mínimo de diez caracteres, previniendo entradas vacías o triviales. Estas validaciones en cliente mejoran la experiencia del usuario al proporcionar retroalimentación inmediata, aunque no sustituyen a las validaciones del backend, que son las que garantizan la integridad del sistema.
+
+---
+
+## BLOQUE — OWASP Bloque 3: hardening final de entradas y configuración
+**Sección destino en memoria**: Capítulo 4.2 (Seguridad) — ampliar con el tercer y último bloque de mejoras
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+En una tercera y última iteración de seguridad antes de la entrega del Hito 3 apliqué las mejoras restantes identificadas en el plan de seguridad OWASP.
+
+La primera mejora refuerza la política de contraseñas en el registro de nuevos usuarios (A02). El validador `@Pattern` añadido sobre el campo `password` del DTO de registro impone que toda contraseña nueva cumpla cuatro requisitos simultáneamente: al menos una letra mayúscula, al menos una minúscula, al menos un dígito y al menos un carácter especial, con un mínimo de diez caracteres. Este patrón es más estricto que el mínimo de ocho caracteres que existía anteriormente y está en línea con las recomendaciones del NIST para contraseñas de aplicaciones de gestión académica. La validación actúa en la capa de entrada, antes de que la contraseña llegue al servicio o sea procesada por BCrypt.
+
+La segunda mejora cierra un vector de abuso en el módulo de seguimientos (A04). El servicio comprueba ahora si ya existe un parte del alumno en estado `PENDIENTE_EMPRESA` para la misma semana ISO (de lunes a domingo) antes de permitir el registro de uno nuevo. Esta restricción replica la lógica del proceso real: un alumno entrega un único parte semanal, no partes diarios. Sin este control, un alumno podría acumular múltiples partes pendientes en la misma semana, sobrecargando a los tutores con validaciones redundantes y generando inconsistencias en el cómputo de horas.
+
+La tercera mejora añade las cabeceras de seguridad HTTP que faltaban en el servidor Nginx del frontend (A05). Las cabeceras `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` y una `Content-Security-Policy` restringida protegen al navegador del usuario frente a ataques de clickjacking, MIME sniffing y ejecución de recursos de terceros no autorizados. Estas cabeceras complementan las que ya estaban configuradas en Spring Security para las respuestas de la API, completando la cobertura tanto en las peticiones a la API como en la carga de la aplicación web.
+
+Finalmente, se establecieron límites de tamaño de petición en la configuración de Spring Boot: 5 MB para peticiones multipart (ficheros adjuntos) y 1 MB para formularios, previniendo ataques de denegación de servicio por peticiones masivas.

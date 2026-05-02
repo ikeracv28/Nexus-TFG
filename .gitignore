@@ -3,6 +3,9 @@
 # Incluye archivos de Claude Code y conductor/
 # ============================================================
 
+# Credenciales locales — no subir al repo
+USUARIOS_PRUEBA.md
+
 # Flutter / Dart
 .dart_tool/
 .packages

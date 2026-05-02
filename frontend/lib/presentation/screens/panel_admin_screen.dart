@@ -5,10 +5,11 @@ import '../../data/models/usuario_model.dart';
 import '../../data/models/practica_model.dart';
 import '../../data/models/empresa_model.dart';
 import '../../data/models/incidencia_model.dart';
+import '../../data/models/audit_log_model.dart';
 import '../providers/admin_provider.dart';
 import '../providers/auth_provider.dart';
 
-enum _ModoAdmin { dashboard, practicas, usuarios }
+enum _ModoAdmin { dashboard, practicas, usuarios, auditoria }
 
 class PanelAdminScreen extends StatefulWidget {
   const PanelAdminScreen({super.key});
@@ -83,6 +84,8 @@ class _PanelAdminScreenState extends State<PanelAdminScreen> {
         return 'Prácticas';
       case _ModoAdmin.usuarios:
         return 'Usuarios';
+      case _ModoAdmin.auditoria:
+        return 'Auditoría';
     }
   }
 
@@ -94,6 +97,8 @@ class _PanelAdminScreenState extends State<PanelAdminScreen> {
         return const _VistaPracticas();
       case _ModoAdmin.usuarios:
         return const _VistaUsuarios();
+      case _ModoAdmin.auditoria:
+        return const _VistaAuditoria();
     }
   }
 }
@@ -133,6 +138,13 @@ class _Sidebar extends StatelessWidget {
             activo: modoActivo == _ModoAdmin.usuarios,
             tooltip: 'Usuarios',
             onTap: () => onModoChanged(_ModoAdmin.usuarios),
+          ),
+          const SizedBox(height: NexusSizes.spaceXS),
+          _IconBtn(
+            icon: Icons.history_outlined,
+            activo: modoActivo == _ModoAdmin.auditoria,
+            tooltip: 'Auditoría',
+            onTap: () => onModoChanged(_ModoAdmin.auditoria),
           ),
           const Spacer(),
           _IconBtn(
@@ -1509,6 +1521,215 @@ class _DialogCrearUsuarioState extends State<_DialogCrearUsuario> {
   }
 }
 
+// ---- Vista Auditoría ----
+
+class _VistaAuditoria extends StatefulWidget {
+  const _VistaAuditoria();
+
+  @override
+  State<_VistaAuditoria> createState() => _VistaAuditoriaState();
+}
+
+class _VistaAuditoriaState extends State<_VistaAuditoria> {
+  static const _modulos = ['TODOS', 'USUARIOS', 'PRACTICAS', 'AUSENCIAS', 'INCIDENCIAS', 'SEGUIMIENTOS'];
+  String _moduloSeleccionado = 'TODOS';
+
+  static const _coloresModulo = {
+    'USUARIOS': NexusColors.danger,
+    'PRACTICAS': NexusColors.primary,
+    'AUSENCIAS': NexusColors.warning,
+    'INCIDENCIAS': Color(0xFFE57373),
+    'SEGUIMIENTOS': NexusColors.success,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminProvider>().cargarAuditLogs();
+    });
+  }
+
+  void _cambiarModulo(String modulo) {
+    setState(() => _moduloSeleccionado = modulo);
+    final filtro = modulo == 'TODOS' ? null : modulo;
+    context.read<AdminProvider>().cargarAuditLogs(modulo: filtro);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          color: NexusColors.surface,
+          padding: const EdgeInsets.symmetric(
+              horizontal: NexusSizes.space3XL, vertical: NexusSizes.spaceLG),
+          child: Row(
+            children: [
+              const Text('Auditoría del sistema', style: NexusText.heading2),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.refresh, size: 18),
+                tooltip: 'Recargar',
+                onPressed: () => _cambiarModulo(_moduloSeleccionado),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          color: NexusColors.surface,
+          padding: const EdgeInsets.symmetric(
+              horizontal: NexusSizes.space3XL, vertical: NexusSizes.spaceSM),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _modulos.map((m) {
+                final activo = _moduloSeleccionado == m;
+                final color = m == 'TODOS' ? NexusColors.ink : (_coloresModulo[m] ?? NexusColors.ink);
+                return Padding(
+                  padding: const EdgeInsets.only(right: NexusSizes.spaceSM),
+                  child: FilterChip(
+                    label: Text(m),
+                    selected: activo,
+                    onSelected: (_) => _cambiarModulo(m),
+                    selectedColor: color.withOpacity(0.15),
+                    labelStyle: TextStyle(
+                        fontSize: 12,
+                        fontWeight: activo ? FontWeight.w600 : FontWeight.normal,
+                        color: activo ? color : NexusColors.inkSecondary),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+        Expanded(child: Consumer<AdminProvider>(
+          builder: (context, admin, _) {
+            if (admin.cargandoAudit) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (admin.auditLogs.isEmpty) {
+              return const Center(
+                child: Text('No hay registros de auditoría.',
+                    style: TextStyle(color: NexusColors.inkSecondary)),
+              );
+            }
+            return ListView.separated(
+              padding: const EdgeInsets.all(NexusSizes.space2XL),
+              itemCount: admin.auditLogs.length,
+              separatorBuilder: (_, __) => const SizedBox(height: NexusSizes.spaceXS),
+              itemBuilder: (_, i) => _AuditLogTile(
+                log: admin.auditLogs[i],
+                color: _coloresModulo[admin.auditLogs[i].modulo] ?? NexusColors.ink,
+              ),
+            );
+          },
+        )),
+      ],
+    );
+  }
+}
+
+class _AuditLogTile extends StatelessWidget {
+  final AuditLogModel log;
+  final Color color;
+
+  const _AuditLogTile({required this.log, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final fecha = log.fecha;
+    final fechaStr =
+        '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}  '
+        '${fecha.hour.toString().padLeft(2, '0')}:${fecha.minute.toString().padLeft(2, '0')}:${fecha.second.toString().padLeft(2, '0')}';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: NexusColors.surface,
+        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+      ),
+      padding: const EdgeInsets.symmetric(
+          horizontal: NexusSizes.spaceLG, vertical: NexusSizes.spaceMD),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 4,
+            height: 42,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: NexusSizes.spaceMD),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _ChipModulo(modulo: log.modulo, color: color),
+                    const SizedBox(width: NexusSizes.spaceSM),
+                    Text(log.accion,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: NexusColors.ink)),
+                    if (log.entidadId != null) ...[
+                      const SizedBox(width: NexusSizes.spaceXS),
+                      Text('#${log.entidadId}',
+                          style: const TextStyle(
+                              fontSize: 11, color: NexusColors.inkTertiary)),
+                    ],
+                    const Spacer(),
+                    Text(fechaStr,
+                        style: const TextStyle(
+                            fontSize: 11, color: NexusColors.inkTertiary)),
+                  ],
+                ),
+                if (log.descripcion != null && log.descripcion!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(log.descripcion!,
+                      style: const TextStyle(
+                          fontSize: 12, color: NexusColors.inkSecondary)),
+                ],
+                if (log.usuarioEmail != null) ...[
+                  const SizedBox(height: 2),
+                  Text('por ${log.usuarioEmail}',
+                      style: const TextStyle(
+                          fontSize: 11, color: NexusColors.inkTertiary)),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChipModulo extends StatelessWidget {
+  final String modulo;
+  final Color color;
+
+  const _ChipModulo({required this.modulo, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Text(modulo,
+          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color)),
+    );
+  }
+}
+
 // ---- Dialog editar usuario ----
 
 class _DialogEditarUsuario extends StatefulWidget {
@@ -1944,6 +2165,13 @@ class _MobileBottomNavAdmin extends StatelessWidget {
               label: 'Usuarios',
               isActive: modo == _ModoAdmin.usuarios,
               onTap: () => onChanged(_ModoAdmin.usuarios),
+            ),
+            _MobileNavItem(
+              icon: Icons.history_outlined,
+              activeIcon: Icons.history,
+              label: 'Auditoría',
+              isActive: modo == _ModoAdmin.auditoria,
+              onTap: () => onChanged(_ModoAdmin.auditoria),
             ),
           ],
         ),

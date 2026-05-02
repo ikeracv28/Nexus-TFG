@@ -13,6 +13,7 @@ import com.tfg.api.models.repository.IncidenciaRepository;
 import com.tfg.api.models.repository.PracticaRepository;
 import com.tfg.api.models.repository.SeguimientoRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
+import com.tfg.api.services.AuditService;
 import com.tfg.api.services.SeguimientoService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ public class SeguimientoServiceImpl implements SeguimientoService {
     private final UsuarioRepository usuarioRepository;
     private final IncidenciaRepository incidenciaRepository;
     private final SeguimientoMapper seguimientoMapper;
+    private final AuditService auditService;
 
     @Override
     @Transactional
@@ -57,7 +59,11 @@ public class SeguimientoServiceImpl implements SeguimientoService {
         seguimiento.setPractica(practica);
         seguimiento.setEstado("PENDIENTE_EMPRESA");
 
-        return seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
+        SeguimientoResponse registrado = seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
+        String actor = SecurityContextHolder.getContext().getAuthentication().getName();
+        auditService.registrar("SEGUIMIENTOS", "REGISTRAR", registrado.id(),
+                "Fecha=" + request.fechaRegistro() + " practica=" + practica.getId(), actor);
+        return registrado;
     }
 
     @Override
@@ -100,7 +106,10 @@ public class SeguimientoServiceImpl implements SeguimientoService {
             log.info("SEGUIMIENTO_VALIDADO_EMPRESA id={} por_tutor={}", id, emailTutor);
         }
 
-        return seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
+        SeguimientoResponse validado = seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
+        auditService.registrar("SEGUIMIENTOS", "VALIDAR_EMPRESA_" + nuevoEstado, id,
+                "Seguimiento → " + nuevoEstado, emailTutor);
+        return validado;
     }
 
     @Override
@@ -122,7 +131,10 @@ public class SeguimientoServiceImpl implements SeguimientoService {
         seguimiento.setValidadoPor(tutorCentro);
         log.info("SEGUIMIENTO_COMPLETADO id={} por_tutor={}", id, emailTutor);
 
-        return seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
+        SeguimientoResponse completado = seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
+        auditService.registrar("SEGUIMIENTOS", "VALIDAR_CENTRO", id,
+                "Seguimiento completado", emailTutor);
+        return completado;
     }
 
     @Override

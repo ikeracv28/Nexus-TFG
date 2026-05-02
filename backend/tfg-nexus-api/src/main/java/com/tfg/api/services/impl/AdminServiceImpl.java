@@ -11,6 +11,7 @@ import com.tfg.api.models.mapper.UsuarioMapper;
 import com.tfg.api.models.repository.RolRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
 import com.tfg.api.services.AdminService;
+import com.tfg.api.services.AuditService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,7 @@ public class AdminServiceImpl implements AdminService {
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
     private final UsuarioMapper usuarioMapper;
+    private final AuditService auditService;
 
     @Override
     @Transactional
@@ -64,6 +66,8 @@ public class AdminServiceImpl implements AdminService {
 
         Usuario guardado = usuarioRepository.save(usuario);
         log.info("ADMIN_CREAR_USUARIO id={} rol={}", guardado.getId(), request.rolNombre());
+        auditService.registrar("USUARIOS", "CREAR", guardado.getId(),
+                "Usuario creado: " + guardado.getEmail() + " rol=" + request.rolNombre(), "admin");
         return usuarioMapper.toResponse(guardado);
     }
 
@@ -83,7 +87,10 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         usuario.setActivo(!usuario.getActivo());
         log.info("ADMIN_TOGGLE_ACTIVO id={} activo={}", id, usuario.getActivo());
-        return usuarioMapper.toResponse(usuarioRepository.save(usuario));
+        UsuarioResponse resultado = usuarioMapper.toResponse(usuarioRepository.save(usuario));
+        auditService.registrar("USUARIOS", usuario.getActivo() ? "ACTIVAR" : "DESACTIVAR", id,
+                "Usuario " + usuario.getEmail() + " → activo=" + usuario.getActivo(), "admin");
+        return resultado;
     }
 
     @Override
@@ -114,6 +121,9 @@ public class AdminServiceImpl implements AdminService {
         usuario.getRoles().add(nuevoRol);
 
         log.info("ADMIN_EDITAR_USUARIO id={} rol={}", id, request.rolNombre());
-        return usuarioMapper.toResponse(usuarioRepository.save(usuario));
+        UsuarioResponse editado = usuarioMapper.toResponse(usuarioRepository.save(usuario));
+        auditService.registrar("USUARIOS", "EDITAR", id,
+                "Usuario editado: " + usuario.getEmail() + " rol=" + request.rolNombre(), "admin");
+        return editado;
     }
 }

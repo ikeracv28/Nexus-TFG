@@ -9,6 +9,7 @@ import com.tfg.api.models.mapper.IncidenciaMapper;
 import com.tfg.api.models.repository.IncidenciaRepository;
 import com.tfg.api.models.repository.PracticaRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
+import com.tfg.api.services.AuditService;
 import com.tfg.api.services.IncidenciaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class IncidenciaServiceImpl implements IncidenciaService {
     private final UsuarioRepository usuarioRepository;
     private final PracticaRepository practicaRepository;
     private final IncidenciaMapper incidenciaMapper;
+    private final AuditService auditService;
 
     private static final List<String> ORDEN_ESTADOS =
             List.of("ABIERTA", "EN_PROCESO", "RESUELTA", "CERRADA");
@@ -45,7 +47,10 @@ public class IncidenciaServiceImpl implements IncidenciaService {
                 .estado("ABIERTA")
                 .build();
 
-        return incidenciaMapper.toResponse(incidenciaRepository.save(incidencia));
+        IncidenciaResponse creada = incidenciaMapper.toResponse(incidenciaRepository.save(incidencia));
+        auditService.registrar("INCIDENCIAS", "CREAR", creada.id(),
+                "Tipo=" + request.tipo() + " practica=" + practica.getId(), emailUsuario);
+        return creada;
     }
 
     @Override
@@ -94,6 +99,9 @@ public class IncidenciaServiceImpl implements IncidenciaService {
             }
         }
 
-        return incidenciaMapper.toResponse(incidenciaRepository.save(incidencia));
+        IncidenciaResponse actualizada = incidenciaMapper.toResponse(incidenciaRepository.save(incidencia));
+        auditService.registrar("INCIDENCIAS", "CAMBIAR_ESTADO", id,
+                "Incidencia → " + nuevoEstado, emailTutor);
+        return actualizada;
     }
 }

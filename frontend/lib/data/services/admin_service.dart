@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../models/usuario_model.dart';
 import '../models/practica_model.dart';
 import '../models/empresa_model.dart';
+import '../models/audit_log_model.dart';
 import '../../core/config/api_client.dart';
 
 class AdminService {
@@ -151,5 +152,15 @@ class AdminService {
     return (response.data as List)
         .map((j) => EmpresaModel.fromJson(j as Map<String, dynamic>))
         .toList();
+  }
+
+  // ---- Audit logs ----
+
+  Future<List<AuditLogModel>> listarAuditLogs({String? modulo, int page = 0, int size = 50}) async {
+    final params = <String, dynamic>{'page': page, 'size': size, 'sort': 'fecha,desc'};
+    if (modulo != null) params['modulo'] = modulo;
+    final response = await _apiClient.dio.get('/admin/audit-logs', queryParameters: params);
+    final content = response.data['content'] as List;
+    return content.map((j) => AuditLogModel.fromJson(j as Map<String, dynamic>)).toList();
   }
 }

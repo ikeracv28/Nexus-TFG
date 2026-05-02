@@ -11,6 +11,7 @@ import com.tfg.api.models.mapper.AusenciaMapper;
 import com.tfg.api.models.repository.AusenciaRepository;
 import com.tfg.api.models.repository.PracticaRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
+import com.tfg.api.services.AuditService;
 import com.tfg.api.services.AusenciaService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ public class AusenciaServiceImpl implements AusenciaService {
     private final PracticaRepository practicaRepository;
     private final UsuarioRepository usuarioRepository;
     private final AusenciaMapper ausenciaMapper;
+    private final AuditService auditService;
 
     @Override
     @Transactional
@@ -69,7 +71,10 @@ public class AusenciaServiceImpl implements AusenciaService {
                 .build();
 
         log.info("AUSENCIA_REGISTRADA practica={} alumno={} fecha={}", practica.getId(), alumno.getId(), request.fecha());
-        return ausenciaMapper.toResponse(ausenciaRepository.save(ausencia));
+        AusenciaResponse resp = ausenciaMapper.toResponse(ausenciaRepository.save(ausencia));
+        auditService.registrar("AUSENCIAS", "REGISTRAR", resp.id(),
+                "Fecha=" + request.fecha() + " practica=" + practica.getId(), emailAlumno);
+        return resp;
     }
 
     @Override
@@ -114,7 +119,10 @@ public class AusenciaServiceImpl implements AusenciaService {
         ausencia.setComentarioRevision(comentario);
 
         log.info("AUSENCIA_REVISADA id={} tipo={} por={}", id, nuevoTipo, emailTutor);
-        return ausenciaMapper.toResponse(ausenciaRepository.save(ausencia));
+        AusenciaResponse revisada = ausenciaMapper.toResponse(ausenciaRepository.save(ausencia));
+        auditService.registrar("AUSENCIAS", "REVISAR_" + nuevoTipo, id,
+                "Ausencia revisada como " + nuevoTipo, emailTutor);
+        return revisada;
     }
 
     @Override
@@ -142,7 +150,10 @@ public class AusenciaServiceImpl implements AusenciaService {
         ausencia.setNombreFichero(fichero.getOriginalFilename());
         ausencia.setMimeType(mime);
 
-        return ausenciaMapper.toResponse(ausenciaRepository.save(ausencia));
+        AusenciaResponse conJustificante = ausenciaMapper.toResponse(ausenciaRepository.save(ausencia));
+        auditService.registrar("AUSENCIAS", "ADJUNTAR_JUSTIFICANTE", id,
+                "Fichero=" + fichero.getOriginalFilename(), emailAlumno);
+        return conJustificante;
     }
 
     @Override
@@ -173,6 +184,8 @@ public class AusenciaServiceImpl implements AusenciaService {
             throw new BusinessRuleException("No se puede eliminar una ausencia ya revisada");
         }
 
+        auditService.registrar("AUSENCIAS", "ELIMINAR", id,
+                "Ausencia eliminada por alumno", emailAlumno);
         ausenciaRepository.delete(ausencia);
         log.info("AUSENCIA_ELIMINADA id={} por={}", id, emailAlumno);
     }

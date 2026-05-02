@@ -9,6 +9,7 @@ import com.tfg.api.models.mapper.PracticaMapper;
 import com.tfg.api.models.repository.EmpresaRepository;
 import com.tfg.api.models.repository.PracticaRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
+import com.tfg.api.services.AuditService;
 import com.tfg.api.services.PracticaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +33,7 @@ public class PracticaServiceImpl implements PracticaService {
     private final UsuarioRepository usuarioRepository;
     private final EmpresaRepository empresaRepository;
     private final PracticaMapper practicaMapper;
+    private final AuditService auditService;
 
     @Override
     @Transactional
@@ -57,7 +59,11 @@ public class PracticaServiceImpl implements PracticaService {
         practica.setTutorEmpresa(tutorEmpresa);
         practica.setEmpresa(empresa);
 
-        return practicaMapper.toResponse(practicaRepository.save(practica));
+        PracticaResponse creada = practicaMapper.toResponse(practicaRepository.save(practica));
+        String actor = SecurityContextHolder.getContext().getAuthentication().getName();
+        auditService.registrar("PRACTICAS", "CREAR", creada.id(),
+                "Práctica " + request.codigo() + " alumno=" + alumno.getEmail(), actor);
+        return creada;
     }
 
     @Override
@@ -96,7 +102,11 @@ public class PracticaServiceImpl implements PracticaService {
             practica.setEstado(request.estado());
         }
 
-        return practicaMapper.toResponse(practicaRepository.save(practica));
+        PracticaResponse actualizada = practicaMapper.toResponse(practicaRepository.save(practica));
+        String actor = SecurityContextHolder.getContext().getAuthentication().getName();
+        auditService.registrar("PRACTICAS", "EDITAR", id,
+                "Práctica " + practica.getCodigo() + " actualizada", actor);
+        return actualizada;
     }
 
     @Override
@@ -110,6 +120,9 @@ public class PracticaServiceImpl implements PracticaService {
             throw new BusinessRuleException("No se puede eliminar una práctica que no esté en estado BORRADOR");
         }
 
+        String actor = SecurityContextHolder.getContext().getAuthentication().getName();
+        auditService.registrar("PRACTICAS", "ELIMINAR", id,
+                "Práctica " + practica.getCodigo() + " eliminada (estado BORRADOR)", actor);
         practicaRepository.delete(practica);
     }
 
@@ -127,7 +140,11 @@ public class PracticaServiceImpl implements PracticaService {
         Practica practica = practicaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Práctica no encontrada"));
         practica.setEstado(estado);
-        return practicaMapper.toResponse(practicaRepository.save(practica));
+        PracticaResponse resp = practicaMapper.toResponse(practicaRepository.save(practica));
+        String actor = SecurityContextHolder.getContext().getAuthentication().getName();
+        auditService.registrar("PRACTICAS", "CAMBIAR_ESTADO", id,
+                "Práctica " + practica.getCodigo() + " → " + estado, actor);
+        return resp;
     }
 
     @Override

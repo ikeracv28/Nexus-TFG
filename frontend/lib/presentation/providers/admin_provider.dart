@@ -3,6 +3,7 @@ import '../../data/models/usuario_model.dart';
 import '../../data/models/practica_model.dart';
 import '../../data/models/empresa_model.dart';
 import '../../data/models/incidencia_model.dart';
+import '../../data/models/audit_log_model.dart';
 import '../../data/services/admin_service.dart';
 import '../../data/services/incidencia_service.dart';
 
@@ -14,6 +15,8 @@ class AdminProvider extends ChangeNotifier {
   List<Practica> _practicas = [];
   List<EmpresaModel> _empresas = [];
   List<Incidencia> _incidencias = [];
+  List<AuditLogModel> _auditLogs = [];
+  bool _cargandoAudit = false;
 
   bool _cargando = false;
   String? _error;
@@ -22,6 +25,8 @@ class AdminProvider extends ChangeNotifier {
   List<Practica> get practicas => _practicas;
   List<EmpresaModel> get empresas => _empresas;
   List<Incidencia> get incidencias => _incidencias;
+  List<AuditLogModel> get auditLogs => _auditLogs;
+  bool get cargandoAudit => _cargandoAudit;
   bool get cargando => _cargando;
   String? get error => _error;
 
@@ -184,6 +189,19 @@ class AdminProvider extends ChangeNotifier {
       _error = e.toString().replaceFirst('Exception: ', '');
       notifyListeners();
       return false;
+    }
+  }
+
+  Future<void> cargarAuditLogs({String? modulo}) async {
+    _cargandoAudit = true;
+    notifyListeners();
+    try {
+      _auditLogs = await _service.listarAuditLogs(modulo: modulo);
+    } catch (_) {
+      _auditLogs = [];
+    } finally {
+      _cargandoAudit = false;
+      notifyListeners();
     }
   }
 

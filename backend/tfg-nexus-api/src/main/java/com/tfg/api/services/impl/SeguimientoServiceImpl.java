@@ -60,7 +60,7 @@ public class SeguimientoServiceImpl implements SeguimientoService {
         seguimiento.setEstado("PENDIENTE_EMPRESA");
 
         SeguimientoResponse registrado = seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
-        String actor = SecurityContextHolder.getContext().getAuthentication().getName();
+        String actor = currentUserEmail();
         auditService.registrar("SEGUIMIENTOS", "REGISTRAR", registrado.id(),
                 "Fecha=" + request.fechaRegistro() + " practica=" + practica.getId(), actor);
         return registrado;
@@ -91,7 +91,7 @@ public class SeguimientoServiceImpl implements SeguimientoService {
             throw new BusinessRuleException("El motivo es obligatorio al rechazar un parte");
         }
 
-        String emailTutor = SecurityContextHolder.getContext().getAuthentication().getName();
+        String emailTutor = currentUserEmail();
         Usuario tutorEmpresa = usuarioRepository.findByEmail(emailTutor)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no identificado"));
 
@@ -123,7 +123,7 @@ public class SeguimientoServiceImpl implements SeguimientoService {
                     "El parte debe ser validado por la empresa antes de que el centro actúe");
         }
 
-        String emailTutor = SecurityContextHolder.getContext().getAuthentication().getName();
+        String emailTutor = currentUserEmail();
         Usuario tutorCentro = usuarioRepository.findByEmail(emailTutor)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no identificado"));
 
@@ -148,6 +148,11 @@ public class SeguimientoServiceImpl implements SeguimientoService {
         }
 
         seguimientoRepository.delete(seguimiento);
+    }
+
+    private String currentUserEmail() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null) ? auth.getName() : "system";
     }
 
     private void crearIncidenciaRechazo(Practica practica, Usuario tutorEmpresa, String motivo) {

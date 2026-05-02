@@ -89,7 +89,7 @@ public class AusenciaServiceImpl implements AusenciaService {
 
     @Override
     @Transactional
-    public AusenciaResponse revisar(Long id, String nuevoTipo, String comentario, String emailTutorCentro) {
+    public AusenciaResponse revisar(Long id, String nuevoTipo, String comentario, String emailTutor) {
         Ausencia ausencia = ausenciaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ausencia no encontrada"));
 
@@ -100,14 +100,20 @@ public class AusenciaServiceImpl implements AusenciaService {
             throw new BusinessRuleException("Tipo no válido. Use: JUSTIFICADA o INJUSTIFICADA");
         }
 
-        Usuario tutorCentro = usuarioRepository.findByEmail(emailTutorCentro)
+        Usuario tutor = usuarioRepository.findByEmail(emailTutor)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
+        // A01: el tutor empresa solo puede revisar ausencias de sus propias prácticas
+        Practica practica = ausencia.getPractica();
+        if (practica.getTutorEmpresa() == null || !practica.getTutorEmpresa().getId().equals(tutor.getId())) {
+            throw new BusinessRuleException("No tienes permiso para revisar ausencias de esta práctica");
+        }
+
         ausencia.setTipo(nuevoTipo);
-        ausencia.setRevisadaPor(tutorCentro);
+        ausencia.setRevisadaPor(tutor);
         ausencia.setComentarioRevision(comentario);
 
-        log.info("AUSENCIA_REVISADA id={} tipo={} por={}", id, nuevoTipo, emailTutorCentro);
+        log.info("AUSENCIA_REVISADA id={} tipo={} por={}", id, nuevoTipo, emailTutor);
         return ausenciaMapper.toResponse(ausenciaRepository.save(ausencia));
     }
 
@@ -137,6 +143,20 @@ public class AusenciaServiceImpl implements AusenciaService {
         ausencia.setMimeType(mime);
 
         return ausenciaMapper.toResponse(ausenciaRepository.save(ausencia));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AusenciaService.JustificanteDto descargarJustificante(Long id) {
+        Ausencia ausencia = ausenciaRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ausencia no encontrada"));
+        if (ausencia.getJustificante() == null || ausencia.getJustificante().length == 0) {
+            throw new ResourceNotFoundException("Esta ausencia no tiene justificante adjunto");
+        }
+        return new AusenciaService.JustificanteDto(
+                ausencia.getJustificante(),
+                ausencia.getMimeType(),
+                ausencia.getNombreFichero());
     }
 
     @Override

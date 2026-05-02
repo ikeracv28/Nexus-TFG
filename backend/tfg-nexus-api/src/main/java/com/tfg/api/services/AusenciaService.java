@@ -15,9 +15,13 @@ public interface AusenciaService {
 
     AusenciaResponse obtenerPorId(Long id);
 
-    AusenciaResponse revisar(Long id, String nuevoTipo, String comentario, String emailTutorCentro);
+    AusenciaResponse revisar(Long id, String nuevoTipo, String comentario, String emailTutor);
 
     AusenciaResponse adjuntarJustificante(Long id, MultipartFile fichero, String emailAlumno) throws IOException;
 
     void eliminar(Long id, String emailAlumno);
+
+    record JustificanteDto(byte[] datos, String mimeType, String nombreFichero) {}
+
+    JustificanteDto descargarJustificante(Long id);
 }

@@ -62,6 +62,42 @@ class AusenciaService {
     }
   }
 
+  Future<({Uint8List bytes, String mimeType})> descargarJustificante(int id) async {
+    try {
+      final response = await _apiClient.dio.get<List<int>>(
+        '/ausencias/$id/justificante',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final mime = (response.headers['content-type']?.first ?? 'application/octet-stream')
+          .split(';')
+          .first
+          .trim();
+      return (bytes: Uint8List.fromList(response.data!), mimeType: mime);
+    } on DioException catch (e) {
+      throw Exception('Error al descargar justificante: ${e.message}');
+    }
+  }
+
+  Future<Ausencia> revisar({
+    required int id,
+    required String nuevoTipo,
+    String? comentario,
+  }) async {
+    try {
+      final response = await _apiClient.dio.patch(
+        '/ausencias/$id/revisar',
+        queryParameters: {
+          'nuevoTipo': nuevoTipo,
+          if (comentario != null && comentario.isNotEmpty) 'comentario': comentario,
+        },
+      );
+      return Ausencia.fromJson(response.data);
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? e.message ?? 'Error al revisar ausencia';
+      throw Exception(msg);
+    }
+  }
+
   Future<void> eliminar(int id) async {
     try {
       await _apiClient.dio.delete('/ausencias/$id');

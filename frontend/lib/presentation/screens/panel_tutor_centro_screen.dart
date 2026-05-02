@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../data/models/ausencia_model.dart';
 import '../../data/models/incidencia_model.dart';
 import '../../data/models/practica_model.dart';
 import '../../data/models/seguimiento_model.dart';
@@ -546,6 +547,8 @@ class _StudentList extends StatelessWidget {
                             .incidenciasDe(p.id)
                             .where((x) => x.estaAbierta)
                             .length,
+                        ausenciasInjustificadas:
+                            provider.ausenciasInjustificadasDe(p.id).length,
                         onTap: () => provider.seleccionar(p.id),
                       );
                     },
@@ -562,6 +565,7 @@ class _StudentItem extends StatelessWidget {
   final bool isSelected;
   final int pendientesCentro;
   final int incidenciasAbiertas;
+  final int ausenciasInjustificadas;
   final VoidCallback onTap;
 
   const _StudentItem({
@@ -569,6 +573,7 @@ class _StudentItem extends StatelessWidget {
     required this.isSelected,
     required this.pendientesCentro,
     required this.incidenciasAbiertas,
+    required this.ausenciasInjustificadas,
     required this.onTap,
   });
 
@@ -577,9 +582,10 @@ class _StudentItem extends StatelessWidget {
     final initials = _getInitials(practica.alumnoNombre);
 
     Widget badge;
-    if (incidenciasAbiertas > 0) {
+    final alertaTotal = incidenciasAbiertas + ausenciasInjustificadas;
+    if (alertaTotal > 0) {
       badge = _MiniPill(
-          label: '!$incidenciasAbiertas',
+          label: '!$alertaTotal',
           bg: NexusColors.dangerLight,
           textColor: NexusColors.dangerText);
     } else if (pendientesCentro > 0) {
@@ -721,6 +727,7 @@ class _DetailPanel extends StatelessWidget {
 
     final pendientes = provider.pendientesCentroDe(practica.id);
     final incidencias = provider.incidenciasDe(practica.id);
+    final ausenciasInjustificadas = provider.ausenciasInjustificadasDe(practica.id);
     final horasCompletadas = provider.horasCompletadasDe(practica.id);
     final horasTotales = practica.horasTotales ?? 240;
     final progreso = horasTotales > 0
@@ -899,6 +906,40 @@ class _DetailPanel extends StatelessWidget {
                         ),
                       )),
               const SizedBox(height: 6),
+            ],
+
+            // ── Ausencias injustificadas ──────────────────────────────────
+            if (ausenciasInjustificadas.isNotEmpty) ...[
+              _SectionLabel(
+                  label: 'AUSENCIAS INJUSTIFICADAS',
+                  count: ausenciasInjustificadas.length,
+                  countColor: NexusColors.danger),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: NexusColors.surface,
+                  border: Border.all(
+                      color: NexusColors.border,
+                      width: NexusSizes.borderWidth),
+                  borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(6),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: ausenciasInjustificadas.asMap().entries.map((e) {
+                    return _AusenciaInjustificadaRow(
+                      ausencia: e.value,
+                      isLast: e.key == ausenciasInjustificadas.length - 1,
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 16),
             ],
 
             // ── Chat ──────────────────────────────────────────────────────
@@ -1995,6 +2036,67 @@ class _ChatPlaceholder extends StatelessWidget {
                   'Pendiente: Hito 4',
                   style:
                       NexusText.small.copyWith(color: NexusColors.primaryText),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Ausencia injustificada row ─────────────────────────────────────────────────
+
+class _AusenciaInjustificadaRow extends StatelessWidget {
+  final Ausencia ausencia;
+  final bool isLast;
+
+  const _AusenciaInjustificadaRow({
+    required this.ausencia,
+    required this.isLast,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fecha = DateFormat('d/MM/yyyy', 'es_ES').format(ausencia.fecha);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : const Border(
+                bottom: BorderSide(
+                    color: NexusColors.border,
+                    width: NexusSizes.borderWidth)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: NexusColors.danger,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  ausencia.motivo,
+                  style: NexusText.small,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '$fecha · Revisada por ${ausencia.revisadaPorNombre ?? 'tutor empresa'}',
+                  style: NexusText.caption.copyWith(
+                      color: NexusColors.inkSecondary, fontSize: 10),
                 ),
               ],
             ),

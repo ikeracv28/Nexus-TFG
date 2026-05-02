@@ -13,6 +13,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.http.HttpHeaders;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -46,15 +48,30 @@ public class AusenciaController {
         return ResponseEntity.ok(ausenciaService.obtenerPorId(id));
     }
 
-    /** Tutor centro revisa la ausencia: JUSTIFICADA o INJUSTIFICADA + comentario opcional. */
+    /** Tutor empresa revisa la ausencia: JUSTIFICADA o INJUSTIFICADA + comentario opcional. */
     @PatchMapping("/{id}/revisar")
-    @PreAuthorize("hasRole('TUTOR_CENTRO')")
+    @PreAuthorize("hasRole('TUTOR_EMPRESA')")
     public ResponseEntity<AusenciaResponse> revisar(
             @PathVariable Long id,
             @RequestParam String nuevoTipo,
             @RequestParam(required = false) String comentario) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(ausenciaService.revisar(id, nuevoTipo, comentario, email));
+    }
+
+    /** Descarga el fichero justificante adjunto (todos los roles con acceso). */
+    @GetMapping("/{id}/justificante")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR_CENTRO', 'TUTOR_EMPRESA', 'ALUMNO')")
+    public ResponseEntity<byte[]> descargarJustificante(@PathVariable Long id) {
+        AusenciaService.JustificanteDto dto = ausenciaService.descargarJustificante(id);
+        // A03: sanitizar el nombre para evitar header injection
+        String nombreSeguro = dto.nombreFichero() == null ? "justificante"
+                : dto.nombreFichero().replaceAll("[\\r\\n\"\\\\]", "_");
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(dto.mimeType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + nombreSeguro + "\"")
+                .body(dto.datos());
     }
 
     /** Alumno adjunta fichero justificante (PDF / JPG / PNG, máx 5 MB). */

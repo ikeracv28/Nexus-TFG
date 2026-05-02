@@ -1,6 +1,7 @@
 package com.tfg.api.controllers;
 
 import com.tfg.api.models.dto.CreateUsuarioRequest;
+import com.tfg.api.models.dto.UpdateUsuarioRequest;
 import com.tfg.api.models.dto.UsuarioResponse;
 import com.tfg.api.services.AdminService;
 import jakarta.validation.Valid;
@@ -35,5 +36,13 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UsuarioResponse> toggleActivo(@PathVariable Long id) {
         return ResponseEntity.ok(adminService.toggleActivo(id));
+    }
+
+    @PutMapping("/usuarios/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UsuarioResponse> editarUsuario(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateUsuarioRequest request) {
+        return ResponseEntity.ok(adminService.editarUsuario(id, request));
     }
 }

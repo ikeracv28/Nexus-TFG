@@ -3,6 +3,7 @@ package com.tfg.api.services.impl;
 import com.tfg.api.exceptions.BusinessRuleException;
 import com.tfg.api.exceptions.ResourceNotFoundException;
 import com.tfg.api.models.dto.CreateUsuarioRequest;
+import com.tfg.api.models.dto.UpdateUsuarioRequest;
 import com.tfg.api.models.dto.UsuarioResponse;
 import com.tfg.api.models.entity.Rol;
 import com.tfg.api.models.entity.Usuario;
@@ -81,6 +82,36 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         usuario.setActivo(!usuario.getActivo());
         log.info("ADMIN_TOGGLE_ACTIVO id={} activo={}", id, usuario.getActivo());
+        return usuarioMapper.toResponse(usuarioRepository.save(usuario));
+    }
+
+    @Override
+    @Transactional
+    public UsuarioResponse editarUsuario(Long id, UpdateUsuarioRequest request) {
+        if (!ROLES_PERMITIDOS.contains(request.rolNombre())) {
+            throw new BusinessRuleException(
+                    "Rol no válido. Los roles permitidos son: " + String.join(", ", ROLES_PERMITIDOS));
+        }
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        if (!usuario.getEmail().equals(request.email()) && usuarioRepository.existsByEmail(request.email())) {
+            throw new BusinessRuleException("El email ya está en uso por otro usuario.");
+        }
+        if (!usuario.getDni().equals(request.dni()) && usuarioRepository.existsByDni(request.dni())) {
+            throw new BusinessRuleException("El DNI ya está en uso por otro usuario.");
+        }
+
+        Rol nuevoRol = rolRepository.findByNombre(request.rolNombre())
+                .orElseThrow(() -> new BusinessRuleException("Rol no encontrado en el sistema: " + request.rolNombre()));
+
+        usuario.setDni(request.dni());
+        usuario.setNombre(request.nombre());
+        usuario.setApellidos(request.apellidos());
+        usuario.setEmail(request.email());
+        usuario.setRoles(Set.of(nuevoRol));
+
+        log.info("ADMIN_EDITAR_USUARIO id={} rol={}", id, request.rolNombre());
         return usuarioMapper.toResponse(usuarioRepository.save(usuario));
     }
 }

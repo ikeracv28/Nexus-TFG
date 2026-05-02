@@ -737,6 +737,19 @@ class _PracticaCard extends StatelessWidget {
               ],
             ),
           ],
+          const SizedBox(width: NexusSizes.spaceXS),
+          Builder(builder: (ctx) => IconButton(
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            tooltip: 'Editar práctica',
+            color: NexusColors.inkSecondary,
+            onPressed: () => showDialog(
+              context: ctx,
+              builder: (_) => ChangeNotifierProvider.value(
+                value: ctx.read<AdminProvider>(),
+                child: _DialogEditarPractica(practica: practica),
+              ),
+            ),
+          )),
         ],
       ),
     );
@@ -1242,7 +1255,19 @@ class _UsuarioCard extends StatelessWidget {
           _ChipRol(rol: usuario.rolPrincipal),
           const SizedBox(width: NexusSizes.spaceMD),
           _ChipActivoEstado(activo: usuario.activo),
-          const SizedBox(width: NexusSizes.spaceMD),
+          const SizedBox(width: NexusSizes.spaceXS),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            tooltip: 'Editar usuario',
+            color: NexusColors.inkSecondary,
+            onPressed: () => showDialog(
+              context: context,
+              builder: (_) => ChangeNotifierProvider.value(
+                value: context.read<AdminProvider>(),
+                child: _DialogEditarUsuario(usuario: usuario),
+              ),
+            ),
+          ),
           IconButton(
             icon: Icon(
               usuario.activo ? Icons.toggle_on : Icons.toggle_off,
@@ -1480,6 +1505,404 @@ class _DialogCrearUsuarioState extends State<_DialogCrearUsuario> {
           (required
               ? (v) => (v == null || v.trim().isEmpty) ? 'Obligatorio' : null
               : null),
+    );
+  }
+}
+
+// ---- Dialog editar usuario ----
+
+class _DialogEditarUsuario extends StatefulWidget {
+  final UsuarioModel usuario;
+  const _DialogEditarUsuario({required this.usuario});
+
+  @override
+  State<_DialogEditarUsuario> createState() => _DialogEditarUsuarioState();
+}
+
+class _DialogEditarUsuarioState extends State<_DialogEditarUsuario> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _dniCtrl;
+  late final TextEditingController _nombreCtrl;
+  late final TextEditingController _apellidosCtrl;
+  late final TextEditingController _emailCtrl;
+  late String _rolSeleccionado;
+  bool _enviando = false;
+  String? _error;
+
+  static const _roles = [
+    ('ROLE_ALUMNO', 'Alumno'),
+    ('ROLE_TUTOR_CENTRO', 'Tutor Centro'),
+    ('ROLE_TUTOR_EMPRESA', 'Tutor Empresa'),
+    ('ROLE_ADMIN', 'Administrador'),
+  ];
+
+  String _rolActual(UsuarioModel u) {
+    if (u.roles.contains('ROLE_ADMIN')) return 'ROLE_ADMIN';
+    if (u.roles.contains('ROLE_TUTOR_CENTRO')) return 'ROLE_TUTOR_CENTRO';
+    if (u.roles.contains('ROLE_TUTOR_EMPRESA')) return 'ROLE_TUTOR_EMPRESA';
+    return 'ROLE_ALUMNO';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _dniCtrl = TextEditingController(text: widget.usuario.dni);
+    _nombreCtrl = TextEditingController(text: widget.usuario.nombre);
+    _apellidosCtrl = TextEditingController(text: widget.usuario.apellidos);
+    _emailCtrl = TextEditingController(text: widget.usuario.email);
+    _rolSeleccionado = _rolActual(widget.usuario);
+  }
+
+  @override
+  void dispose() {
+    _dniCtrl.dispose(); _nombreCtrl.dispose();
+    _apellidosCtrl.dispose(); _emailCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _enviar() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() { _enviando = true; _error = null; });
+    final ok = await context.read<AdminProvider>().editarUsuario(
+      id: widget.usuario.id,
+      dni: _dniCtrl.text.trim(),
+      nombre: _nombreCtrl.text.trim(),
+      apellidos: _apellidosCtrl.text.trim(),
+      email: _emailCtrl.text.trim(),
+      rolNombre: _rolSeleccionado,
+    );
+    if (!mounted) return;
+    if (ok) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Usuario actualizado correctamente'),
+        backgroundColor: NexusColors.success,
+      ));
+    } else {
+      setState(() {
+        _error = context.read<AdminProvider>().error;
+        _enviando = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Editar usuario', style: NexusText.heading3),
+      content: SizedBox(
+        width: 480,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_error != null) ...[
+                _ErrorBanner(mensaje: _error!),
+                const SizedBox(height: NexusSizes.spaceMD),
+              ],
+              Row(children: [
+                Expanded(child: _campo(_nombreCtrl, 'Nombre', required: true)),
+                const SizedBox(width: NexusSizes.spaceMD),
+                Expanded(child: _campo(_apellidosCtrl, 'Apellidos', required: true)),
+              ]),
+              const SizedBox(height: NexusSizes.spaceMD),
+              Row(children: [
+                Expanded(child: _campo(_dniCtrl, 'DNI', required: true)),
+                const SizedBox(width: NexusSizes.spaceMD),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _rolSeleccionado,
+                    decoration: _deco('Rol'),
+                    items: _roles.map((r) =>
+                        DropdownMenuItem(value: r.$1, child: Text(r.$2))).toList(),
+                    onChanged: (v) => setState(() => _rolSeleccionado = v!),
+                  ),
+                ),
+              ]),
+              const SizedBox(height: NexusSizes.spaceMD),
+              _campo(_emailCtrl, 'Email',
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (v) =>
+                      (v == null || !v.contains('@')) ? 'Email inválido' : null),
+              const SizedBox(height: NexusSizes.spaceXS),
+              const Text(
+                'La contraseña no se puede editar desde aquí.',
+                style: TextStyle(fontSize: 11, color: NexusColors.inkTertiary),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _enviando ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _enviando ? null : _enviar,
+          style: FilledButton.styleFrom(backgroundColor: NexusColors.primary),
+          child: _enviando
+              ? const SizedBox(width: 16, height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Guardar cambios'),
+        ),
+      ],
+    );
+  }
+
+  InputDecoration _deco(String label) => InputDecoration(
+      labelText: label, border: const OutlineInputBorder(),
+      contentPadding: const EdgeInsets.symmetric(
+          horizontal: NexusSizes.spaceMD, vertical: NexusSizes.spaceMD),
+      isDense: true);
+
+  Widget _campo(TextEditingController ctrl, String label,
+      {bool required = false, TextInputType? keyboardType,
+      String? Function(String?)? validator}) {
+    return TextFormField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      decoration: _deco(label),
+      validator: validator ??
+          (required ? (v) => (v == null || v.trim().isEmpty) ? 'Obligatorio' : null : null),
+    );
+  }
+}
+
+// ---- Dialog editar práctica ----
+
+class _DialogEditarPractica extends StatefulWidget {
+  final Practica practica;
+  const _DialogEditarPractica({required this.practica});
+
+  @override
+  State<_DialogEditarPractica> createState() => _DialogEditarPracticaState();
+}
+
+class _DialogEditarPracticaState extends State<_DialogEditarPractica> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _codigoCtrl;
+  late final TextEditingController _horasCtrl;
+  DateTime? _fechaInicio;
+  DateTime? _fechaFin;
+  UsuarioModel? _alumno;
+  UsuarioModel? _tutorCentro;
+  UsuarioModel? _tutorEmpresa;
+  EmpresaModel? _empresa;
+  late String _estado;
+  bool _enviando = false;
+  String? _error;
+
+  static const _estados = ['BORRADOR', 'ACTIVA', 'FINALIZADA'];
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.practica;
+    _codigoCtrl = TextEditingController(text: p.codigo);
+    _horasCtrl = TextEditingController(text: p.horasTotales?.toString() ?? '');
+    _fechaInicio = p.fechaInicio;
+    _fechaFin = p.fechaFin;
+    _estado = p.estado;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_alumno == null) {
+      final admin = context.read<AdminProvider>();
+      final p = widget.practica;
+      _alumno = admin.alumnos.where((u) => u.id == p.alumnoId).firstOrNull;
+      _tutorCentro = admin.tutoresCentro.where((u) => u.id == p.tutorCentroId).firstOrNull;
+      _tutorEmpresa = admin.tutoresEmpresa.where((u) => u.id == p.tutorEmpresaId).firstOrNull;
+      _empresa = admin.empresas.where((e) => e.id == p.empresaId).firstOrNull;
+    }
+  }
+
+  @override
+  void dispose() {
+    _codigoCtrl.dispose();
+    _horasCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _seleccionarFecha(bool esInicio) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: (esInicio ? _fechaInicio : _fechaFin) ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+    if (picked != null) {
+      setState(() {
+        if (esInicio) _fechaInicio = picked;
+        else _fechaFin = picked;
+      });
+    }
+  }
+
+  Future<void> _enviar() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_fechaInicio == null || _fechaFin == null) {
+      setState(() => _error = 'Las fechas de inicio y fin son obligatorias');
+      return;
+    }
+    setState(() { _enviando = true; _error = null; });
+
+    final ok = await context.read<AdminProvider>().editarPractica(
+      id: widget.practica.id,
+      codigo: _codigoCtrl.text.trim(),
+      alumnoId: _alumno!.id,
+      tutorCentroId: _tutorCentro!.id,
+      tutorEmpresaId: _tutorEmpresa!.id,
+      empresaId: _empresa!.id,
+      fechaInicio: _fechaInicio!.toIso8601String().split('T')[0],
+      fechaFin: _fechaFin!.toIso8601String().split('T')[0],
+      horasTotales: int.parse(_horasCtrl.text.trim()),
+      estado: _estado,
+    );
+
+    if (!mounted) return;
+    if (ok) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Práctica actualizada correctamente'),
+        backgroundColor: NexusColors.success,
+      ));
+    } else {
+      setState(() {
+        _error = context.read<AdminProvider>().error;
+        _enviando = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final admin = context.watch<AdminProvider>();
+    return AlertDialog(
+      title: const Text('Editar práctica', style: NexusText.heading3),
+      content: SizedBox(
+        width: 520,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_error != null) ...[
+                  _ErrorBanner(mensaje: _error!),
+                  const SizedBox(height: NexusSizes.spaceMD),
+                ],
+                Row(children: [
+                  Expanded(child: _campoTexto(_codigoCtrl, 'Código', required: true)),
+                  const SizedBox(width: NexusSizes.spaceMD),
+                  Expanded(
+                    child: _campoTexto(_horasCtrl, 'Horas totales',
+                        keyboardType: TextInputType.number,
+                        validator: (v) => (v == null || int.tryParse(v) == null)
+                            ? 'Número válido'
+                            : null),
+                  ),
+                ]),
+                const SizedBox(height: NexusSizes.spaceMD),
+                DropdownButtonFormField<String>(
+                  value: _estado,
+                  decoration: _deco('Estado'),
+                  items: _estados.map((e) =>
+                      DropdownMenuItem(value: e, child: Text(e))).toList(),
+                  onChanged: (v) => setState(() => _estado = v!),
+                ),
+                const SizedBox(height: NexusSizes.spaceMD),
+                _DropdownUsuario(
+                  label: 'Alumno',
+                  usuarios: admin.alumnos,
+                  valor: _alumno,
+                  onChanged: (u) => setState(() => _alumno = u),
+                ),
+                const SizedBox(height: NexusSizes.spaceMD),
+                _DropdownUsuario(
+                  label: 'Tutor del centro',
+                  usuarios: admin.tutoresCentro,
+                  valor: _tutorCentro,
+                  onChanged: (u) => setState(() => _tutorCentro = u),
+                ),
+                const SizedBox(height: NexusSizes.spaceMD),
+                _DropdownUsuario(
+                  label: 'Tutor de empresa',
+                  usuarios: admin.tutoresEmpresa,
+                  valor: _tutorEmpresa,
+                  onChanged: (u) => setState(() => _tutorEmpresa = u),
+                ),
+                const SizedBox(height: NexusSizes.spaceMD),
+                DropdownButtonFormField<EmpresaModel>(
+                  value: _empresa,
+                  decoration: _deco('Empresa'),
+                  items: admin.empresas
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e.nombre)))
+                      .toList(),
+                  onChanged: (e) => setState(() => _empresa = e),
+                  validator: (v) => v == null ? 'Selecciona una empresa' : null,
+                ),
+                const SizedBox(height: NexusSizes.spaceMD),
+                Row(children: [
+                  Expanded(
+                    child: _BotonFecha(
+                      label: 'Inicio',
+                      fecha: _fechaInicio,
+                      onTap: () => _seleccionarFecha(true),
+                    ),
+                  ),
+                  const SizedBox(width: NexusSizes.spaceMD),
+                  Expanded(
+                    child: _BotonFecha(
+                      label: 'Fin',
+                      fecha: _fechaFin,
+                      onTap: () => _seleccionarFecha(false),
+                    ),
+                  ),
+                ]),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _enviando ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _enviando ? null : _enviar,
+          style: FilledButton.styleFrom(backgroundColor: NexusColors.primary),
+          child: _enviando
+              ? const SizedBox(width: 16, height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Guardar cambios'),
+        ),
+      ],
+    );
+  }
+
+  InputDecoration _deco(String label) => InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(
+            horizontal: NexusSizes.spaceMD, vertical: NexusSizes.spaceMD),
+        isDense: true,
+      );
+
+  Widget _campoTexto(TextEditingController ctrl, String label,
+      {bool required = false,
+      TextInputType? keyboardType,
+      String? Function(String?)? validator}) {
+    return TextFormField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      decoration: _deco(label),
+      validator: validator ??
+          (required ? (v) => (v == null || v.trim().isEmpty) ? 'Obligatorio' : null : null),
     );
   }
 }

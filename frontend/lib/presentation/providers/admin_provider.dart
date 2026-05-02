@@ -109,6 +109,29 @@ class AdminProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
+  Future<bool> editarUsuario({
+    required int id,
+    required String dni,
+    required String nombre,
+    required String apellidos,
+    required String email,
+    required String rolNombre,
+  }) async {
+    try {
+      final actualizado = await _service.editarUsuario(
+        id: id, dni: dni, nombre: nombre,
+        apellidos: apellidos, email: email, rolNombre: rolNombre,
+      );
+      _usuarios = _usuarios.map((u) => u.id == id ? actualizado : u).toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> crearPractica({
     required String codigo,
     required int alumnoId,
@@ -126,6 +149,35 @@ class AdminProvider extends ChangeNotifier {
         fechaInicio: fechaInicio, fechaFin: fechaFin, horasTotales: horasTotales,
       );
       _practicas = [nueva, ..._practicas];
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> editarPractica({
+    required int id,
+    required String codigo,
+    required int alumnoId,
+    required int tutorCentroId,
+    required int tutorEmpresaId,
+    required int empresaId,
+    required String fechaInicio,
+    required String fechaFin,
+    required int horasTotales,
+    required String estado,
+  }) async {
+    try {
+      final actualizada = await _service.editarPractica(
+        id: id, codigo: codigo, alumnoId: alumnoId,
+        tutorCentroId: tutorCentroId, tutorEmpresaId: tutorEmpresaId,
+        empresaId: empresaId, fechaInicio: fechaInicio, fechaFin: fechaFin,
+        horasTotales: horasTotales, estado: estado,
+      );
+      _practicas = _practicas.map((p) => p.id == id ? actualizada : p).toList();
       notifyListeners();
       return true;
     } catch (e) {

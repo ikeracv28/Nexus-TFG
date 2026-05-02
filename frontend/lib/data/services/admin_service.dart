@@ -47,6 +47,31 @@ class AdminService {
     return UsuarioModel.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<UsuarioModel> editarUsuario({
+    required int id,
+    required String dni,
+    required String nombre,
+    required String apellidos,
+    required String email,
+    required String rolNombre,
+  }) async {
+    try {
+      final response = await _apiClient.dio.put('/admin/usuarios/$id', data: {
+        'dni': dni,
+        'nombre': nombre,
+        'apellidos': apellidos,
+        'email': email,
+        'rolNombre': rolNombre,
+      });
+      return UsuarioModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      final message = (data is Map ? data['message'] as String? : null)
+          ?? 'Error al editar el usuario';
+      throw Exception(message);
+    }
+  }
+
   // ---- Prácticas ----
 
   Future<List<Practica>> listarPracticas() async {
@@ -82,6 +107,39 @@ class AdminService {
       final data = e.response?.data;
       final message = (data is Map ? data['message'] as String? : null)
           ?? 'Error al crear la práctica';
+      throw Exception(message);
+    }
+  }
+
+  Future<Practica> editarPractica({
+    required int id,
+    required String codigo,
+    required int alumnoId,
+    required int tutorCentroId,
+    required int tutorEmpresaId,
+    required int empresaId,
+    required String fechaInicio,
+    required String fechaFin,
+    required int horasTotales,
+    required String estado,
+  }) async {
+    try {
+      final response = await _apiClient.dio.put('/practicas/$id', data: {
+        'codigo': codigo,
+        'alumnoId': alumnoId,
+        'tutorCentroId': tutorCentroId,
+        'tutorEmpresaId': tutorEmpresaId,
+        'empresaId': empresaId,
+        'fechaInicio': fechaInicio,
+        'fechaFin': fechaFin,
+        'horasTotales': horasTotales,
+        'estado': estado,
+      });
+      return Practica.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      final message = (data is Map ? data['message'] as String? : null)
+          ?? 'Error al editar la práctica';
       throw Exception(message);
     }
   }

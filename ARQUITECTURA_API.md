@@ -297,10 +297,16 @@
 **Acceso**: ADMIN, TUTOR_CENTRO, TUTOR_EMPRESA, ALUMNO
 **Respuesta 200**: `AusenciaResponse`
 
+### GET /ausencias/{id}/justificante
+**Acceso**: ADMIN, TUTOR_CENTRO, TUTOR_EMPRESA, ALUMNO
+**Respuesta 200**: bytes del fichero con `Content-Type` original y `Content-Disposition: inline`
+**Respuesta 404**: la ausencia no tiene justificante adjunto
+
 ### PATCH /ausencias/{id}/revisar
-**Acceso**: TUTOR_CENTRO
+**Acceso**: TUTOR_EMPRESA (ownership check — solo si supervisa esa práctica)
 **Query**: `nuevoTipo=JUSTIFICADA|INJUSTIFICADA`, `comentario` (opcional)
 **Respuesta 200**: `AusenciaResponse` con el nuevo tipo
+**Respuesta 403**: el tutor empresa no supervisa esa práctica (OWASP A01)
 **Respuesta 409**: la ausencia ya fue revisada
 
 ### PATCH /ausencias/{id}/justificante
@@ -319,8 +325,8 @@
 | Tipo | Significado |
 |------|-------------|
 | `PENDIENTE` | Registrada por el alumno, sin revisar. |
-| `JUSTIFICADA` | Revisada por el tutor del centro — documentada y aceptada. |
-| `INJUSTIFICADA` | Revisada por el tutor del centro — no aceptada o sin justificación válida. |
+| `JUSTIFICADA` | Revisada por el tutor de empresa — documentada y aceptada. |
+| `INJUSTIFICADA` | Revisada por el tutor de empresa — no aceptada o sin justificación válida. |
 
 **Response example**:
 ```json

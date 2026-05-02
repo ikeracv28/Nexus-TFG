@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -57,7 +58,7 @@ public class AdminServiceImpl implements AdminService {
                 .apellidos(request.apellidos())
                 .email(request.email())
                 .passwordHash(passwordEncoder.encode(request.password()))
-                .roles(Set.of(rol))
+                .roles(new HashSet<>(Set.of(rol)))
                 .activo(true)
                 .build();
 
@@ -109,7 +110,8 @@ public class AdminServiceImpl implements AdminService {
         usuario.setNombre(request.nombre());
         usuario.setApellidos(request.apellidos());
         usuario.setEmail(request.email());
-        usuario.setRoles(Set.of(nuevoRol));
+        usuario.getRoles().clear();
+        usuario.getRoles().add(nuevoRol);
 
         log.info("ADMIN_EDITAR_USUARIO id={} rol={}", id, request.rolNombre());
         return usuarioMapper.toResponse(usuarioRepository.save(usuario));

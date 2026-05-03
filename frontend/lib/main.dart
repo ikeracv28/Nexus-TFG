@@ -9,6 +9,7 @@ import 'presentation/providers/practica_provider.dart';
 import 'presentation/providers/tutor_empresa_provider.dart';
 import 'presentation/providers/tutor_centro_provider.dart';
 import 'presentation/providers/admin_provider.dart';
+import 'presentation/providers/chat_provider.dart';
 
 void main() {
   runApp(const MyApp());
@@ -26,6 +27,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TutorEmpresaProvider()),
         ChangeNotifierProvider(create: (_) => TutorCentroProvider()),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: const _AppWithRouter(),
     );

@@ -8,6 +8,7 @@ import '../../data/models/practica_model.dart';
 import '../../data/models/seguimiento_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tutor_centro_provider.dart';
+import 'chat_placeholder_screen.dart';
 
 enum _Mode { alumnos, partes, incidencias, chat }
 
@@ -50,15 +51,22 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
                   mode: _mode,
                   onChangeMode: (m) => setState(() => _mode = m),
                 ),
-                if (_mode == _Mode.alumnos) ...[
+                if (_mode == _Mode.alumnos || _mode == _Mode.chat) ...[
                   _StudentList(provider: provider),
                   Expanded(
-                    child: _DetailPanel(
-                      provider: provider,
-                      auth: auth,
-                      onValidar: _confirmarValidar,
-                      onCambiarEstadoIncidencia: _mostrarModalEstado,
-                    ),
+                    child: _mode == _Mode.alumnos
+                        ? _DetailPanel(
+                            provider: provider,
+                            auth: auth,
+                            onValidar: _confirmarValidar,
+                            onCambiarEstadoIncidencia: _mostrarModalEstado,
+                            onChatTap: () =>
+                                setState(() => _mode = _Mode.chat),
+                          )
+                        : ChatPlaceholderScreen(
+                            key: ValueKey(provider.selectedPractica?.id),
+                            practicaId: provider.selectedPractica?.id,
+                          ),
                   ),
                 ] else
                   Expanded(child: _buildWidePanel(provider)),
@@ -75,7 +83,9 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
                 mode: _mode,
                 onChangeMode: (m) => setState(() {
                   _mode = m;
-                  if (m != _Mode.alumnos) provider.seleccionar(-1);
+                  if (m != _Mode.alumnos && m != _Mode.chat) {
+                    provider.seleccionar(-1);
+                  }
                 }),
                 pendientePartes: provider.todosPendientesCentro.length,
                 pendienteIncidencias:
@@ -97,7 +107,8 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
         return _AllIncidenciasPanel(
             provider: provider, onCambiarEstado: _mostrarModalEstado);
       case _Mode.chat:
-        return const _ChatPlaceholder();
+        return ChatPlaceholderScreen(
+            practicaId: provider.selectedPractica?.id);
       default:
         return const SizedBox.shrink();
     }
@@ -111,7 +122,13 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
         return _AllIncidenciasPanel(
             provider: provider, onCambiarEstado: _mostrarModalEstado);
       case _Mode.chat:
-        return const _ChatPlaceholder();
+        if (provider.selectedPractica == null) {
+          return _StudentList(provider: provider, isMobile: true);
+        }
+        return ChatPlaceholderScreen(
+          key: ValueKey(provider.selectedPractica?.id),
+          practicaId: provider.selectedPractica?.id,
+        );
       case _Mode.alumnos:
         if (provider.selectedPractica == null) {
           return _StudentList(provider: provider, isMobile: true);
@@ -123,6 +140,7 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
           onCambiarEstadoIncidencia: _mostrarModalEstado,
           showBackButton: true,
           onBack: () => provider.seleccionar(-1),
+          onChatTap: () => setState(() => _mode = _Mode.chat),
         );
     }
   }
@@ -699,6 +717,7 @@ class _DetailPanel extends StatelessWidget {
   final void Function(Incidencia) onCambiarEstadoIncidencia;
   final bool showBackButton;
   final VoidCallback? onBack;
+  final VoidCallback? onChatTap;
 
   const _DetailPanel({
     required this.provider,
@@ -707,6 +726,7 @@ class _DetailPanel extends StatelessWidget {
     required this.onCambiarEstadoIncidencia,
     this.showBackButton = false,
     this.onBack,
+    this.onChatTap,
   });
 
   @override
@@ -945,98 +965,15 @@ class _DetailPanel extends StatelessWidget {
             // ── Chat ──────────────────────────────────────────────────────
             _SectionLabel(label: 'CHAT'),
             const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: NexusColors.surface,
-                border: Border.all(
-                    color: NexusColors.border,
-                    width: NexusSizes.borderWidth),
-                borderRadius:
-                    BorderRadius.circular(NexusSizes.radiusMD),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(6),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      CircleAvatar(
-                        radius: 13,
-                        backgroundColor: NexusColors.primaryLight,
-                        child: Text(
-                          _getInitials(practica.alumnoNombre),
-                          style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: NexusColors.primaryText),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: NexusColors.surfaceAlt,
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              topRight: Radius.circular(12),
-                              bottomRight: Radius.circular(12),
-                              bottomLeft: Radius.circular(2),
-                            ),
-                          ),
-                          child: Text(
-                            'El chat en tiempo real estará disponible en el Hito 4.',
-                            style: NexusText.small.copyWith(
-                                color: NexusColors.inkSecondary),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          height: 36,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: NexusColors.surfaceAlt,
-                            border: Border.all(
-                                color: NexusColors.border,
-                                width: NexusSizes.borderWidth),
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          alignment: Alignment.centerLeft,
-                          child: Text('Escribe un mensaje...',
-                              style: NexusText.body.copyWith(
-                                  color: NexusColors.inkTertiary,
-                                  fontSize: 12)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: const BoxDecoration(
-                          color: NexusColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.send_rounded,
-                            size: 15, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ],
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onChatTap,
+                icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                label: const Text('Abrir chat con este alumno'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
               ),
             ),
           ],

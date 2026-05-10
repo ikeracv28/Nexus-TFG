@@ -55,6 +55,9 @@ class TutorCentroProvider extends ChangeNotifier {
   List<Incidencia> incidenciasDe(int practicaId) =>
       _incidenciasPorPractica[practicaId] ?? [];
 
+  List<Ausencia> ausenciasDe(int practicaId) =>
+      _ausenciasPorPractica[practicaId] ?? [];
+
   List<Ausencia> ausenciasInjustificadasDe(int practicaId) =>
       (_ausenciasPorPractica[practicaId] ?? [])
           .where((a) => a.tipo == 'INJUSTIFICADA')

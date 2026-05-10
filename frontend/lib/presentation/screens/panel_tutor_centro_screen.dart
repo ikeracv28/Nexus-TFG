@@ -10,6 +10,7 @@ import '../../data/models/seguimiento_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tutor_centro_provider.dart';
 import 'chat_placeholder_screen.dart';
+import 'ficha_alumno_screen.dart';
 
 enum _Mode { alumnos, partes, incidencias, chat }
 
@@ -814,6 +815,23 @@ class _DetailPanel extends StatelessWidget {
                   color: practica.estado == 'ACTIVA'
                       ? NexusColors.primary
                       : context.nxt.inkSecondary,
+                ),
+                const SizedBox(width: 8),
+                Tooltip(
+                  message: 'Ver ficha completa',
+                  child: IconButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            FichaAlumnoScreen(practica: practica),
+                      ),
+                    ),
+                    icon: Icon(Icons.open_in_new,
+                        size: 18, color: context.nxt.inkSecondary),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
                 ),
               ],
             ),

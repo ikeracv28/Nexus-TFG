@@ -209,8 +209,8 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(ctx, estado),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: _colorEstado(estado),
-                        side: BorderSide(color: _colorEstado(estado)),
+                        foregroundColor: _colorEstado(context, estado),
+                        side: BorderSide(color: _colorEstado(context, estado)),
                       ),
                       child: Text('Marcar como ${_labelEstado(estado)}'),
                     ),
@@ -249,14 +249,14 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
     return labels[estado] ?? estado;
   }
 
-  Color _colorEstado(String estado) {
+  Color _colorEstado(BuildContext context, String estado) {
     switch (estado) {
       case 'EN_PROCESO':
         return NexusColors.primary;
       case 'RESUELTA':
         return NexusColors.success;
       default:
-        return NexusColors.inkSecondary;
+        return context.nxt.inkSecondary;
     }
   }
 }
@@ -283,14 +283,13 @@ class _Sidebar extends StatelessWidget {
         provider.todasIncidencias.where((i) => i.estaAbierta).length;
     final partesPendientes = provider.todosPendientesCentro.length;
 
-    final isDarkSidebar = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 52,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: context.nxt.surface,
         border: Border(
             right: BorderSide(
-                color: isDarkSidebar ? const Color(0xFF2C2C2A) : NexusColors.border,
+                color: context.nxt.border,
                 width: NexusSizes.borderWidth)),
       ),
       child: Column(
@@ -358,7 +357,7 @@ class _Sidebar extends StatelessWidget {
           const SizedBox(height: 4),
           Builder(builder: (ctx) {
             final isDark = Theme.of(ctx).brightness == Brightness.dark;
-            final iconColor = isDark ? const Color(0xFFA8A6A0) : NexusColors.inkSecondary;
+            final iconColor = ctx.nxt.inkSecondary;
             return Column(children: [
               Tooltip(
                 message: isDark ? 'Modo claro' : 'Modo oscuro',
@@ -429,7 +428,7 @@ class _NavBtn extends StatelessWidget {
             isActive ? activeIcon : icon,
             size: 17,
             color:
-                isActive ? NexusColors.primary : NexusColors.inkSecondary,
+                isActive ? NexusColors.primary : context.nxt.inkSecondary,
           ),
         ),
       ),
@@ -478,7 +477,7 @@ class _NavBadgeBtn extends StatelessWidget {
                 size: 17,
                 color: isActive
                     ? NexusColors.primary
-                    : NexusColors.inkSecondary,
+                    : context.nxt.inkSecondary,
               ),
             ),
             if (badgeCount > 0)
@@ -647,7 +646,7 @@ class _StudentItem extends StatelessWidget {
                 bottom: BorderSide(
                     color: isSelected
                         ? NexusColors.primary.withAlpha(77)
-                        : NexusColors.border,
+                        : context.nxt.border,
                     width: NexusSizes.borderWidth)),
           ),
           child: Row(
@@ -674,14 +673,14 @@ class _StudentItem extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                             color: isSelected
                                 ? Colors.white
-                                : NexusColors.ink),
+                                : context.nxt.ink),
                         overflow: TextOverflow.ellipsis),
                     Text(practica.empresaNombre,
                         style: NexusText.caption.copyWith(
                             fontSize: 10,
                             color: isSelected
                                 ? Colors.white.withAlpha(179)
-                                : NexusColors.inkSecondary),
+                                : context.nxt.inkSecondary),
                         overflow: TextOverflow.ellipsis),
                   ],
                 ),
@@ -814,7 +813,7 @@ class _DetailPanel extends StatelessWidget {
                       : practica.estado,
                   color: practica.estado == 'ACTIVA'
                       ? NexusColors.primary
-                      : NexusColors.inkSecondary,
+                      : context.nxt.inkSecondary,
                 ),
               ],
             ),
@@ -1128,7 +1127,7 @@ class _AllIncidenciasPanel extends StatelessWidget {
             ...grupos.entries.map((entry) {
               final estado = entry.key;
               final items = entry.value;
-              final color = _colorEstados[estado] ?? NexusColors.inkSecondary;
+              final color = _colorEstados[estado] ?? context.nxt.inkSecondary;
               final label = _labelEstados[estado] ?? estado;
 
               return Column(
@@ -1459,7 +1458,7 @@ class _FullIncidenciaCard extends StatelessWidget {
         break;
       default:
         accentColor = NexusColors.inkSecondary;
-        bgColor = const Color(0xFFF1EFE8);
+        bgColor = context.nxt.surfaceAlt;
         textColor = NexusColors.neutralText;
         label = incidencia.estado;
     }
@@ -1761,7 +1760,7 @@ class _BottomItem extends StatelessWidget {
                 size: 22,
                 color: isActive
                     ? NexusColors.primary
-                    : NexusColors.inkTertiary,
+                    : context.nxt.inkTertiary,
               ),
               const SizedBox(height: 2),
               Text(label,
@@ -1769,7 +1768,7 @@ class _BottomItem extends StatelessWidget {
                       fontSize: 10,
                       color: isActive
                           ? NexusColors.primary
-                          : NexusColors.inkTertiary,
+                          : context.nxt.inkTertiary,
                       fontWeight: isActive
                           ? FontWeight.w600
                           : FontWeight.normal),
@@ -1865,7 +1864,7 @@ class _SectionLabel extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: countColor ?? NexusColors.inkSecondary)),
+                    color: countColor ?? context.nxt.inkSecondary)),
           ),
         ],
       ],

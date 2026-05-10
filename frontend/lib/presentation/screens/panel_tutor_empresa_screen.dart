@@ -150,8 +150,8 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
                     ? '${provider.totalHorasRestantes}h'
                     : '—',
                 label: 'Horas restantes',
-                accent: NexusColors.inkSecondary,
-                bg: const Color(0xFFF1EFE8),
+                accent: context.nxt.inkSecondary,
+                bg: context.nxt.surfaceAlt,
                 labelColor: context.nxt.inkSecondary,
               ),
             ],
@@ -661,15 +661,12 @@ class _Sidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     final initials = _getInitials(auth.user?.nombreCompleto ?? '');
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = Theme.of(context).colorScheme.surface;
-    final borderColor = isDark ? const Color(0xFF2C2C2A) : NexusColors.border;
-    final iconColor = isDark ? const Color(0xFFA8A6A0) : NexusColors.inkSecondary;
 
     return Container(
       width: 52,
       decoration: BoxDecoration(
-        color: surfaceColor,
-        border: Border(right: BorderSide(color: borderColor, width: NexusSizes.borderWidth)),
+        color: context.nxt.surface,
+        border: Border(right: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
       ),
       child: Column(
         children: [
@@ -715,7 +712,7 @@ class _Sidebar extends StatelessWidget {
             child: IconButton(
               onPressed: () => context.read<ThemeProvider>().toggle(),
               icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                  size: 18, color: iconColor),
+                  size: 18, color: context.nxt.inkSecondary),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
             ),
@@ -765,7 +762,7 @@ class _NavItem extends StatelessWidget {
           ),
           child: Icon(icon,
               size: 17,
-              color: selected ? NexusColors.success : NexusColors.inkSecondary),
+              color: selected ? NexusColors.success : context.nxt.inkSecondary),
         ),
       ),
     );
@@ -846,7 +843,7 @@ class _MobileTab extends StatelessWidget {
         Text(label,
             style: NexusText.small.copyWith(
                 fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-                color: selected ? NexusColors.success : NexusColors.inkSecondary)),
+                color: selected ? NexusColors.success : context.nxt.inkSecondary)),
       ],
     );
   }
@@ -1278,7 +1275,7 @@ class _HoursPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1EFE8),
+        color: context.nxt.surfaceAlt,
         borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
       ),
       child: Text('${hours}h',

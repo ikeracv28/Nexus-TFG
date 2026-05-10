@@ -1066,7 +1066,7 @@ class _BotonFecha extends StatelessWidget {
             : '$label: seleccionar',
         style: TextStyle(
             fontSize: 12,
-            color: fecha != null ? NexusColors.ink : NexusColors.inkTertiary),
+            color: fecha != null ? context.nxt.ink : context.nxt.inkTertiary),
       ),
       style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(
@@ -1605,7 +1605,7 @@ class _VistaAuditoriaState extends State<_VistaAuditoria> {
             child: Row(
               children: _modulos.map((m) {
                 final activo = _moduloSeleccionado == m;
-                final color = m == 'TODOS' ? NexusColors.ink : (_coloresModulo[m] ?? NexusColors.ink);
+                final color = m == 'TODOS' ? context.nxt.ink : (_coloresModulo[m] ?? context.nxt.ink);
                 return Padding(
                   padding: const EdgeInsets.only(right: NexusSizes.spaceSM),
                   child: FilterChip(
@@ -1616,7 +1616,7 @@ class _VistaAuditoriaState extends State<_VistaAuditoria> {
                     labelStyle: TextStyle(
                         fontSize: 12,
                         fontWeight: activo ? FontWeight.w600 : FontWeight.normal,
-                        color: activo ? color : NexusColors.inkSecondary),
+                        color: activo ? color : context.nxt.inkSecondary),
                   ),
                 );
               }).toList(),
@@ -1640,7 +1640,7 @@ class _VistaAuditoriaState extends State<_VistaAuditoria> {
               separatorBuilder: (_, __) => const SizedBox(height: NexusSizes.spaceXS),
               itemBuilder: (_, i) => _AuditLogTile(
                 log: admin.auditLogs[i],
-                color: _coloresModulo[admin.auditLogs[i].modulo] ?? NexusColors.ink,
+                color: _coloresModulo[admin.auditLogs[i].modulo] ?? context.nxt.ink,
               ),
             );
           },

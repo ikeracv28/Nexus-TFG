@@ -1815,6 +1815,15 @@ class _MobileHeader extends StatelessWidget {
               child: Text('Tutor Centro',
                   style: NexusText.small
                       .copyWith(fontWeight: FontWeight.w600))),
+          Builder(builder: (ctx) {
+            final isDark = Theme.of(ctx).brightness == Brightness.dark;
+            return IconButton(
+              icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                  size: 20, color: NexusColors.inkSecondary),
+              tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
+              onPressed: () => ctx.read<ThemeProvider>().toggle(),
+            );
+          }),
           IconButton(
             icon: const Icon(Icons.logout_outlined,
                 size: 20, color: NexusColors.inkSecondary),

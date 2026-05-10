@@ -60,6 +60,15 @@ class _PanelAdminScreenState extends State<PanelAdminScreen> {
                 fontWeight: FontWeight.w600),
           ),
           actions: [
+            Builder(builder: (ctx) {
+              final isDark = ctx.watch<ThemeProvider>().isDark;
+              return IconButton(
+                icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                    color: Colors.white54, size: 20),
+                tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
+                onPressed: () => ctx.read<ThemeProvider>().toggle(),
+              );
+            }),
             IconButton(
               icon: const Icon(Icons.logout,
                   color: Colors.white54, size: 20),

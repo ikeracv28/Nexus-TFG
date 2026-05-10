@@ -2,14 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF161614) : NexusColors.surfaceAlt;
+
+    if (!auth.sessionChecked) {
+      return Scaffold(
+        backgroundColor: bgColor,
+        body: const Center(
+          child: CircularProgressIndicator(color: NexusColors.primary),
+        ),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: NexusColors.surfaceAlt,
+      backgroundColor: bgColor,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(NexusSizes.space2XL),
@@ -22,9 +36,23 @@ class LoginScreen extends StatelessWidget {
                 const SizedBox(height: NexusSizes.space2XL),
                 const _LoginCard(),
                 const SizedBox(height: NexusSizes.spaceLG),
-                Text(
-                  'CampusFP · Nexus v1.0',
-                  style: NexusText.caption.copyWith(color: NexusColors.inkTertiary),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'CampusFP · Nexus v1.0',
+                      style: NexusText.caption.copyWith(color: NexusColors.inkTertiary),
+                    ),
+                    const SizedBox(width: NexusSizes.spaceSM),
+                    GestureDetector(
+                      onTap: () => context.read<ThemeProvider>().toggle(),
+                      child: Icon(
+                        isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                        size: 16,
+                        color: NexusColors.inkTertiary,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

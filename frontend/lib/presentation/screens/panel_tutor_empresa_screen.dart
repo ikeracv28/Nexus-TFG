@@ -806,6 +806,17 @@ class _MobileBar extends StatelessWidget {
                 selected: tab == 1),
           ),
           const Spacer(),
+          Builder(builder: (ctx) {
+            final isDark = Theme.of(ctx).brightness == Brightness.dark;
+            return IconButton(
+              icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                  size: 18, color: NexusColors.inkSecondary),
+              tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
+              onPressed: () => ctx.read<ThemeProvider>().toggle(),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            );
+          }),
           TextButton.icon(
             onPressed: () => auth.logout(),
             icon: const Icon(Icons.logout_outlined,

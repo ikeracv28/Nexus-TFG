@@ -107,7 +107,8 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
         if (isAdmin) return;
 
-        Practica practica = practicaRepository.findById(practicaId)
+        // JOIN FETCH para evitar LazyInitializationException fuera de sesión JPA
+        Practica practica = practicaRepository.findByIdConParticipantes(practicaId)
                 .orElseThrow(() -> new org.springframework.security.access
                         .AccessDeniedException("Práctica no encontrada"));
 

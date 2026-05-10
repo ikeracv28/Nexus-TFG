@@ -11,6 +11,10 @@ import '../providers/auth_provider.dart';
 import '../providers/tutor_centro_provider.dart';
 import 'chat_placeholder_screen.dart';
 import 'ficha_alumno_screen.dart';
+import 'perfil_screen.dart';
+import 'notificaciones_screen.dart';
+import '../widgets/nexus_avatar.dart';
+import '../providers/notificacion_provider.dart';
 
 enum _Mode { alumnos, partes, incidencias, chat }
 
@@ -279,7 +283,6 @@ class _Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initials = _getInitials(auth.user?.nombreCompleto ?? '');
     final incAbiertos =
         provider.todasIncidencias.where((i) => i.estaAbierta).length;
     final partesPendientes = provider.todosPendientesCentro.length;
@@ -344,16 +347,44 @@ class _Sidebar extends StatelessWidget {
           ),
           const Spacer(),
           Tooltip(
-            message: auth.user?.nombreCompleto ?? '',
-            child: CircleAvatar(
-              radius: 15,
-              backgroundColor: NexusColors.successLight,
-              child: Text(initials,
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: NexusColors.successText)),
+            message: 'Mi perfil',
+            child: GestureDetector(
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const PerfilScreen())),
+              child: NexusAvatar(
+                userId: auth.user!.id,
+                nombre: auth.user!.nombreCompleto,
+                radius: 15,
+              ),
             ),
+          ),
+          const SizedBox(height: 4),
+          Consumer<NotificacionProvider>(
+            builder: (ctx, notifProv, _) {
+              final count = notifProv.noLeidas;
+              return Tooltip(
+                message: 'Notificaciones',
+                child: IconButton(
+                  onPressed: () async {
+                    await Navigator.push(ctx,
+                        MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
+                          value: notifProv,
+                          child: const NotificacionesScreen(),
+                        )));
+                    notifProv.cargar();
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                  icon: Badge(
+                    isLabelVisible: count > 0,
+                    label: Text(count > 9 ? '9+' : '$count',
+                        style: const TextStyle(fontSize: 10)),
+                    child: Icon(Icons.notifications_none_outlined,
+                        size: 18, color: ctx.nxt.inkSecondary),
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 4),
           Builder(builder: (ctx) {
@@ -614,8 +645,6 @@ class _StudentItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initials = _getInitials(practica.alumnoNombre);
-
     Widget badge;
     final alertaTotal = incidenciasAbiertas + ausenciasInjustificadas;
     if (alertaTotal > 0) {
@@ -652,17 +681,12 @@ class _StudentItem extends StatelessWidget {
           ),
           child: Row(
             children: [
-              CircleAvatar(
+              NexusAvatar(
+                userId: practica.alumnoId,
+                nombre: practica.alumnoNombre,
                 radius: 14,
-                backgroundColor:
-                    isSelected ? Colors.white.withAlpha(51) : NexusColors.primaryLight,
-                child: Text(initials,
-                    style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: isSelected
-                            ? Colors.white
-                            : NexusColors.primaryText)),
+                backgroundColor: isSelected ? Colors.white.withAlpha(51) : NexusColors.primaryLight,
+                textColor: isSelected ? Colors.white : NexusColors.primaryText,
               ),
               const SizedBox(width: 9),
               Expanded(
@@ -1196,6 +1220,7 @@ class _AllIncidenciasPanel extends StatelessWidget {
                             provider.practicaDe(inc.practicaId);
                         return _IncidenciaRow(
                           incidencia: inc,
+                          alumnoId: practica?.alumnoId ?? 0,
                           alumnoNombre:
                               practica?.alumnoNombre ?? 'Alumno',
                           accentColor: color,
@@ -1222,6 +1247,7 @@ class _AllIncidenciasPanel extends StatelessWidget {
 
 class _IncidenciaRow extends StatelessWidget {
   final Incidencia incidencia;
+  final int alumnoId;
   final String alumnoNombre;
   final Color accentColor;
   final bool isLast;
@@ -1229,6 +1255,7 @@ class _IncidenciaRow extends StatelessWidget {
 
   const _IncidenciaRow({
     required this.incidencia,
+    required this.alumnoId,
     required this.alumnoNombre,
     required this.accentColor,
     required this.isLast,
@@ -1239,13 +1266,6 @@ class _IncidenciaRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final fecha =
         DateFormat('d MMM', 'es_ES').format(incidencia.fechaCreacion);
-    final initials = alumnoNombre
-        .trim()
-        .split(' ')
-        .where((p) => p.isNotEmpty)
-        .take(2)
-        .map((p) => p[0].toUpperCase())
-        .join();
 
     return Container(
       decoration: BoxDecoration(
@@ -1270,16 +1290,7 @@ class _IncidenciaRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          // Avatar
-          CircleAvatar(
-            radius: 14,
-            backgroundColor: NexusColors.primaryLight,
-            child: Text(initials,
-                style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: NexusColors.primaryText)),
-          ),
+          NexusAvatar(userId: alumnoId, nombre: alumnoNombre, radius: 14),
           const SizedBox(width: 10),
           // Texto
           Expanded(
@@ -2354,8 +2365,6 @@ class _AlumnosYCarga extends StatelessWidget {
               final total = p.horasTotales ?? 240;
               final progreso =
                   total > 0 ? (horas / total).clamp(0.0, 1.0) : 0.0;
-              final initials = _initials(p.alumnoNombre);
-
               return Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -2369,15 +2378,7 @@ class _AlumnosYCarga extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 16,
-                      backgroundColor: NexusColors.primaryLight,
-                      child: Text(initials,
-                          style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: NexusColors.primaryText)),
-                    ),
+                    NexusAvatar(userId: p.alumnoId, nombre: p.alumnoNombre, radius: 16),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(

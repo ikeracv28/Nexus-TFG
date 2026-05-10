@@ -11,6 +11,8 @@ import 'presentation/providers/tutor_centro_provider.dart';
 import 'presentation/providers/admin_provider.dart';
 import 'presentation/providers/chat_provider.dart';
 import 'presentation/providers/theme_provider.dart';
+import 'presentation/providers/perfil_provider.dart';
+import 'presentation/providers/notificacion_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +38,25 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TutorCentroProvider()),
         ChangeNotifierProvider(create: (_) => AdminProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, NotificacionProvider>(
+          create: (_) => NotificacionProvider(),
+          update: (_, auth, notif) {
+            if (auth.isAuthenticated && !notif!.cargando) notif.cargar();
+            return notif!;
+          },
+        ),
+        // PerfilProvider global: se auto-carga cuando el usuario está autenticado
+        ChangeNotifierProxyProvider<AuthProvider, PerfilProvider>(
+          create: (_) => PerfilProvider(),
+          update: (_, auth, perfil) {
+            if (auth.isAuthenticated && perfil!.usuario == null && !perfil.isLoading) {
+              perfil.cargar();
+            } else if (!auth.isAuthenticated) {
+              perfil!.reset();
+            }
+            return perfil!;
+          },
+        ),
       ],
       child: const _AppWithRouter(),
     );

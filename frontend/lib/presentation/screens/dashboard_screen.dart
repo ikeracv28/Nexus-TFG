@@ -17,6 +17,10 @@ import 'seguimientos_screen.dart';
 import 'incidencias_screen.dart';
 import 'ausencias_screen.dart';
 import 'chat_placeholder_screen.dart';
+import 'perfil_screen.dart';
+import 'notificaciones_screen.dart';
+import '../widgets/nexus_avatar.dart';
+import '../providers/notificacion_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -93,7 +97,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   PreferredSizeWidget _buildAppBar(AuthProvider auth) {
-    final initials = _getInitials(auth.user?.nombreCompleto ?? '');
     return AppBar(
       backgroundColor: context.nxt.surface,
       elevation: 0,
@@ -106,18 +109,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: NexusSizes.spaceSM),
-          child: CircleAvatar(
-            radius: 16,
-            backgroundColor: NexusColors.primaryLight,
-            child: Text(
-              initials,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: NexusColors.primaryText,
+          child: Tooltip(
+            message: 'Mi perfil',
+            child: GestureDetector(
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const PerfilScreen())),
+              child: NexusAvatar(
+                userId: auth.user!.id,
+                nombre: auth.user!.nombreCompleto,
+                radius: 16,
               ),
             ),
           ),
+        ),
+        Consumer<NotificacionProvider>(
+          builder: (ctx, notifProv, _) {
+            final count = notifProv.noLeidas;
+            return IconButton(
+              tooltip: 'Notificaciones',
+              onPressed: () async {
+                await Navigator.push(ctx,
+                    MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
+                      value: notifProv,
+                      child: const NotificacionesScreen(),
+                    )));
+                notifProv.cargar();
+              },
+              icon: Badge(
+                isLabelVisible: count > 0,
+                label: Text(count > 9 ? '9+' : '$count',
+                    style: const TextStyle(fontSize: 10)),
+                child: Icon(Icons.notifications_none_outlined,
+                    size: 20, color: ctx.nxt.inkSecondary),
+              ),
+            );
+          },
         ),
         Builder(builder: (ctx) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;

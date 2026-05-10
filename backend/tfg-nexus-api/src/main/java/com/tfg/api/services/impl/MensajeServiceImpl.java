@@ -12,6 +12,7 @@ import com.tfg.api.models.repository.PracticaRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
 import com.tfg.api.services.AuditService;
 import com.tfg.api.services.MensajeService;
+import com.tfg.api.services.NotificacionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -29,6 +30,7 @@ public class MensajeServiceImpl implements MensajeService {
     private final PracticaRepository practicaRepository;
     private final UsuarioRepository usuarioRepository;
     private final AuditService auditService;
+    private final NotificacionService notificacionService;
 
     @Override
     @Transactional
@@ -55,6 +57,13 @@ public class MensajeServiceImpl implements MensajeService {
         Mensaje guardado = mensajeRepository.save(mensaje);
         auditService.registrar("MENSAJES", "ENVIAR", guardado.getId(),
                 "Practica=" + practicaId, emailRemitente);
+
+        String nombreRemitente = remitente.getNombre() + " " + remitente.getApellidos();
+        List.of(practica.getAlumno(), practica.getTutorCentro(), practica.getTutorEmpresa())
+                .stream()
+                .filter(u -> !u.getEmail().equals(emailRemitente))
+                .forEach(u -> notificacionService.crear(u.getId(), "CHAT",
+                        "Nuevo mensaje de " + nombreRemitente + " en tu práctica."));
 
         return toResponse(guardado);
     }

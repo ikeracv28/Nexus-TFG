@@ -9,6 +9,9 @@ import '../../data/models/incidencia_model.dart';
 import '../../data/models/audit_log_model.dart';
 import '../providers/admin_provider.dart';
 import '../providers/auth_provider.dart';
+import 'perfil_screen.dart';
+import 'notificaciones_screen.dart';
+import '../providers/notificacion_provider.dart';
 
 enum _ModoAdmin { dashboard, practicas, usuarios, auditoria }
 
@@ -157,6 +160,45 @@ class _Sidebar extends StatelessWidget {
             onTap: () => onModoChanged(_ModoAdmin.auditoria),
           ),
           const Spacer(),
+          _IconBtn(
+            icon: Icons.person_outline,
+            tooltip: 'Mi perfil',
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const PerfilScreen())),
+          ),
+          const SizedBox(height: NexusSizes.spaceXS),
+          Consumer<NotificacionProvider>(
+            builder: (ctx, notifProv, _) {
+              final count = notifProv.noLeidas;
+              return Tooltip(
+                message: 'Notificaciones',
+                child: InkWell(
+                  onTap: () async {
+                    await Navigator.push(ctx,
+                        MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
+                          value: notifProv,
+                          child: const NotificacionesScreen(),
+                        )));
+                    notifProv.cargar();
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 34, height: 34,
+                    child: Center(
+                      child: Badge(
+                        isLabelVisible: count > 0,
+                        label: Text(count > 9 ? '9+' : '$count',
+                            style: const TextStyle(fontSize: 10)),
+                        child: const Icon(Icons.notifications_none_outlined,
+                            size: 18, color: Colors.white70),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: NexusSizes.spaceXS),
           _IconBtn(
             icon: Theme.of(context).brightness == Brightness.dark
                 ? Icons.light_mode_outlined

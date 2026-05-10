@@ -11,6 +11,10 @@ import '../../data/models/seguimiento_model.dart';
 import '../../data/services/ausencia_service.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tutor_empresa_provider.dart';
+import 'perfil_screen.dart';
+import 'notificaciones_screen.dart';
+import '../widgets/nexus_avatar.dart';
+import '../providers/notificacion_provider.dart';
 
 class PanelTutorEmpresaScreen extends StatefulWidget {
   const PanelTutorEmpresaScreen({super.key});
@@ -175,6 +179,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _ParteCard(
                     seguimiento: s,
+                    alumnoId: practica?.alumnoId ?? 0,
                     alumnoNombre: practica?.alumnoNombre ?? 'Alumno',
                     onValidar: () => _confirmarValidar(s.id),
                     onRechazar: () => _mostrarModalRechazo(s.id),
@@ -199,6 +204,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _AusenciaEmpresaCard(
                     ausencia: ausencia,
+                    alumnoId: practica?.alumnoId ?? 0,
                     alumnoNombre: practica?.alumnoNombre ?? 'Alumno',
                     onJustificar: () => _revisarAusencia(ausencia.id, 'JUSTIFICADA'),
                     onInjustificar: () => _revisarAusencia(ausencia.id, 'INJUSTIFICADA'),
@@ -451,14 +457,6 @@ class _ProgresoCard extends StatelessWidget {
     final inicio = practica.fechaInicio != null ? fmt.format(practica.fechaInicio!) : '—';
     final fin = practica.fechaFin != null ? fmt.format(practica.fechaFin!) : '—';
 
-    final initials = practica.alumnoNombre
-        .trim()
-        .split(' ')
-        .where((p) => p.isNotEmpty)
-        .take(2)
-        .map((p) => p[0].toUpperCase())
-        .join();
-
     return Container(
       decoration: BoxDecoration(
         color: context.nxt.surface,
@@ -480,13 +478,10 @@ class _ProgresoCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                CircleAvatar(
+                NexusAvatar(
+                  userId: practica.alumnoId,
+                  nombre: practica.alumnoNombre,
                   radius: 20,
-                  backgroundColor: NexusColors.primaryLight,
-                  child: Text(initials,
-                      style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w600,
-                          color: NexusColors.primaryText)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -659,7 +654,6 @@ class _Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initials = _getInitials(auth.user?.nombreCompleto ?? '');
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -696,15 +690,44 @@ class _Sidebar extends StatelessWidget {
           ),
           const Spacer(),
           Tooltip(
-            message: auth.user?.nombreCompleto ?? '',
-            child: CircleAvatar(
-              radius: 15,
-              backgroundColor: NexusColors.successLight,
-              child: Text(initials,
-                  style: const TextStyle(
-                      fontSize: 11, fontWeight: FontWeight.w600,
-                      color: NexusColors.successText)),
+            message: 'Mi perfil',
+            child: GestureDetector(
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const PerfilScreen())),
+              child: NexusAvatar(
+                userId: auth.user!.id,
+                nombre: auth.user!.nombreCompleto,
+                radius: 15,
+              ),
             ),
+          ),
+          const SizedBox(height: 4),
+          Consumer<NotificacionProvider>(
+            builder: (ctx, notifProv, _) {
+              final count = notifProv.noLeidas;
+              return Tooltip(
+                message: 'Notificaciones',
+                child: IconButton(
+                  onPressed: () async {
+                    await Navigator.push(ctx,
+                        MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
+                          value: notifProv,
+                          child: const NotificacionesScreen(),
+                        )));
+                    notifProv.cargar();
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                  icon: Badge(
+                    isLabelVisible: count > 0,
+                    label: Text(count > 9 ? '9+' : '$count',
+                        style: const TextStyle(fontSize: 10)),
+                    child: Icon(Icons.notifications_none_outlined,
+                        size: 18, color: ctx.nxt.inkSecondary),
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 4),
           Tooltip(
@@ -953,12 +976,14 @@ class _StatTile extends StatelessWidget {
 
 class _ParteCard extends StatelessWidget {
   final Seguimiento seguimiento;
+  final int alumnoId;
   final String alumnoNombre;
   final VoidCallback onValidar;
   final VoidCallback onRechazar;
 
   const _ParteCard({
     required this.seguimiento,
+    required this.alumnoId,
     required this.alumnoNombre,
     required this.onValidar,
     required this.onRechazar,
@@ -967,13 +992,6 @@ class _ParteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fecha = DateFormat('d MMM yyyy', 'es_ES').format(seguimiento.fechaRegistro);
-    final initials = alumnoNombre
-        .trim()
-        .split(' ')
-        .where((p) => p.isNotEmpty)
-        .take(2)
-        .map((p) => p[0].toUpperCase())
-        .join();
 
     return Container(
       decoration: BoxDecoration(
@@ -995,14 +1013,7 @@ class _ParteCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: NexusColors.primaryLight,
-                  child: Text(initials,
-                      style: const TextStyle(
-                          fontSize: 11, fontWeight: FontWeight.w600,
-                          color: NexusColors.primaryText)),
-                ),
+                NexusAvatar(userId: alumnoId, nombre: alumnoNombre, radius: 16),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -1084,6 +1095,7 @@ class _ParteCard extends StatelessWidget {
 
 class _AusenciaEmpresaCard extends StatelessWidget {
   final Ausencia ausencia;
+  final int alumnoId;
   final String alumnoNombre;
   final VoidCallback onJustificar;
   final VoidCallback onInjustificar;
@@ -1091,6 +1103,7 @@ class _AusenciaEmpresaCard extends StatelessWidget {
 
   const _AusenciaEmpresaCard({
     required this.ausencia,
+    required this.alumnoId,
     required this.alumnoNombre,
     required this.onJustificar,
     required this.onInjustificar,
@@ -1100,13 +1113,6 @@ class _AusenciaEmpresaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fecha = DateFormat('d MMM yyyy', 'es_ES').format(ausencia.fecha);
-    final initials = alumnoNombre
-        .trim()
-        .split(' ')
-        .where((p) => p.isNotEmpty)
-        .take(2)
-        .map((p) => p[0].toUpperCase())
-        .join();
 
     return Container(
       decoration: BoxDecoration(
@@ -1128,14 +1134,7 @@ class _AusenciaEmpresaCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: NexusColors.warningLight,
-                  child: Text(initials,
-                      style: const TextStyle(
-                          fontSize: 11, fontWeight: FontWeight.w600,
-                          color: NexusColors.warningText)),
-                ),
+                NexusAvatar(userId: alumnoId, nombre: alumnoNombre, radius: 16),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(

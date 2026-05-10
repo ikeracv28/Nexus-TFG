@@ -14,6 +14,7 @@ import com.tfg.api.models.repository.PracticaRepository;
 import com.tfg.api.models.repository.SeguimientoRepository;
 import com.tfg.api.models.repository.UsuarioRepository;
 import com.tfg.api.services.AuditService;
+import com.tfg.api.services.NotificacionService;
 import com.tfg.api.services.SeguimientoService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -42,6 +43,7 @@ public class SeguimientoServiceImpl implements SeguimientoService {
     private final IncidenciaRepository incidenciaRepository;
     private final SeguimientoMapper seguimientoMapper;
     private final AuditService auditService;
+    private final NotificacionService notificacionService;
 
     @Override
     @Transactional
@@ -127,11 +129,16 @@ public class SeguimientoServiceImpl implements SeguimientoService {
         seguimiento.setValidadoPor(tutorEmpresa);
         seguimiento.setComentarioTutor(motivo);
 
+        Long alumnoId = seguimiento.getPractica().getAlumno().getId();
         if ("RECHAZADO".equals(nuevoEstado)) {
             log.info("SEGUIMIENTO_RECHAZADO id={} por_tutor={} motivo={}", id, emailTutor, motivo);
             crearIncidenciaRechazo(seguimiento.getPractica(), tutorEmpresa, motivo);
+            notificacionService.crear(alumnoId, "SEGUIMIENTO",
+                    "Tu parte de seguimiento del " + seguimiento.getFechaRegistro() + " ha sido rechazado. Motivo: " + motivo);
         } else {
             log.info("SEGUIMIENTO_VALIDADO_EMPRESA id={} por_tutor={}", id, emailTutor);
+            notificacionService.crear(alumnoId, "SEGUIMIENTO",
+                    "Tu parte de seguimiento del " + seguimiento.getFechaRegistro() + " ha sido aprobado por la empresa.");
         }
 
         SeguimientoResponse validado = seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
@@ -166,6 +173,11 @@ public class SeguimientoServiceImpl implements SeguimientoService {
         SeguimientoResponse completado = seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
         auditService.registrar("SEGUIMIENTOS", "VALIDAR_CENTRO", id,
                 "Seguimiento completado", emailTutor);
+
+        Long alumnoId = seguimiento.getPractica().getAlumno().getId();
+        notificacionService.crear(alumnoId, "SEGUIMIENTO",
+                "Tu parte de seguimiento del " + seguimiento.getFechaRegistro() + " ha sido completado y validado por el tutor del centro.");
+
         return completado;
     }
 

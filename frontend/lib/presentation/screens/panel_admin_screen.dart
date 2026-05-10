@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../providers/theme_provider.dart';
 import '../../data/models/usuario_model.dart';
 import '../../data/models/practica_model.dart';
 import '../../data/models/empresa_model.dart';
@@ -147,6 +148,16 @@ class _Sidebar extends StatelessWidget {
             onTap: () => onModoChanged(_ModoAdmin.auditoria),
           ),
           const Spacer(),
+          _IconBtn(
+            icon: Theme.of(context).brightness == Brightness.dark
+                ? Icons.light_mode_outlined
+                : Icons.dark_mode_outlined,
+            tooltip: Theme.of(context).brightness == Brightness.dark
+                ? 'Modo claro'
+                : 'Modo oscuro',
+            onTap: () => context.read<ThemeProvider>().toggle(),
+          ),
+          const SizedBox(height: NexusSizes.spaceXS),
           _IconBtn(
             icon: Icons.logout,
             tooltip: 'Cerrar sesión',

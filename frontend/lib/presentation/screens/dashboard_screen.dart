@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../providers/theme_provider.dart';
 import '../../data/models/practica_model.dart';
 import '../../data/models/seguimiento_model.dart';
 import '../../data/models/incidencia_model.dart';
@@ -117,11 +118,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ),
-        IconButton(
-          icon: const Icon(Icons.logout_outlined, size: 20, color: NexusColors.inkSecondary),
-          tooltip: 'Cerrar sesión',
-          onPressed: () => auth.logout(),
-        ),
+        Builder(builder: (ctx) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final iconColor = isDark ? const Color(0xFFA8A6A0) : NexusColors.inkSecondary;
+          return Row(mainAxisSize: MainAxisSize.min, children: [
+            IconButton(
+              icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                  size: 20, color: iconColor),
+              tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
+              onPressed: () => ctx.read<ThemeProvider>().toggle(),
+            ),
+            IconButton(
+              icon: Icon(Icons.logout_outlined, size: 20, color: iconColor),
+              tooltip: 'Cerrar sesión',
+              onPressed: () => auth.logout(),
+            ),
+          ]);
+        }),
         const SizedBox(width: NexusSizes.spaceXS),
       ],
     );

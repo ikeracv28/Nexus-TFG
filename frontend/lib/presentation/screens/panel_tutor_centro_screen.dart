@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../providers/theme_provider.dart';
 import '../../data/models/ausencia_model.dart';
 import '../../data/models/incidencia_model.dart';
 import '../../data/models/practica_model.dart';
@@ -282,13 +283,15 @@ class _Sidebar extends StatelessWidget {
         provider.todasIncidencias.where((i) => i.estaAbierta).length;
     final partesPendientes = provider.todosPendientesCentro.length;
 
+    final isDarkSidebar = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 52,
-      decoration: const BoxDecoration(
-        color: NexusColors.surface,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         border: Border(
             right: BorderSide(
-                color: NexusColors.border, width: NexusSizes.borderWidth)),
+                color: isDarkSidebar ? const Color(0xFF2C2C2A) : NexusColors.border,
+                width: NexusSizes.borderWidth)),
       ),
       child: Column(
         children: [
@@ -353,17 +356,31 @@ class _Sidebar extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Tooltip(
-            message: 'Cerrar sesión',
-            child: IconButton(
-              onPressed: () => auth.logout(),
-              icon: const Icon(Icons.logout_outlined,
-                  size: 18, color: NexusColors.inkSecondary),
-              padding: EdgeInsets.zero,
-              constraints:
-                  const BoxConstraints(minWidth: 34, minHeight: 34),
-            ),
-          ),
+          Builder(builder: (ctx) {
+            final isDark = Theme.of(ctx).brightness == Brightness.dark;
+            final iconColor = isDark ? const Color(0xFFA8A6A0) : NexusColors.inkSecondary;
+            return Column(children: [
+              Tooltip(
+                message: isDark ? 'Modo claro' : 'Modo oscuro',
+                child: IconButton(
+                  onPressed: () => ctx.read<ThemeProvider>().toggle(),
+                  icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                      size: 18, color: iconColor),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                ),
+              ),
+              Tooltip(
+                message: 'Cerrar sesión',
+                child: IconButton(
+                  onPressed: () => auth.logout(),
+                  icon: Icon(Icons.logout_outlined, size: 18, color: iconColor),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                ),
+              ),
+            ]);
+          }),
           const SizedBox(height: 8),
         ],
       ),

@@ -3,6 +3,7 @@ import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/ausencia_model.dart';
 import '../../data/models/practica_model.dart';
@@ -659,12 +660,16 @@ class _Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final initials = _getInitials(auth.user?.nombreCompleto ?? '');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final borderColor = isDark ? const Color(0xFF2C2C2A) : NexusColors.border;
+    final iconColor = isDark ? const Color(0xFFA8A6A0) : NexusColors.inkSecondary;
+
     return Container(
       width: 52,
-      decoration: const BoxDecoration(
-        color: NexusColors.surface,
-        border: Border(
-            right: BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth)),
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        border: Border(right: BorderSide(color: borderColor, width: NexusSizes.borderWidth)),
       ),
       child: Column(
         children: [
@@ -706,11 +711,20 @@ class _Sidebar extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Tooltip(
+            message: isDark ? 'Modo claro' : 'Modo oscuro',
+            child: IconButton(
+              onPressed: () => context.read<ThemeProvider>().toggle(),
+              icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                  size: 18, color: iconColor),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+            ),
+          ),
+          Tooltip(
             message: 'Cerrar sesión',
             child: IconButton(
               onPressed: () => auth.logout(),
-              icon: const Icon(Icons.logout_outlined,
-                  size: 18, color: NexusColors.inkSecondary),
+              icon: Icon(Icons.logout_outlined, size: 18, color: iconColor),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
             ),

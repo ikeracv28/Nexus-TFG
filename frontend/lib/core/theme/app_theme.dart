@@ -64,6 +64,21 @@ class NexusText {
   static const TextStyle label    = TextStyle(fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.6, color: NexusColors.inkSecondary);
 }
 
+// ── Paleta oscura ────────────────────────────────────────────────────────────
+class NexusDarkColors {
+  NexusDarkColors._();
+
+  static const Color surface      = Color(0xFF1E1E1C);
+  static const Color surfaceAlt   = Color(0xFF161614);
+  static const Color border       = Color(0xFF2C2C2A);
+  static const Color borderStrong = Color(0xFF3C3C3A);
+  static const Color ink          = Color(0xFFF0EFE9);
+  static const Color inkSecondary = Color(0xFFA8A6A0);
+  static const Color inkTertiary  = Color(0xFF6B6965);
+  static const Color primary      = Color(0xFF5BA8F5);
+  static const Color primaryLight = Color(0xFF1A3A5A);
+}
+
 ThemeData nexusTheme() {
   return ThemeData(
     useMaterial3: true,
@@ -138,7 +153,88 @@ ThemeData nexusTheme() {
   );
 }
 
-// Componentes reutilizables
+ThemeData nexusDarkTheme() {
+  return ThemeData(
+    useMaterial3: true,
+    fontFamily: 'Inter',
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: NexusDarkColors.surfaceAlt,
+    colorScheme: ColorScheme.dark(
+      primary: NexusDarkColors.primary,
+      onPrimary: const Color(0xFF0A2A4A),
+      surface: NexusDarkColors.surface,
+      onSurface: NexusDarkColors.ink,
+      surfaceContainerHighest: NexusDarkColors.surfaceAlt,
+      outline: NexusDarkColors.border,
+    ),
+    appBarTheme: const AppBarTheme(
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: NexusDarkColors.surface,
+      foregroundColor: NexusDarkColors.ink,
+      titleTextStyle: TextStyle(
+        fontSize: 16, fontWeight: FontWeight.w500,
+        color: NexusDarkColors.ink,
+      ),
+    ),
+    cardTheme: CardThemeData(
+      elevation: 0,
+      color: NexusDarkColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+        side: const BorderSide(color: NexusDarkColors.border, width: NexusSizes.borderWidth),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: NexusDarkColors.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        borderSide: const BorderSide(color: NexusDarkColors.border, width: NexusSizes.borderWidth),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        borderSide: const BorderSide(color: NexusDarkColors.border, width: NexusSizes.borderWidth),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        borderSide: const BorderSide(color: NexusDarkColors.primary, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        borderSide: const BorderSide(color: NexusColors.danger, width: NexusSizes.borderWidth),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        borderSide: const BorderSide(color: NexusColors.danger, width: 1.5),
+      ),
+      labelStyle: const TextStyle(fontSize: 13, color: NexusDarkColors.inkSecondary),
+      hintStyle: const TextStyle(fontSize: 13, color: NexusDarkColors.inkTertiary),
+      errorStyle: TextStyle(fontSize: 12, color: NexusColors.danger),
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: NexusDarkColors.primary,
+        foregroundColor: const Color(0xFF0A2A4A),
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        ),
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      ),
+    ),
+    dividerTheme: const DividerThemeData(
+      color: NexusDarkColors.border,
+      thickness: NexusSizes.borderWidth,
+      space: 0,
+    ),
+  );
+}
+
+// ── Componentes reutilizables ─────────────────────────────────────────────────
 
 Widget nexusEstadoBadge(String texto, {required Color bg, required Color textColor}) {
   return Container(
@@ -154,12 +250,16 @@ Widget nexusEstadoBadge(String texto, {required Color bg, required Color textCol
   );
 }
 
-Widget nexusCard({required Widget child, EdgeInsets? padding}) {
+Widget nexusCard({required Widget child, EdgeInsets? padding, BuildContext? context}) {
+  final isDark = context != null && Theme.of(context).brightness == Brightness.dark;
   return Container(
     padding: padding ?? const EdgeInsets.all(NexusSizes.spaceLG),
     decoration: BoxDecoration(
-      color: NexusColors.surface,
-      border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+      color: isDark ? NexusDarkColors.surface : NexusColors.surface,
+      border: Border.all(
+        color: isDark ? NexusDarkColors.border : NexusColors.border,
+        width: NexusSizes.borderWidth,
+      ),
       borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
     ),
     child: child,

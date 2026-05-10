@@ -66,6 +66,7 @@ class SeguimientoDoubleValidationTest {
     @Test
     @DisplayName("Caso 1: alumno registra parte, estado inicial es PENDIENTE_EMPRESA")
     void caso1_registro_estado_pendiente_empresa() {
+        setSecurityContext("alumno@validacion.test");
         SeguimientoResponse response = seguimientoService.registrar(
                 new SeguimientoRequest(practica.getId(), LocalDate.now(), 8, "Primera semana"));
 
@@ -78,6 +79,7 @@ class SeguimientoDoubleValidationTest {
     @Test
     @DisplayName("Caso 2: tutor empresa valida parte, estado pasa a PENDIENTE_CENTRO")
     void caso2_tutor_empresa_valida() {
+        setSecurityContext("alumno@validacion.test");
         SeguimientoResponse reg = seguimientoService.registrar(
                 new SeguimientoRequest(practica.getId(), LocalDate.now(), 8, "Segunda semana"));
 
@@ -94,6 +96,7 @@ class SeguimientoDoubleValidationTest {
     @Test
     @DisplayName("Caso 3: tutor empresa rechaza parte, se genera incidencia RECHAZO_PARTE automáticamente")
     void caso3_tutor_empresa_rechaza_genera_incidencia() {
+        setSecurityContext("alumno@validacion.test");
         SeguimientoResponse reg = seguimientoService.registrar(
                 new SeguimientoRequest(practica.getId(), LocalDate.now(), 8, "Tercera semana"));
 
@@ -119,6 +122,7 @@ class SeguimientoDoubleValidationTest {
     @Test
     @DisplayName("Caso 4: tutor centro no puede validar un parte que aún está en PENDIENTE_EMPRESA")
     void caso4_tutor_centro_no_puede_saltarse_el_orden() {
+        setSecurityContext("alumno@validacion.test");
         SeguimientoResponse reg = seguimientoService.registrar(
                 new SeguimientoRequest(practica.getId(), LocalDate.now(), 8, "Cuarta semana"));
 
@@ -134,6 +138,7 @@ class SeguimientoDoubleValidationTest {
     @Test
     @DisplayName("Flujo completo: empresa valida y centro completa, estado final es COMPLETADO")
     void flujo_completo_empresa_luego_centro() {
+        setSecurityContext("alumno@validacion.test");
         SeguimientoResponse reg = seguimientoService.registrar(
                 new SeguimientoRequest(practica.getId(), LocalDate.now(), 8, "Quinta semana"));
 

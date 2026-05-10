@@ -13,6 +13,9 @@ import com.tfg.api.models.repository.UsuarioRepository;
 import com.tfg.api.services.AuditService;
 import com.tfg.api.services.MensajeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,6 +62,21 @@ public class MensajeServiceImpl implements MensajeService {
     @Override
     @Transactional(readOnly = true)
     public List<MensajeResponse> listarPorPractica(Long practicaId) {
+        Practica practica = practicaRepository.findById(practicaId)
+                .orElseThrow(() -> new ResourceNotFoundException("Práctica no encontrada"));
+
+        // A01: solo participantes de la práctica o admin
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin
+                && !practica.getAlumno().getEmail().equals(email)
+                && !practica.getTutorCentro().getEmail().equals(email)
+                && !practica.getTutorEmpresa().getEmail().equals(email)) {
+            throw new AccessDeniedException("No tienes acceso al chat de esta práctica");
+        }
+
         return mensajeRepository.findByPracticaIdOrderByFechaEnvioAsc(practicaId)
                 .stream().map(this::toResponse).toList();
     }

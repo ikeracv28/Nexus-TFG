@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +48,12 @@ public class SeguimientoServiceImpl implements SeguimientoService {
     public SeguimientoResponse registrar(SeguimientoRequest request) {
         Practica practica = practicaRepository.findById(request.practicaId())
                 .orElseThrow(() -> new ResourceNotFoundException("Práctica no encontrada"));
+
+        // A01: el alumno solo puede registrar partes en su propia práctica
+        String emailAlumno = currentUserEmail();
+        if (!practica.getAlumno().getEmail().equals(emailAlumno)) {
+            throw new AccessDeniedException("No tienes acceso a esta práctica");
+        }
 
         // A04: máximo 1 parte pendiente por semana ISO (lunes-domingo)
         LocalDate lunes = request.fechaRegistro().with(DayOfWeek.MONDAY);
@@ -167,6 +174,12 @@ public class SeguimientoServiceImpl implements SeguimientoService {
     public void eliminar(Long id) {
         Seguimiento seguimiento = seguimientoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Seguimiento no encontrado"));
+
+        // A01: solo el alumno propietario puede eliminar su parte
+        String emailAlumno = currentUserEmail();
+        if (!seguimiento.getPractica().getAlumno().getEmail().equals(emailAlumno)) {
+            throw new AccessDeniedException("No tienes permiso para eliminar este seguimiento");
+        }
 
         if (!"PENDIENTE_EMPRESA".equals(seguimiento.getEstado())) {
             throw new BusinessRuleException("No se puede eliminar un registro ya procesado");

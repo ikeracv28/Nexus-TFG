@@ -15,6 +15,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +39,11 @@ class MensajeServiceTest {
     private Usuario alumno;
     private Usuario tutorCentro;
     private Usuario tutorEmpresa;
+
+    private void setSecurityContext(String email) {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(email, null, List.of()));
+    }
 
     @BeforeEach
     void setUp() {
@@ -113,6 +120,7 @@ class MensajeServiceTest {
     @Test
     @DisplayName("Listar mensajes de práctica sin mensajes devuelve lista vacía")
     void listar_practica_sin_mensajes_devuelve_lista_vacia() {
+        setSecurityContext(alumno.getEmail());
         List<MensajeResponse> mensajes = mensajeService.listarPorPractica(practica.getId());
 
         assertThat(mensajes).isEmpty();
@@ -124,6 +132,7 @@ class MensajeServiceTest {
         mensajeService.guardar(new MensajeRequest("Primer mensaje"), alumno.getEmail(), practica.getId());
         mensajeService.guardar(new MensajeRequest("Segundo mensaje"), tutorCentro.getEmail(), practica.getId());
 
+        setSecurityContext(alumno.getEmail());
         List<MensajeResponse> mensajes = mensajeService.listarPorPractica(practica.getId());
 
         assertThat(mensajes).hasSize(2);
@@ -149,6 +158,7 @@ class MensajeServiceTest {
         mensajeService.guardar(new MensajeRequest("Hola soy el tutor"), tutorCentro.getEmail(), practica.getId());
         mensajeService.guardar(new MensajeRequest("Hola soy la empresa"), tutorEmpresa.getEmail(), practica.getId());
 
+        setSecurityContext(alumno.getEmail());
         List<MensajeResponse> mensajes = mensajeService.listarPorPractica(practica.getId());
 
         assertThat(mensajes).hasSize(3);

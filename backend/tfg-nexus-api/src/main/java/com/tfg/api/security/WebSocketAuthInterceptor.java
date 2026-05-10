@@ -8,6 +8,7 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
@@ -26,22 +27,28 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
         if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
             String authHeader = accessor.getFirstNativeHeader("Authorization");
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                String token = authHeader.substring(7);
-                try {
-                    String email = jwtUtils.extractUsername(token);
-                    if (email != null) {
-                        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                        if (jwtUtils.validateToken(token, userDetails)) {
-                            UsernamePasswordAuthenticationToken auth =
-                                    new UsernamePasswordAuthenticationToken(
-                                            userDetails, null, userDetails.getAuthorities());
-                            accessor.setUser(auth);
-                        }
-                    }
-                } catch (Exception ignored) {
-                    // Token inválido — la conexión queda sin autenticar
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new org.springframework.security.authentication.AuthenticationCredentialsNotFoundException(
+                        "Se requiere autenticación para conectarse al chat");
+            }
+            String token = authHeader.substring(7);
+            try {
+                String email = jwtUtils.extractUsername(token);
+                if (email == null) {
+                    throw new org.springframework.security.authentication.BadCredentialsException("Token inválido");
                 }
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                if (!jwtUtils.validateToken(token, userDetails)) {
+                    throw new org.springframework.security.authentication.BadCredentialsException("Token expirado o inválido");
+                }
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails, null, userDetails.getAuthorities());
+                accessor.setUser(auth);
+            } catch (AuthenticationException ex) {
+                throw ex;
+            } catch (Exception ex) {
+                throw new org.springframework.security.authentication.BadCredentialsException("Token inválido", ex);
             }
         }
         return message;

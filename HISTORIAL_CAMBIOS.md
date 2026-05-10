@@ -4,6 +4,35 @@ Este documento registra las implementaciones técnicas realizadas a lo largo del
 
 ---
 
+## [10/05/2026] — Correcciones feedback profesor (75%) + Foto de perfil + Notificaciones
+
+### Correcciones OWASP — Feedback del profesor
+
+- **[E] enum EstadoValidacionEmpresa — A04/OWASP**: El endpoint `PATCH /seguimientos/{id}/validar-empresa` aceptaba un `String` libre como `nuevoEstado`, lo que permitía enviar valores arbitrarios. Se crea el enum `EstadoValidacionEmpresa { PENDIENTE_CENTRO, RECHAZADO }` y se cambia el `@RequestParam` del controller a este tipo. Spring convierte el String al enum antes de llegar al método; si el valor no es válido, el nuevo `MethodArgumentTypeMismatchException` handler devuelve 400 con la lista de valores aceptados.
+- **[F] V13__Pgcrypto_Extension.sql**: La extensión `pgcrypto` (usada en V6 y V7 para `crypt()` y `gen_salt()`) se cargaba implícitamente porque PostgreSQL la tenía activa por defecto, pero no estaba declarada en Flyway. Si la BD no tuviera la extensión, las migraciones V6/V7 fallarían silenciosamente. Se añade `CREATE EXTENSION IF NOT EXISTS pgcrypto` como V13 idempotente.
+- **[B] WebSocket SUBSCRIBE sin autorización**: El `WebSocketAuthInterceptor` solo validaba el frame `CONNECT` (autenticación JWT). Cualquier usuario autenticado podía suscribirse a `/topic/practica/{id}` de una práctica ajena. Se añade manejo de `StompCommand.SUBSCRIBE`: se extrae el `practicaId` con regex `^/topic/practica/(\\d+)$`, se busca la práctica en BD y se verifica que el email del principal es alumno, tutor centro o tutor empresa de esa práctica. Si no, `AccessDeniedException`. Los admins se omiten del check.
+- **[A, C]**: Confirmados como ya correctos en el codebase actual — no requirieron cambios.
+
+### Feature: Foto de perfil (Hito 5)
+
+- **Backend**: Migración V12 añade columnas `foto_perfil BYTEA` y `foto_content_type VARCHAR(50)` a la tabla `usuarios`. `UsuarioController` expone `POST /me/foto` (multipart, validación MIME + 5 MB) y `GET /{id}/foto` (devuelve bytes con Content-Type original). `UsuarioResponse` incorpora campo `tieneFoto: boolean`. Corrección clave: `@Column(columnDefinition = "bytea")` en lugar de `@Lob` — Hibernate 6 mapea `@Lob` a OID en PostgreSQL, no a bytea.
+- **Flutter**: `FotoCache` estático con `ValueNotifier<int>` para sincronización global. `NexusAvatar` widget escucha el notifier y se reconstruye cuando la foto cambia. `PerfilScreen` con selector de imagen y subida. `PerfilProvider` global registrado con `ChangeNotifierProxyProvider` en `main.dart` — se auto-carga al autenticarse.
+
+### Feature: Sistema de notificaciones completo (Hito D del feedback)
+
+- **Backend**:
+  - `NotificacionRepository`: queries `findByUsuarioIdOrderByFechaCreacionDesc`, `countByUsuarioIdAndLeidaFalse`, `@Modifying marcarLeida`, `marcarTodasLeidas`.
+  - `NotificacionService` / `NotificacionServiceImpl`: `crear(usuarioId, tipo, mensaje)`, `listarParaUsuario()`, `contarNoLeidas()`, `marcarLeida(id)`, `marcarTodasLeidas()`. Usa `SecurityContextHolder` para resolver el usuario autenticado.
+  - `NotificacionController`: 4 endpoints REST (`GET /me`, `GET /me/no-leidas`, `PATCH /{id}/leer`, `PATCH /me/leer-todas`).
+  - **Hooks automáticos**: `SeguimientoServiceImpl.validarEmpresa()` crea notificación al alumno al aprobar o rechazar su parte; `validarCentro()` notifica al completar. `MensajeServiceImpl.guardar()` notifica a los otros 2 participantes (no al remitente) cuando se envía un mensaje de chat.
+- **Flutter**:
+  - `NotificacionService` (data layer): llama a los 4 endpoints REST.
+  - `NotificacionProvider`: lista, badge counter, `marcarLeida`, `marcarTodasLeidas`. Se registra con `ChangeNotifierProxyProvider` en `main.dart` — llama `cargar()` al autenticarse.
+  - `NotificacionesScreen`: lista con iconos por tipo (CHAT=azul, SEGUIMIENTO=verde, INCIDENCIA=ámbar), marca como leída al tocar, botón "Leer todas", estado vacío.
+  - **Badge en todos los paneles**: campana `Icons.notifications_none_outlined` con `Badge` (contador rojo) en el AppBar del dashboard del alumno y en el sidebar de los paneles de tutor empresa, tutor centro y admin.
+
+---
+
 ## [29/04/2026] — Dashboard Tutor Centro + Mobile Nav Admin + Nginx Cache Fix
 
 ### Frontend (Flutter)

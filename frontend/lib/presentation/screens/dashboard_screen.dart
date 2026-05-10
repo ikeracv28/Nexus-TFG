@@ -854,7 +854,7 @@ class _NexusBottomNav extends StatelessWidget {
         onTap: onTap,
         backgroundColor: context.nxt.surface,
         selectedItemColor: NexusColors.primary,
-        unselectedItemcolor: context.nxt.inkTertiary,
+        unselectedItemColor: context.nxt.inkTertiary,
         selectedLabelStyle: NexusText.caption.copyWith(color: NexusColors.primary),
         unselectedLabelStyle: NexusText.caption,
         elevation: 0,

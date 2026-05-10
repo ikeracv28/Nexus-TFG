@@ -19,6 +19,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
     private final JwtUtils jwtUtils;
     private final UserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -36,6 +37,11 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 String email = jwtUtils.extractUsername(token);
                 if (email == null) {
                     throw new org.springframework.security.authentication.BadCredentialsException("Token inválido");
+                }
+                // A07: rechazar tokens revocados por logout
+                String jti = jwtUtils.extractJti(token);
+                if (tokenBlacklistService.estaRevocado(jti)) {
+                    throw new org.springframework.security.authentication.BadCredentialsException("Token revocado");
                 }
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                 if (!jwtUtils.validateToken(token, userDetails)) {

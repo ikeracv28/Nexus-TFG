@@ -4,6 +4,7 @@ import com.tfg.api.models.dto.EmpresaResponse;
 import com.tfg.api.services.EmpresaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,6 +24,7 @@ public class EmpresaController {
      * Devuelve el listado de todas las empresas registradas.
      */
     @GetMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<EmpresaResponse>> getAll() {
         return ResponseEntity.ok(empresaService.findAll());
     }

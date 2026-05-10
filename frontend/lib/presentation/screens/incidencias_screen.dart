@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/services/incidencia_service.dart';
@@ -14,7 +14,7 @@ class IncidenciasScreen extends StatelessWidget {
       builder: (_, provider, __) {
         final incidencias = provider.incidencias;
         return Scaffold(
-          backgroundColor: NexusColors.surfaceAlt,
+          backgroundColor: context.nxt.surfaceAlt,
           body: RefreshIndicator(
             color: NexusColors.primary,
             onRefresh: provider.cargarDashboard,
@@ -28,8 +28,8 @@ class IncidenciasScreen extends StatelessWidget {
                 else
                   Container(
                     decoration: BoxDecoration(
-                      color: NexusColors.surface,
-                      border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+                      color: context.nxt.surface,
+                      border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
                       borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
                     ),
                     child: Column(
@@ -40,13 +40,13 @@ class IncidenciasScreen extends StatelessWidget {
                             children: [
                               IncidenciaTile(incidencia: entry.value),
                               if (!isLast)
-                                const Padding(
+                                Padding(
                                   padding: EdgeInsets.only(
                                     top: NexusSizes.spaceMD,
                                     left: NexusSizes.spaceLG,
                                     right: NexusSizes.spaceLG,
                                   ),
-                                  child: Divider(height: 1, thickness: 0.5, color: NexusColors.border),
+                                  child: Divider(height: 1, thickness: 0.5, color: context.nxt.border),
                                 ),
                             ],
                           );
@@ -86,7 +86,7 @@ class _BotonReportar extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: NexusColors.surface,
+      backgroundColor: context.nxt.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(NexusSizes.radiusLG)),
       ),
@@ -133,7 +133,7 @@ class _ReportarIncidenciaSheetState extends State<_ReportarIncidenciaSheet> {
               Text('Reportar incidencia', style: NexusText.heading3),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close, size: 20, color: NexusColors.inkSecondary),
+                icon: Icon(Icons.close, size: 20, color: context.nxt.inkSecondary),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -167,7 +167,7 @@ class _ReportarIncidenciaSheetState extends State<_ReportarIncidenciaSheet> {
               onPressed: _enviando ? null : _enviar,
               style: ElevatedButton.styleFrom(
                 backgroundColor: NexusColors.danger,
-                foregroundColor: NexusColors.surface,
+                foregroundColor: context.nxt.surface,
                 padding: const EdgeInsets.symmetric(vertical: NexusSizes.spaceMD),
               ),
               child: _enviando
@@ -187,15 +187,15 @@ class _ReportarIncidenciaSheetState extends State<_ReportarIncidenciaSheet> {
     hintText: hint,
     hintStyle: NexusText.caption,
     filled: true,
-    fillColor: NexusColors.surfaceAlt,
+    fillColor: context.nxt.surfaceAlt,
     contentPadding: const EdgeInsets.all(NexusSizes.spaceMD),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-      borderSide: const BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth),
+      borderSide: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-      borderSide: const BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth),
+      borderSide: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
@@ -230,13 +230,13 @@ class _EmptyIncidencias extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: NexusSizes.space3XL),
       decoration: BoxDecoration(
-        color: NexusColors.surface,
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
       ),
       child: Column(
         children: [
-          const Icon(Icons.warning_amber_outlined, size: 36, color: NexusColors.inkTertiary),
+          Icon(Icons.warning_amber_outlined, size: 36, color: context.nxt.inkTertiary),
           const SizedBox(height: NexusSizes.spaceMD),
           Text('Sin incidencias activas', style: NexusText.small.copyWith(fontWeight: FontWeight.w500)),
           const SizedBox(height: NexusSizes.spaceXS),

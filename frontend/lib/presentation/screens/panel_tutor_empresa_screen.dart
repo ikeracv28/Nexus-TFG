@@ -1,4 +1,4 @@
-// ignore: avoid_web_libraries_in_flutter
+﻿// ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -37,7 +37,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
     final provider = context.watch<TutorEmpresaProvider>();
 
     return Scaffold(
-      backgroundColor: NexusColors.surfaceAlt,
+      backgroundColor: context.nxt.surfaceAlt,
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth > 600;
@@ -116,7 +116,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
                     const SizedBox(height: 4),
                     Text(
                       '${auth.user?.nombreCompleto ?? ''} · $empresa',
-                      style: NexusText.body.copyWith(color: NexusColors.inkSecondary),
+                      style: NexusText.body.copyWith(color: context.nxt.inkSecondary),
                     ),
                   ],
                 ),
@@ -152,7 +152,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
                 label: 'Horas restantes',
                 accent: NexusColors.inkSecondary,
                 bg: const Color(0xFFF1EFE8),
-                labelColor: NexusColors.inkSecondary,
+                labelColor: context.nxt.inkSecondary,
               ),
             ],
           ),
@@ -166,7 +166,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
               Text(
                 'FIRMA PENDIENTE',
                 style: NexusText.label.copyWith(
-                    color: NexusColors.inkTertiary, letterSpacing: 1.2),
+                    color: context.nxt.inkTertiary, letterSpacing: 1.2),
               ),
               const SizedBox(height: 10),
               ...pendientes.map((s) {
@@ -190,7 +190,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
               Text(
                 'AUSENCIAS PENDIENTES · ${ausenciasPendientes.length}',
                 style: NexusText.label.copyWith(
-                    color: NexusColors.inkTertiary, letterSpacing: 1.2),
+                    color: context.nxt.inkTertiary, letterSpacing: 1.2),
               ),
               const SizedBox(height: 10),
               ...ausenciasPendientes.map((ausencia) {
@@ -234,7 +234,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
                         style: NexusText.heading2.copyWith(letterSpacing: -0.3)),
                     const SizedBox(height: 4),
                     Text('Seguimiento de horas y estado del convenio',
-                        style: NexusText.body.copyWith(color: NexusColors.inkSecondary)),
+                        style: NexusText.body.copyWith(color: context.nxt.inkSecondary)),
                   ],
                 ),
               ),
@@ -350,7 +350,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
-        backgroundColor: NexusColors.surface,
+        backgroundColor: context.nxt.surface,
         shape: const RoundedRectangleBorder(
           borderRadius:
               BorderRadius.vertical(top: Radius.circular(NexusSizes.radiusLG)),
@@ -368,7 +368,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
                 const SizedBox(height: 6),
                 Text(
                   'El alumno recibirá una incidencia automática con el motivo indicado.',
-                  style: NexusText.body.copyWith(color: NexusColors.inkSecondary),
+                  style: NexusText.body.copyWith(color: context.nxt.inkSecondary),
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
@@ -461,9 +461,9 @@ class _ProgresoCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: NexusColors.surface,
+        color: context.nxt.surface,
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         boxShadow: [
           BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 6, offset: const Offset(0, 2)),
         ],
@@ -474,9 +474,9 @@ class _ProgresoCard extends StatelessWidget {
           // ── Cabecera alumno ───────────────────────────────────────────
           Container(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
-                  bottom: BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth)),
+                  bottom: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
             ),
             child: Row(
               children: [
@@ -496,7 +496,7 @@ class _ProgresoCard extends StatelessWidget {
                       Text(practica.alumnoNombre,
                           style: NexusText.body.copyWith(fontWeight: FontWeight.w600)),
                       Text('${practica.codigo} · ${practica.empresaNombre}',
-                          style: NexusText.small.copyWith(color: NexusColors.inkSecondary)),
+                          style: NexusText.small.copyWith(color: context.nxt.inkSecondary)),
                     ],
                   ),
                 ),
@@ -513,11 +513,11 @@ class _ProgresoCard extends StatelessWidget {
                 // ── Fechas ───────────────────────────────────────────────
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined,
-                        size: 13, color: NexusColors.inkSecondary),
+                    Icon(Icons.calendar_today_outlined,
+                        size: 13, color: context.nxt.inkSecondary),
                     const SizedBox(width: 6),
                     Text('$inicio  →  $fin',
-                        style: NexusText.small.copyWith(color: NexusColors.inkSecondary)),
+                        style: NexusText.small.copyWith(color: context.nxt.inkSecondary)),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -540,7 +540,7 @@ class _ProgresoCard extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: progreso,
                     minHeight: 8,
-                    backgroundColor: NexusColors.surfaceAlt,
+                    backgroundColor: context.nxt.surfaceAlt,
                     valueColor: AlwaysStoppedAnimation(_colorProgreso(pct)),
                   ),
                 ),
@@ -552,7 +552,7 @@ class _ProgresoCard extends StatelessWidget {
                     _HorasStat(
                       label: 'Registradas\npor el alumno',
                       value: '${horasRegistradas}h',
-                      color: NexusColors.inkSecondary,
+                      color: context.nxt.inkSecondary,
                     ),
                     _Divider(),
                     _HorasStat(
@@ -573,7 +573,7 @@ class _ProgresoCard extends StatelessWidget {
                       _HorasStat(
                         label: 'Total\ndel convenio',
                         value: '${horasTotales}h',
-                        color: NexusColors.inkTertiary,
+                        color: context.nxt.inkTertiary,
                       ),
                     ],
                   ],
@@ -611,7 +611,7 @@ class _HorasStat extends StatelessWidget {
           const SizedBox(height: 4),
           Text(label,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 10, color: NexusColors.inkSecondary, height: 1.3)),
+              style: TextStyle(fontSize: 10, color: context.nxt.inkSecondary, height: 1.3)),
         ],
       ),
     );
@@ -621,7 +621,7 @@ class _HorasStat extends StatelessWidget {
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(width: 1, height: 36, color: NexusColors.border, margin: const EdgeInsets.symmetric(horizontal: 4));
+    return Container(width: 1, height: 36, color: context.nxt.border, margin: const EdgeInsets.symmetric(horizontal: 4));
   }
 }
 
@@ -783,9 +783,9 @@ class _MobileBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: NexusColors.surface,
-        border: Border(top: BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth)),
+      decoration: BoxDecoration(
+        color: context.nxt.surface,
+        border: Border(top: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
@@ -810,7 +810,7 @@ class _MobileBar extends StatelessWidget {
             final isDark = Theme.of(ctx).brightness == Brightness.dark;
             return IconButton(
               icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                  size: 18, color: NexusColors.inkSecondary),
+                  size: 18, color: context.nxt.inkSecondary),
               tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
               onPressed: () => ctx.read<ThemeProvider>().toggle(),
               padding: EdgeInsets.zero,
@@ -819,10 +819,10 @@ class _MobileBar extends StatelessWidget {
           }),
           TextButton.icon(
             onPressed: () => auth.logout(),
-            icon: const Icon(Icons.logout_outlined,
-                size: 16, color: NexusColors.inkSecondary),
+            icon: Icon(Icons.logout_outlined,
+                size: 16, color: context.nxt.inkSecondary),
             label: Text('Salir',
-                style: NexusText.small.copyWith(color: NexusColors.inkSecondary)),
+                style: NexusText.small.copyWith(color: context.nxt.inkSecondary)),
           ),
         ],
       ),
@@ -898,11 +898,11 @@ class _RefreshBtn extends StatelessWidget {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+            border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(Icons.refresh_rounded,
-              size: 16, color: NexusColors.inkSecondary),
+          child: Icon(Icons.refresh_rounded,
+              size: 16, color: context.nxt.inkSecondary),
         ),
       ),
     );
@@ -980,9 +980,9 @@ class _ParteCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: NexusColors.surface,
+        color: context.nxt.surface,
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         boxShadow: [
           BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 6, offset: const Offset(0, 2)),
         ],
@@ -992,9 +992,9 @@ class _ParteCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
-                  bottom: BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth)),
+                  bottom: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
             ),
             child: Row(
               children: [
@@ -1014,7 +1014,7 @@ class _ParteCard extends StatelessWidget {
                       Text(alumnoNombre,
                           style: NexusText.small.copyWith(fontWeight: FontWeight.w600)),
                       Text(fecha,
-                          style: NexusText.caption.copyWith(color: NexusColors.inkSecondary)),
+                          style: NexusText.caption.copyWith(color: context.nxt.inkSecondary)),
                     ],
                   ),
                 ),
@@ -1031,14 +1031,14 @@ class _ParteCard extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: NexusColors.surfaceAlt,
+                  color: context.nxt.surfaceAlt,
                   borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
-                  border: const Border(left: BorderSide(color: NexusColors.border, width: 3)),
+                  border: Border(left: BorderSide(color: context.nxt.border, width: 3)),
                 ),
                 child: Text(
                   '"${seguimiento.descripcion}"',
                   style: NexusText.body.copyWith(
-                      color: NexusColors.inkSecondary, fontStyle: FontStyle.italic),
+                      color: context.nxt.inkSecondary, fontStyle: FontStyle.italic),
                   maxLines: 4,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1113,9 +1113,9 @@ class _AusenciaEmpresaCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: NexusColors.surface,
+        color: context.nxt.surface,
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         boxShadow: [
           BoxShadow(color: Colors.black.withAlpha(8), blurRadius: 6, offset: const Offset(0, 2)),
         ],
@@ -1125,9 +1125,9 @@ class _AusenciaEmpresaCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
-                  bottom: BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth)),
+                  bottom: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
             ),
             child: Row(
               children: [
@@ -1147,7 +1147,7 @@ class _AusenciaEmpresaCard extends StatelessWidget {
                       Text(alumnoNombre,
                           style: NexusText.small.copyWith(fontWeight: FontWeight.w600)),
                       Text(fecha,
-                          style: NexusText.caption.copyWith(color: NexusColors.inkSecondary)),
+                          style: NexusText.caption.copyWith(color: context.nxt.inkSecondary)),
                     ],
                   ),
                 ),
@@ -1186,12 +1186,12 @@ class _AusenciaEmpresaCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: NexusColors.surfaceAlt,
+                color: context.nxt.surfaceAlt,
                 borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
                 border: const Border(left: BorderSide(color: NexusColors.warning, width: 3)),
               ),
               child: Text(ausencia.motivo,
-                  style: NexusText.body.copyWith(color: NexusColors.inkSecondary),
+                  style: NexusText.body.copyWith(color: context.nxt.inkSecondary),
                   maxLines: 3, overflow: TextOverflow.ellipsis),
             ),
           ),
@@ -1243,8 +1243,8 @@ class _EmptyCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 48),
       decoration: BoxDecoration(
-        color: NexusColors.surface,
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
       ),
       child: Column(
@@ -1260,7 +1260,7 @@ class _EmptyCard extends StatelessWidget {
           Text('Todo al día', style: NexusText.heading3),
           const SizedBox(height: 6),
           Text('No hay partes pendientes de firma.',
-              style: NexusText.body.copyWith(color: NexusColors.inkSecondary)),
+              style: NexusText.body.copyWith(color: context.nxt.inkSecondary)),
         ],
       ),
     );
@@ -1282,9 +1282,9 @@ class _HoursPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
       ),
       child: Text('${hours}h',
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 11, fontWeight: FontWeight.w600,
-              color: NexusColors.inkSecondary)),
+              color: context.nxt.inkSecondary)),
     );
   }
 }

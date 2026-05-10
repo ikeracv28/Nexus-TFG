@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../providers/practica_provider.dart';
@@ -17,7 +17,7 @@ class SeguimientosScreen extends StatelessWidget {
         final horasTotales = provider.practicaActiva?.horasTotales ?? 0;
 
         return Scaffold(
-          backgroundColor: NexusColors.surfaceAlt,
+          backgroundColor: context.nxt.surfaceAlt,
           body: RefreshIndicator(
             color: NexusColors.primary,
             onRefresh: provider.cargarDashboard,
@@ -34,8 +34,8 @@ class SeguimientosScreen extends StatelessWidget {
                 else
                   Container(
                     decoration: BoxDecoration(
-                      color: NexusColors.surface,
-                      border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+                      color: context.nxt.surface,
+                      border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
                       borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
                     ),
                     child: Column(
@@ -46,13 +46,13 @@ class SeguimientosScreen extends StatelessWidget {
                             children: [
                               SeguimientoTile(seguimiento: entry.value),
                               if (!isLast)
-                                const Padding(
+                                Padding(
                                   padding: EdgeInsets.only(
                                     top: NexusSizes.spaceMD,
                                     left: NexusSizes.spaceLG,
                                     right: NexusSizes.spaceLG,
                                   ),
-                                  child: Divider(height: 1, thickness: 0.5, color: NexusColors.border),
+                                  child: Divider(height: 1, thickness: 0.5, color: context.nxt.border),
                                 ),
                             ],
                           );
@@ -91,8 +91,8 @@ class _HeaderHoras extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(NexusSizes.space2XL),
       decoration: BoxDecoration(
-        color: NexusColors.surface,
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
       ),
       child: Column(
@@ -116,7 +116,7 @@ class _HeaderHoras extends StatelessWidget {
             child: LinearProgressIndicator(
               value: pct,
               minHeight: 6,
-              backgroundColor: NexusColors.border,
+              backgroundColor: context.nxt.border,
               valueColor: const AlwaysStoppedAnimation<Color>(NexusColors.primary),
             ),
           ),
@@ -139,13 +139,13 @@ class _EmptySeguimientos extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: NexusSizes.space3XL),
       decoration: BoxDecoration(
-        color: NexusColors.surface,
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
       ),
       child: Column(
         children: [
-          const Icon(Icons.list_alt_outlined, size: 36, color: NexusColors.inkTertiary),
+          Icon(Icons.list_alt_outlined, size: 36, color: context.nxt.inkTertiary),
           const SizedBox(height: NexusSizes.spaceMD),
           Text(
             'Aun no has registrado ningun parte',

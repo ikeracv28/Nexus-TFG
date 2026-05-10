@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../providers/theme_provider.dart';
@@ -36,7 +36,7 @@ class _PanelAdminScreenState extends State<PanelAdminScreen> {
       final esWeb = constraints.maxWidth > 600;
       if (esWeb) {
         return Scaffold(
-          backgroundColor: NexusColors.surfaceAlt,
+          backgroundColor: context.nxt.surfaceAlt,
           body: Row(
             children: [
               _Sidebar(
@@ -48,9 +48,9 @@ class _PanelAdminScreenState extends State<PanelAdminScreen> {
         );
       }
       return Scaffold(
-        backgroundColor: NexusColors.surfaceAlt,
+        backgroundColor: context.nxt.surfaceAlt,
         appBar: AppBar(
-          backgroundColor: NexusColors.ink,
+          backgroundColor: context.nxt.ink,
           elevation: 0,
           title: Text(
             _modoLabel,
@@ -249,7 +249,7 @@ class _VistaDashboard extends StatelessWidget {
                         Text(
                           'CampusFP · Administración General',
                           style: NexusText.body
-                              .copyWith(color: NexusColors.inkSecondary),
+                              .copyWith(color: context.nxt.inkSecondary),
                         ),
                       ],
                     ),
@@ -335,9 +335,9 @@ class _DashStatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: NexusColors.surface,
+          color: context.nxt.surface,
           border: Border.all(
-              color: NexusColors.border, width: NexusSizes.borderWidth),
+              color: context.nxt.border, width: NexusSizes.borderWidth),
           borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
           boxShadow: [
             BoxShadow(
@@ -360,7 +360,7 @@ class _DashStatCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(label,
                 style:
-                    NexusText.caption.copyWith(color: NexusColors.inkSecondary),
+                    NexusText.caption.copyWith(color: context.nxt.inkSecondary),
                 maxLines: 2),
           ],
         ),
@@ -377,9 +377,9 @@ class _PracticasEnCurso extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: NexusColors.surface,
+        color: context.nxt.surface,
         border: Border.all(
-            color: NexusColors.border, width: NexusSizes.borderWidth),
+            color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
         boxShadow: [
           BoxShadow(
@@ -395,15 +395,15 @@ class _PracticasEnCurso extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Text('PRÁCTICAS EN CURSO',
                 style: NexusText.caption.copyWith(
-                    color: NexusColors.inkSecondary,
+                    color: context.nxt.inkSecondary,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.6)),
           ),
           if (practicas.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Text('No hay prácticas activas.',
-                  style: TextStyle(color: NexusColors.inkSecondary)),
+                  style: TextStyle(color: context.nxt.inkSecondary)),
             )
           else
             ...practicas.map((p) {
@@ -441,7 +441,7 @@ class _PracticasEnCurso extends StatelessWidget {
                               Text(
                                 '${p.empresaNombre} · ${p.codigo}',
                                 style: NexusText.caption.copyWith(
-                                    color: NexusColors.inkSecondary),
+                                    color: context.nxt.inkSecondary),
                               ),
                             ],
                           ),
@@ -463,7 +463,7 @@ class _PracticasEnCurso extends StatelessWidget {
                     ),
                   ),
                   if (p != practicas.last)
-                    const Divider(height: 1, color: NexusColors.border),
+                    Divider(height: 1, color: context.nxt.border),
                 ],
               );
             }),
@@ -484,9 +484,9 @@ class _IncidenciasRecientes extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: NexusColors.surface,
+        color: context.nxt.surface,
         border: Border.all(
-            color: NexusColors.border, width: NexusSizes.borderWidth),
+            color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
         boxShadow: [
           BoxShadow(
@@ -502,15 +502,15 @@ class _IncidenciasRecientes extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
             child: Text('INCIDENCIAS RECIENTES',
                 style: NexusText.caption.copyWith(
-                    color: NexusColors.inkSecondary,
+                    color: context.nxt.inkSecondary,
                     fontWeight: FontWeight.w600,
                     letterSpacing: 0.6)),
           ),
           if (incidencias.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Text('Sin incidencias recientes.',
-                  style: TextStyle(color: NexusColors.inkSecondary)),
+                  style: TextStyle(color: context.nxt.inkSecondary)),
             )
           else
             ...incidencias.map((inc) {
@@ -551,7 +551,7 @@ class _IncidenciasRecientes extends StatelessWidget {
                                 ? '${practica.codigo} · ${inc.creadaPorNombre}'
                                 : inc.creadaPorNombre,
                             style: NexusText.caption.copyWith(
-                                color: NexusColors.inkSecondary),
+                                color: context.nxt.inkSecondary),
                           ),
                         ],
                       ),
@@ -606,7 +606,7 @@ class _VistaPracticasState extends State<_VistaPracticas> {
         children: [
           // Header
           Container(
-            color: NexusColors.surface,
+            color: context.nxt.surface,
             padding: const EdgeInsets.symmetric(
                 horizontal: NexusSizes.space3XL,
                 vertical: NexusSizes.spaceLG),
@@ -626,7 +626,7 @@ class _VistaPracticasState extends State<_VistaPracticas> {
           ),
           // Filtros
           Container(
-            color: NexusColors.surface,
+            color: context.nxt.surface,
             padding: const EdgeInsets.fromLTRB(NexusSizes.space3XL, 0,
                 NexusSizes.space3XL, NexusSizes.spaceMD),
             child: Row(
@@ -658,8 +658,8 @@ class _VistaPracticasState extends State<_VistaPracticas> {
                     ? Center(
                         child: Text(
                           'No hay prácticas con estado $_filtro.',
-                          style: const TextStyle(
-                              color: NexusColors.inkSecondary),
+                          style: TextStyle(
+                              color: context.nxt.inkSecondary),
                         ),
                       )
                     : ListView.separated(
@@ -710,9 +710,9 @@ class _PracticaCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: NexusColors.surface,
+        color: context.nxt.surface,
         border: Border.all(
-            color: NexusColors.border, width: NexusSizes.borderWidth),
+            color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
       ),
       padding: const EdgeInsets.all(NexusSizes.spaceLG),
@@ -725,10 +725,10 @@ class _PracticaCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(practica.codigo,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
-                            color: NexusColors.ink)),
+                            color: context.nxt.ink)),
                     const SizedBox(width: NexusSizes.spaceSM),
                     _ChipEstado(
                         estado: practica.estado, color: _colorEstado),
@@ -736,19 +736,19 @@ class _PracticaCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text('Alumno: ${practica.alumnoNombre}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 12,
-                        color: NexusColors.inkSecondary)),
+                        color: context.nxt.inkSecondary)),
                 if (!compacta) ...[
                   Text('Empresa: ${practica.empresaNombre}',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 12,
-                          color: NexusColors.inkSecondary)),
+                          color: context.nxt.inkSecondary)),
                   Text(
                       'Tutor centro: ${practica.tutorCentroNombre}',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 11,
-                          color: NexusColors.inkTertiary)),
+                          color: context.nxt.inkTertiary)),
                 ],
               ],
             ),
@@ -762,10 +762,10 @@ class _PracticaCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         fontSize: 16,
                         color: NexusColors.primary)),
-                const Text('totales',
+                Text('totales',
                     style: TextStyle(
                         fontSize: 11,
-                        color: NexusColors.inkTertiary)),
+                        color: context.nxt.inkTertiary)),
               ],
             ),
           ],
@@ -773,7 +773,7 @@ class _PracticaCard extends StatelessWidget {
           Builder(builder: (ctx) => IconButton(
             icon: const Icon(Icons.edit_outlined, size: 18),
             tooltip: 'Editar práctica',
-            color: NexusColors.inkSecondary,
+            color: context.nxt.inkSecondary,
             onPressed: () => showDialog(
               context: ctx,
               builder: (_) => ChangeNotifierProvider.value(
@@ -1104,7 +1104,7 @@ class _VistaUsuarios extends StatelessWidget {
     return Column(
       children: [
         Container(
-          color: NexusColors.surface,
+          color: context.nxt.surface,
           padding: const EdgeInsets.symmetric(
               horizontal: NexusSizes.space3XL, vertical: NexusSizes.spaceLG),
           child: Row(
@@ -1143,9 +1143,9 @@ class _ListaUsuarios extends StatelessWidget {
     return Consumer<AdminProvider>(builder: (context, admin, _) {
       if (admin.cargando) return const Center(child: CircularProgressIndicator());
       if (admin.usuarios.isEmpty) {
-        return const Center(
+        return Center(
           child: Text('No hay usuarios registrados.',
-              style: TextStyle(color: NexusColors.inkSecondary)),
+              style: TextStyle(color: context.nxt.inkSecondary)),
         );
       }
 
@@ -1254,9 +1254,9 @@ class _UsuarioCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: NexusColors.surface,
+        color: context.nxt.surface,
         border: Border.all(
-            color: NexusColors.border, width: NexusSizes.borderWidth),
+            color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
       ),
       padding: const EdgeInsets.symmetric(
@@ -1270,17 +1270,17 @@ class _UsuarioCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(usuario.nombreCompleto,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 14,
-                        color: NexusColors.ink)),
+                        color: context.nxt.ink)),
                 const SizedBox(height: 2),
                 Text(usuario.email,
-                    style: const TextStyle(
-                        fontSize: 12, color: NexusColors.inkSecondary)),
+                    style: TextStyle(
+                        fontSize: 12, color: context.nxt.inkSecondary)),
                 Text(usuario.dni,
-                    style: const TextStyle(
-                        fontSize: 11, color: NexusColors.inkTertiary)),
+                    style: TextStyle(
+                        fontSize: 11, color: context.nxt.inkTertiary)),
               ],
             ),
           ),
@@ -1291,7 +1291,7 @@ class _UsuarioCard extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.edit_outlined, size: 18),
             tooltip: 'Editar usuario',
-            color: NexusColors.inkSecondary,
+            color: context.nxt.inkSecondary,
             onPressed: () => showDialog(
               context: context,
               builder: (_) => ChangeNotifierProvider.value(
@@ -1581,7 +1581,7 @@ class _VistaAuditoriaState extends State<_VistaAuditoria> {
     return Column(
       children: [
         Container(
-          color: NexusColors.surface,
+          color: context.nxt.surface,
           padding: const EdgeInsets.symmetric(
               horizontal: NexusSizes.space3XL, vertical: NexusSizes.spaceLG),
           child: Row(
@@ -1597,7 +1597,7 @@ class _VistaAuditoriaState extends State<_VistaAuditoria> {
           ),
         ),
         Container(
-          color: NexusColors.surface,
+          color: context.nxt.surface,
           padding: const EdgeInsets.symmetric(
               horizontal: NexusSizes.space3XL, vertical: NexusSizes.spaceSM),
           child: SingleChildScrollView(
@@ -1629,9 +1629,9 @@ class _VistaAuditoriaState extends State<_VistaAuditoria> {
               return const Center(child: CircularProgressIndicator());
             }
             if (admin.auditLogs.isEmpty) {
-              return const Center(
+              return Center(
                 child: Text('No hay registros de auditoría.',
-                    style: TextStyle(color: NexusColors.inkSecondary)),
+                    style: TextStyle(color: context.nxt.inkSecondary)),
               );
             }
             return ListView.separated(
@@ -1665,8 +1665,8 @@ class _AuditLogTile extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: NexusColors.surface,
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
       ),
       padding: const EdgeInsets.symmetric(
@@ -1692,33 +1692,33 @@ class _AuditLogTile extends StatelessWidget {
                     _ChipModulo(modulo: log.modulo, color: color),
                     const SizedBox(width: NexusSizes.spaceSM),
                     Text(log.accion,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
-                            color: NexusColors.ink)),
+                            color: context.nxt.ink)),
                     if (log.entidadId != null) ...[
                       const SizedBox(width: NexusSizes.spaceXS),
                       Text('#${log.entidadId}',
-                          style: const TextStyle(
-                              fontSize: 11, color: NexusColors.inkTertiary)),
+                          style: TextStyle(
+                              fontSize: 11, color: context.nxt.inkTertiary)),
                     ],
                     const Spacer(),
                     Text(fechaStr,
-                        style: const TextStyle(
-                            fontSize: 11, color: NexusColors.inkTertiary)),
+                        style: TextStyle(
+                            fontSize: 11, color: context.nxt.inkTertiary)),
                   ],
                 ),
                 if (log.descripcion != null && log.descripcion!.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(log.descripcion!,
-                      style: const TextStyle(
-                          fontSize: 12, color: NexusColors.inkSecondary)),
+                      style: TextStyle(
+                          fontSize: 12, color: context.nxt.inkSecondary)),
                 ],
                 if (log.usuarioEmail != null) ...[
                   const SizedBox(height: 2),
                   Text('por ${log.usuarioEmail}',
-                      style: const TextStyle(
-                          fontSize: 11, color: NexusColors.inkTertiary)),
+                      style: TextStyle(
+                          fontSize: 11, color: context.nxt.inkTertiary)),
                 ],
               ],
             ),
@@ -1867,9 +1867,9 @@ class _DialogEditarUsuarioState extends State<_DialogEditarUsuario> {
                   validator: (v) =>
                       (v == null || !v.contains('@')) ? 'Email inválido' : null),
               const SizedBox(height: NexusSizes.spaceXS),
-              const Text(
+              Text(
                 'La contraseña no se puede editar desde aquí.',
-                style: TextStyle(fontSize: 11, color: NexusColors.inkTertiary),
+                style: TextStyle(fontSize: 11, color: context.nxt.inkTertiary),
               ),
             ],
           ),

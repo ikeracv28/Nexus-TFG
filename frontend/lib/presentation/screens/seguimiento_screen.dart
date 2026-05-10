@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../providers/practica_provider.dart';
@@ -134,15 +134,15 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: NexusColors.surfaceAlt,
+      backgroundColor: context.nxt.surfaceAlt,
       appBar: AppBar(
-        backgroundColor: NexusColors.surface,
+        backgroundColor: context.nxt.surface,
         elevation: 0,
         scrolledUnderElevation: 0,
         title: const Text('Registrar seguimiento', style: NexusText.heading3),
-        bottom: const PreferredSize(
+        bottom: PreferredSize(
           preferredSize: Size.fromHeight(0.5),
-          child: Divider(height: 0.5, thickness: 0.5, color: NexusColors.border),
+          child: Divider(height: 0.5, thickness: 0.5, color: context.nxt.border),
         ),
       ),
       body: LayoutBuilder(
@@ -308,24 +308,24 @@ class _FechaPicker extends StatelessWidget {
           vertical: 12,
         ),
         decoration: BoxDecoration(
-          color: NexusColors.surface,
-          border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+          color: context.nxt.surface,
+          border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
           borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
         ),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.calendar_today_outlined,
               size: 16,
-              color: NexusColors.inkSecondary,
+              color: context.nxt.inkSecondary,
             ),
             const SizedBox(width: NexusSizes.spaceSM),
             Text(texto, style: NexusText.small),
             const Spacer(),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down,
               size: 16,
-              color: NexusColors.inkSecondary,
+              color: context.nxt.inkSecondary,
             ),
           ],
         ),

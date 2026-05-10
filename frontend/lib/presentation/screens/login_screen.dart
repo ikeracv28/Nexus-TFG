@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
@@ -41,7 +41,7 @@ class LoginScreen extends StatelessWidget {
                   children: [
                     Text(
                       'CampusFP · Nexus v1.0',
-                      style: NexusText.caption.copyWith(color: NexusColors.inkTertiary),
+                      style: NexusText.caption.copyWith(color: context.nxt.inkTertiary),
                     ),
                     const SizedBox(width: NexusSizes.spaceSM),
                     GestureDetector(
@@ -49,7 +49,7 @@ class LoginScreen extends StatelessWidget {
                       child: Icon(
                         isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
                         size: 16,
-                        color: NexusColors.inkTertiary,
+                        color: context.nxt.inkTertiary,
                       ),
                     ),
                   ],
@@ -82,7 +82,7 @@ class _NexusLogo extends StatelessWidget {
         const SizedBox(height: NexusSizes.spaceXS),
         Text(
           'Gestión de Prácticas Académicas',
-          style: NexusText.small.copyWith(color: NexusColors.inkSecondary),
+          style: NexusText.small.copyWith(color: context.nxt.inkSecondary),
         ),
       ],
     );
@@ -221,8 +221,8 @@ class _LoginCardState extends State<_LoginCard> {
     return Container(
       padding: const EdgeInsets.all(NexusSizes.space3XL),
       decoration: BoxDecoration(
-        color: NexusColors.surface,
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
       ),
       child: Form(
@@ -234,7 +234,7 @@ class _LoginCardState extends State<_LoginCard> {
             const SizedBox(height: NexusSizes.spaceXS),
             Text(
               'Accede con tu cuenta institucional',
-              style: NexusText.caption.copyWith(color: NexusColors.inkTertiary),
+              style: NexusText.caption.copyWith(color: context.nxt.inkTertiary),
             ),
             const SizedBox(height: NexusSizes.space2XL),
 
@@ -270,7 +270,7 @@ class _LoginCardState extends State<_LoginCard> {
                   child: Icon(
                     _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                     size: 18,
-                    color: NexusColors.inkTertiary,
+                    color: context.nxt.inkTertiary,
                   ),
                 ),
               ),
@@ -319,7 +319,7 @@ class _FieldLabel extends StatelessWidget {
     return Text(
       label,
       style: NexusText.label.copyWith(
-        color: NexusColors.inkSecondary,
+        color: context.nxt.inkSecondary,
         letterSpacing: 0.3,
         fontSize: 12,
         fontWeight: FontWeight.w500,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/mensaje_model.dart';
@@ -85,10 +85,10 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
         ?? 'Práctica #${widget.practicaId}';
 
     if (widget.practicaId == null && practicaActiva == null) {
-      return const Center(
+      return Center(
         child: Text(
           'Selecciona un alumno para abrir el chat.',
-          style: TextStyle(color: NexusColors.inkSecondary),
+          style: TextStyle(color: context.nxt.inkSecondary),
         ),
       );
     }
@@ -99,7 +99,7 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
       children: [
         // ---- Header ----
         Container(
-          color: NexusColors.surface,
+          color: context.nxt.surface,
           padding: const EdgeInsets.symmetric(
               horizontal: NexusSizes.spaceLG, vertical: NexusSizes.spaceMD),
           child: Row(
@@ -110,10 +110,10 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
               Expanded(
                 child: Text(
                   'Chat — $codigoChat',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: NexusColors.ink),
+                      color: context.nxt.ink),
                 ),
               ),
               Container(
@@ -138,18 +138,18 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
             ],
           ),
         ),
-        const Divider(height: 0.5, thickness: 0.5, color: NexusColors.border),
+        Divider(height: 0.5, thickness: 0.5, color: context.nxt.border),
 
         // ---- Lista de mensajes ----
         Expanded(
           child: chat.cargando
               ? const Center(child: CircularProgressIndicator())
               : chat.mensajes.isEmpty
-                  ? const Center(
+                  ? Center(
                       child: Text(
                         'Sé el primero en escribir.',
                         style: TextStyle(
-                            color: NexusColors.inkTertiary, fontSize: 13),
+                            color: context.nxt.inkTertiary, fontSize: 13),
                       ),
                     )
                   : ListView.builder(
@@ -166,11 +166,11 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
                     ),
         ),
 
-        const Divider(height: 0.5, thickness: 0.5, color: NexusColors.border),
+        Divider(height: 0.5, thickness: 0.5, color: context.nxt.border),
 
         // ---- Input ----
         Container(
-          color: NexusColors.surface,
+          color: context.nxt.surface,
           padding: const EdgeInsets.symmetric(
               horizontal: NexusSizes.spaceMD, vertical: NexusSizes.spaceSM),
           child: Row(
@@ -185,19 +185,19 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
                   onSubmitted: (_) => _enviar(),
                   decoration: InputDecoration(
                     hintText: 'Escribe un mensaje…',
-                    hintStyle: const TextStyle(
-                        color: NexusColors.inkTertiary, fontSize: 13),
+                    hintStyle: TextStyle(
+                        color: context.nxt.inkTertiary, fontSize: 13),
                     border: OutlineInputBorder(
                       borderRadius:
                           BorderRadius.circular(NexusSizes.radiusFull),
                       borderSide:
-                          const BorderSide(color: NexusColors.border),
+                          BorderSide(color: context.nxt.border),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius:
                           BorderRadius.circular(NexusSizes.radiusFull),
                       borderSide:
-                          const BorderSide(color: NexusColors.border),
+                          BorderSide(color: context.nxt.border),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: NexusSizes.spaceLG,
@@ -273,10 +273,10 @@ class _MensajeBurbuja extends StatelessWidget {
                         left: NexusSizes.spaceXS, bottom: 2),
                     child: Text(
                       mensaje.nombreCompleto,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: NexusColors.inkSecondary),
+                          color: context.nxt.inkSecondary),
                     ),
                   ),
                 Container(
@@ -287,7 +287,7 @@ class _MensajeBurbuja extends StatelessWidget {
                     color: esMio ? NexusColors.primary : NexusColors.surface,
                     border: esMio
                         ? null
-                        : Border.all(color: NexusColors.border),
+                        : Border.all(color: context.nxt.border),
                     borderRadius: BorderRadius.only(
                       topLeft:
                           const Radius.circular(NexusSizes.radiusMD),
@@ -312,9 +312,9 @@ class _MensajeBurbuja extends StatelessWidget {
                       left: NexusSizes.spaceXS,
                       right: NexusSizes.spaceXS),
                   child: Text(hora,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 10,
-                          color: NexusColors.inkTertiary)),
+                          color: context.nxt.inkTertiary)),
                 ),
               ],
             ),

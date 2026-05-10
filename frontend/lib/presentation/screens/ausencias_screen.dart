@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
@@ -16,7 +16,7 @@ class AusenciasScreen extends StatelessWidget {
       builder: (_, provider, __) {
         final ausencias = provider.ausencias;
         return Scaffold(
-          backgroundColor: NexusColors.surfaceAlt,
+          backgroundColor: context.nxt.surfaceAlt,
           body: RefreshIndicator(
             color: NexusColors.primary,
             onRefresh: provider.cargarDashboard,
@@ -34,8 +34,8 @@ class AusenciasScreen extends StatelessWidget {
                 else
                   Container(
                     decoration: BoxDecoration(
-                      color: NexusColors.surface,
-                      border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+                      color: context.nxt.surface,
+                      border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
                       borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
                     ),
                     child: Column(
@@ -54,9 +54,9 @@ class AusenciasScreen extends StatelessWidget {
                                   : null,
                             ),
                             if (!isLast)
-                              const Padding(
+                              Padding(
                                 padding: EdgeInsets.symmetric(horizontal: NexusSizes.spaceLG),
-                                child: Divider(height: 1, thickness: 0.5, color: NexusColors.border),
+                                child: Divider(height: 1, thickness: 0.5, color: context.nxt.border),
                               ),
                           ],
                         );
@@ -173,7 +173,7 @@ class _BotonRegistrar extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: NexusColors.surface,
+      backgroundColor: context.nxt.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(NexusSizes.radiusLG)),
       ),
@@ -229,7 +229,7 @@ class _RegistrarAusenciaSheetState extends State<_RegistrarAusenciaSheet> {
               Text('Registrar ausencia', style: NexusText.heading3),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close, size: 20, color: NexusColors.inkSecondary),
+                icon: Icon(Icons.close, size: 20, color: context.nxt.inkSecondary),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -269,7 +269,7 @@ class _RegistrarAusenciaSheetState extends State<_RegistrarAusenciaSheet> {
               onPressed: _enviando ? null : _enviar,
               style: ElevatedButton.styleFrom(
                 backgroundColor: NexusColors.warning,
-                foregroundColor: NexusColors.surface,
+                foregroundColor: context.nxt.surface,
                 padding: const EdgeInsets.symmetric(vertical: NexusSizes.spaceMD),
               ),
               child: _enviando
@@ -289,15 +289,15 @@ class _RegistrarAusenciaSheetState extends State<_RegistrarAusenciaSheet> {
     hintText: hint,
     hintStyle: NexusText.caption,
     filled: true,
-    fillColor: NexusColors.surfaceAlt,
+    fillColor: context.nxt.surfaceAlt,
     contentPadding: const EdgeInsets.all(NexusSizes.spaceMD),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-      borderSide: const BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth),
+      borderSide: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-      borderSide: const BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth),
+      borderSide: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
@@ -392,7 +392,7 @@ class _SelectorFichero extends StatelessWidget {
             ),
             GestureDetector(
               onTap: onEliminado,
-              child: const Icon(Icons.close, size: 16, color: NexusColors.inkSecondary),
+              child: Icon(Icons.close, size: 16, color: context.nxt.inkSecondary),
             ),
           ],
         ),
@@ -413,17 +413,17 @@ class _SelectorFichero extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(NexusSizes.spaceMD),
         decoration: BoxDecoration(
-          color: NexusColors.surfaceAlt,
+          color: context.nxt.surfaceAlt,
           borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
           border: Border.all(
-            color: NexusColors.border,
+            color: context.nxt.border,
             width: NexusSizes.borderWidth,
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.upload_file_outlined, size: 16, color: NexusColors.inkSecondary),
+            Icon(Icons.upload_file_outlined, size: 16, color: context.nxt.inkSecondary),
             const SizedBox(width: NexusSizes.spaceSM),
             Text(
               'Adjuntar PDF, JPG o PNG (max. 5 MB)',
@@ -463,13 +463,13 @@ class _SelectorFecha extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(NexusSizes.spaceMD),
         decoration: BoxDecoration(
-          color: NexusColors.surfaceAlt,
+          color: context.nxt.surfaceAlt,
           borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-          border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+          border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today_outlined, size: 16, color: NexusColors.inkSecondary),
+            Icon(Icons.calendar_today_outlined, size: 16, color: context.nxt.inkSecondary),
             const SizedBox(width: NexusSizes.spaceMD),
             Text(
               '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}',
@@ -490,13 +490,13 @@ class _EmptyAusencias extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: NexusSizes.space3XL),
       decoration: BoxDecoration(
-        color: NexusColors.surface,
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
       ),
       child: Column(
         children: [
-          const Icon(Icons.event_available_outlined, size: 36, color: NexusColors.inkTertiary),
+          Icon(Icons.event_available_outlined, size: 36, color: context.nxt.inkTertiary),
           const SizedBox(height: NexusSizes.spaceMD),
           Text('Sin ausencias registradas', style: NexusText.small.copyWith(fontWeight: FontWeight.w500)),
           const SizedBox(height: NexusSizes.spaceXS),

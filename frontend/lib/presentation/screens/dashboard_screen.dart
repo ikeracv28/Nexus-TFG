@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../providers/theme_provider.dart';
@@ -42,7 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final practica = Provider.of<PracticaProvider>(context);
 
     return Scaffold(
-      backgroundColor: NexusColors.surfaceAlt,
+      backgroundColor: context.nxt.surfaceAlt,
       appBar: _buildAppBar(auth),
       body: LayoutBuilder(
         builder: (context, constraints) {
@@ -71,7 +71,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   selectedIndex: _navIndex,
                   onDestinationSelected: (i) => setState(() => _navIndex = i),
                 ),
-                const VerticalDivider(width: 1, thickness: 0.5, color: NexusColors.border),
+                VerticalDivider(width: 1, thickness: 0.5, color: context.nxt.border),
                 Expanded(child: content),
               ],
             );
@@ -94,13 +94,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   PreferredSizeWidget _buildAppBar(AuthProvider auth) {
     final initials = _getInitials(auth.user?.nombreCompleto ?? '');
     return AppBar(
-      backgroundColor: NexusColors.surface,
+      backgroundColor: context.nxt.surface,
       elevation: 0,
       scrolledUnderElevation: 0,
       title: const Text('Nexus', style: NexusText.heading3),
-      bottom: const PreferredSize(
+      bottom: PreferredSize(
         preferredSize: Size.fromHeight(0.5),
-        child: Divider(height: 0.5, thickness: 0.5, color: NexusColors.border),
+        child: Divider(height: 0.5, thickness: 0.5, color: context.nxt.border),
       ),
       actions: [
         Padding(
@@ -249,8 +249,8 @@ class _PracticaCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(NexusSizes.space2XL),
       decoration: BoxDecoration(
-        color: NexusColors.surface,
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
       ),
       child: Column(
@@ -280,7 +280,7 @@ class _PracticaCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: NexusSizes.spaceLG),
-          const Divider(height: 1, thickness: 0.5, color: NexusColors.border),
+          Divider(height: 1, thickness: 0.5, color: context.nxt.border),
           const SizedBox(height: NexusSizes.spaceLG),
 
           // Tutores
@@ -308,7 +308,7 @@ class _PracticaCard extends StatelessWidget {
           // Barra de progreso de horas (solo seguimientos COMPLETADOS)
           if (horas > 0) ...[
             const SizedBox(height: NexusSizes.spaceLG),
-            const Divider(height: 1, thickness: 0.5, color: NexusColors.border),
+            Divider(height: 1, thickness: 0.5, color: context.nxt.border),
             const SizedBox(height: NexusSizes.spaceLG),
             Consumer<PracticaProvider>(
               builder: (_, p, __) => _ProgressBar(
@@ -351,7 +351,7 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 15, color: NexusColors.inkTertiary),
+        Icon(icon, size: 15, color: context.nxt.inkTertiary),
         const SizedBox(width: NexusSizes.spaceSM),
         Text('$label  ', style: NexusText.caption),
         Expanded(
@@ -394,7 +394,7 @@ class _ProgressBar extends StatelessWidget {
           child: LinearProgressIndicator(
             value: pct,
             minHeight: 6,
-            backgroundColor: NexusColors.border,
+            backgroundColor: context.nxt.border,
             valueColor: const AlwaysStoppedAnimation<Color>(NexusColors.primary),
           ),
         ),
@@ -595,8 +595,8 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: NexusColors.surface,
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
       ),
       child: Column(
@@ -608,7 +608,7 @@ class _SectionCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(icon, size: 15, color: NexusColors.inkSecondary),
+                Icon(icon, size: 15, color: context.nxt.inkSecondary),
                 const SizedBox(width: NexusSizes.spaceSM),
                 Expanded(
                   child: Text(title, style: NexusText.small.copyWith(fontWeight: FontWeight.w500)),
@@ -629,7 +629,7 @@ class _SectionCard extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, thickness: 0.5, color: NexusColors.border),
+          Divider(height: 1, thickness: 0.5, color: context.nxt.border),
           child,
         ],
       ),
@@ -697,13 +697,13 @@ class _EmptyState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: NexusSizes.space3XL),
       decoration: BoxDecoration(
-        color: NexusColors.surface,
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
       ),
       child: Column(
         children: [
-          const Icon(Icons.assignment_outlined, size: 36, color: NexusColors.inkTertiary),
+          Icon(Icons.assignment_outlined, size: 36, color: context.nxt.inkTertiary),
           const SizedBox(height: NexusSizes.spaceMD),
           Text('Sin practica asignada', style: NexusText.small.copyWith(fontWeight: FontWeight.w500)),
           const SizedBox(height: NexusSizes.spaceXS),
@@ -732,7 +732,7 @@ class _ErrorCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(NexusSizes.space2XL),
       decoration: BoxDecoration(
-        color: NexusColors.surface,
+        color: context.nxt.surface,
         border: Border.all(color: NexusColors.dangerLight, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
       ),
@@ -768,8 +768,8 @@ class _LoadingCard extends StatelessWidget {
     return Container(
       height: 160,
       decoration: BoxDecoration(
-        color: NexusColors.surface,
-        border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
         borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
       ),
       child: const Center(
@@ -798,10 +798,10 @@ class _NexusRail extends StatelessWidget {
     return NavigationRail(
       selectedIndex: selectedIndex,
       onDestinationSelected: onDestinationSelected,
-      backgroundColor: NexusColors.surface,
+      backgroundColor: context.nxt.surface,
       indicatorColor: NexusColors.primaryLight,
       selectedIconTheme: const IconThemeData(color: NexusColors.primary),
-      unselectedIconTheme: const IconThemeData(color: NexusColors.inkSecondary),
+      unselectedIconTheme: IconThemeData(color: context.nxt.inkSecondary),
       labelType: NavigationRailLabelType.none,
       minWidth: 56,
       destinations: const [
@@ -846,15 +846,15 @@ class _NexusBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: NexusColors.border, width: NexusSizes.borderWidth)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
       ),
       child: BottomNavigationBar(
         currentIndex: selectedIndex,
         onTap: onTap,
-        backgroundColor: NexusColors.surface,
+        backgroundColor: context.nxt.surface,
         selectedItemColor: NexusColors.primary,
-        unselectedItemColor: NexusColors.inkTertiary,
+        unselectedItemcolor: context.nxt.inkTertiary,
         selectedLabelStyle: NexusText.caption.copyWith(color: NexusColors.primary),
         unselectedLabelStyle: NexusText.caption,
         elevation: 0,

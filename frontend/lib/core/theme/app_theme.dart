@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+// ── Paleta estática (siempre modo claro) ──────────────────────────────────────
+
 class NexusColors {
   NexusColors._();
 
@@ -28,10 +30,132 @@ class NexusColors {
   static const Color border       = Color(0xFFE8E6DF);
   static const Color borderStrong = Color(0xFFD3D1C7);
 
-  static const Color ink         = Color(0xFF1A1A18);
+  static const Color ink          = Color(0xFF1A1A18);
   static const Color inkSecondary = Color(0xFF5F5E5A);
   static const Color inkTertiary  = Color(0xFF9C9A94);
 }
+
+// ── Paleta estática modo oscuro ───────────────────────────────────────────────
+
+class NexusDarkColors {
+  NexusDarkColors._();
+
+  static const Color surface      = Color(0xFF1E1E1C);
+  static const Color surfaceAlt   = Color(0xFF161614);
+  static const Color border       = Color(0xFF2C2C2A);
+  static const Color borderStrong = Color(0xFF3C3C3A);
+  static const Color ink          = Color(0xFFF0EFE9);
+  static const Color inkSecondary = Color(0xFFA8A6A0);
+  static const Color inkTertiary  = Color(0xFF6B6965);
+  static const Color primary      = Color(0xFF5BA8F5);
+  static const Color primaryLight = Color(0xFF1A3A5A);
+}
+
+// ── ThemeExtension: colores adaptativos accesibles via contexto ───────────────
+
+@immutable
+class NexusThemeExt extends ThemeExtension<NexusThemeExt> {
+  const NexusThemeExt({
+    required this.surface,
+    required this.surfaceAlt,
+    required this.border,
+    required this.borderStrong,
+    required this.ink,
+    required this.inkSecondary,
+    required this.inkTertiary,
+    required this.primaryColor,
+    required this.primaryLight,
+  });
+
+  final Color surface;
+  final Color surfaceAlt;
+  final Color border;
+  final Color borderStrong;
+  final Color ink;
+  final Color inkSecondary;
+  final Color inkTertiary;
+  final Color primaryColor;
+  final Color primaryLight;
+
+  static const NexusThemeExt light = NexusThemeExt(
+    surface:      NexusColors.surface,
+    surfaceAlt:   NexusColors.surfaceAlt,
+    border:       NexusColors.border,
+    borderStrong: NexusColors.borderStrong,
+    ink:          NexusColors.ink,
+    inkSecondary: NexusColors.inkSecondary,
+    inkTertiary:  NexusColors.inkTertiary,
+    primaryColor: NexusColors.primary,
+    primaryLight: NexusColors.primaryLight,
+  );
+
+  static const NexusThemeExt dark = NexusThemeExt(
+    surface:      NexusDarkColors.surface,
+    surfaceAlt:   NexusDarkColors.surfaceAlt,
+    border:       NexusDarkColors.border,
+    borderStrong: NexusDarkColors.borderStrong,
+    ink:          NexusDarkColors.ink,
+    inkSecondary: NexusDarkColors.inkSecondary,
+    inkTertiary:  NexusDarkColors.inkTertiary,
+    primaryColor: NexusDarkColors.primary,
+    primaryLight: NexusDarkColors.primaryLight,
+  );
+
+  @override
+  NexusThemeExt copyWith({
+    Color? surface, Color? surfaceAlt, Color? border, Color? borderStrong,
+    Color? ink, Color? inkSecondary, Color? inkTertiary, Color? primaryColor, Color? primaryLight,
+  }) => NexusThemeExt(
+    surface:      surface      ?? this.surface,
+    surfaceAlt:   surfaceAlt   ?? this.surfaceAlt,
+    border:       border       ?? this.border,
+    borderStrong: borderStrong ?? this.borderStrong,
+    ink:          ink          ?? this.ink,
+    inkSecondary: inkSecondary ?? this.inkSecondary,
+    inkTertiary:  inkTertiary  ?? this.inkTertiary,
+    primaryColor: primaryColor ?? this.primaryColor,
+    primaryLight: primaryLight ?? this.primaryLight,
+  );
+
+  @override
+  NexusThemeExt lerp(NexusThemeExt? other, double t) {
+    if (other == null) return this;
+    return NexusThemeExt(
+      surface:      Color.lerp(surface,      other.surface,      t)!,
+      surfaceAlt:   Color.lerp(surfaceAlt,   other.surfaceAlt,   t)!,
+      border:       Color.lerp(border,       other.border,       t)!,
+      borderStrong: Color.lerp(borderStrong, other.borderStrong, t)!,
+      ink:          Color.lerp(ink,          other.ink,          t)!,
+      inkSecondary: Color.lerp(inkSecondary, other.inkSecondary, t)!,
+      inkTertiary:  Color.lerp(inkTertiary,  other.inkTertiary,  t)!,
+      primaryColor: Color.lerp(primaryColor, other.primaryColor, t)!,
+      primaryLight: Color.lerp(primaryLight, other.primaryLight, t)!,
+    );
+  }
+}
+
+// ── Extensión de BuildContext para acceso corto ───────────────────────────────
+
+extension NexusBuildContextExt on BuildContext {
+  NexusThemeExt get nxt =>
+      Theme.of(this).extension<NexusThemeExt>() ?? NexusThemeExt.light;
+}
+
+// ── Tipografía (SIN color — lo provee el tema) ────────────────────────────────
+
+class NexusText {
+  NexusText._();
+
+  static const TextStyle heading1 = TextStyle(fontSize: 22, fontWeight: FontWeight.w500);
+  static const TextStyle heading2 = TextStyle(fontSize: 18, fontWeight: FontWeight.w500);
+  static const TextStyle heading3 = TextStyle(fontSize: 16, fontWeight: FontWeight.w500);
+  static const TextStyle body     = TextStyle(fontSize: 14, fontWeight: FontWeight.w400, height: 1.5);
+  static const TextStyle small    = TextStyle(fontSize: 13, fontWeight: FontWeight.w400);
+  static const TextStyle caption  = TextStyle(fontSize: 12, fontWeight: FontWeight.w400);
+  static const TextStyle label    = TextStyle(fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.6);
+}
+
+// ── Tamaños ───────────────────────────────────────────────────────────────────
 
 class NexusSizes {
   NexusSizes._();
@@ -52,43 +176,29 @@ class NexusSizes {
   static const double borderWidth = 0.5;
 }
 
-class NexusText {
-  NexusText._();
-
-  static const TextStyle heading1 = TextStyle(fontSize: 22, fontWeight: FontWeight.w500, color: NexusColors.ink);
-  static const TextStyle heading2 = TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: NexusColors.ink);
-  static const TextStyle heading3 = TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: NexusColors.ink);
-  static const TextStyle body     = TextStyle(fontSize: 14, fontWeight: FontWeight.w400, height: 1.5, color: NexusColors.ink);
-  static const TextStyle small    = TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: NexusColors.ink);
-  static const TextStyle caption  = TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: NexusColors.inkSecondary);
-  static const TextStyle label    = TextStyle(fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 0.6, color: NexusColors.inkSecondary);
-}
-
-// ── Paleta oscura ────────────────────────────────────────────────────────────
-class NexusDarkColors {
-  NexusDarkColors._();
-
-  static const Color surface      = Color(0xFF1E1E1C);
-  static const Color surfaceAlt   = Color(0xFF161614);
-  static const Color border       = Color(0xFF2C2C2A);
-  static const Color borderStrong = Color(0xFF3C3C3A);
-  static const Color ink          = Color(0xFFF0EFE9);
-  static const Color inkSecondary = Color(0xFFA8A6A0);
-  static const Color inkTertiary  = Color(0xFF6B6965);
-  static const Color primary      = Color(0xFF5BA8F5);
-  static const Color primaryLight = Color(0xFF1A3A5A);
-}
+// ── Temas ─────────────────────────────────────────────────────────────────────
 
 ThemeData nexusTheme() {
   return ThemeData(
     useMaterial3: true,
     fontFamily: 'Inter',
+    brightness: Brightness.light,
     scaffoldBackgroundColor: NexusColors.surfaceAlt,
     colorScheme: ColorScheme.fromSeed(
       seedColor: NexusColors.primary,
       brightness: Brightness.light,
       surface: NexusColors.surface,
     ),
+    extensions: const [NexusThemeExt.light],
+    textTheme: const TextTheme(
+      displayLarge:   NexusText.heading1,
+      headlineMedium: NexusText.heading2,
+      titleLarge:     NexusText.heading3,
+      bodyLarge:      NexusText.body,
+      bodyMedium:     NexusText.small,
+      bodySmall:      NexusText.caption,
+      labelSmall:     NexusText.label,
+    ).apply(bodyColor: NexusColors.ink, displayColor: NexusColors.ink),
     appBarTheme: const AppBarTheme(
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -128,9 +238,8 @@ ThemeData nexusTheme() {
         borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
         borderSide: const BorderSide(color: NexusColors.danger, width: 1.5),
       ),
-      labelStyle: NexusText.small.copyWith(color: NexusColors.inkSecondary),
-      hintStyle: NexusText.small.copyWith(color: NexusColors.inkTertiary),
-      errorStyle: NexusText.caption.copyWith(color: NexusColors.danger),
+      hintStyle: TextStyle(fontSize: 13, color: NexusColors.inkTertiary),
+      errorStyle: TextStyle(fontSize: 12, color: NexusColors.danger),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -160,13 +269,24 @@ ThemeData nexusDarkTheme() {
     brightness: Brightness.dark,
     scaffoldBackgroundColor: NexusDarkColors.surfaceAlt,
     colorScheme: ColorScheme.dark(
-      primary: NexusDarkColors.primary,
-      onPrimary: const Color(0xFF0A2A4A),
-      surface: NexusDarkColors.surface,
-      onSurface: NexusDarkColors.ink,
-      surfaceContainerHighest: NexusDarkColors.surfaceAlt,
-      outline: NexusDarkColors.border,
+      primary:                  NexusDarkColors.primary,
+      onPrimary:                const Color(0xFF0A2A4A),
+      surface:                  NexusDarkColors.surface,
+      onSurface:                NexusDarkColors.ink,
+      surfaceContainerHighest:  NexusDarkColors.surfaceAlt,
+      outline:                  NexusDarkColors.border,
+      outlineVariant:           NexusDarkColors.borderStrong,
     ),
+    extensions: const [NexusThemeExt.dark],
+    textTheme: const TextTheme(
+      displayLarge:   NexusText.heading1,
+      headlineMedium: NexusText.heading2,
+      titleLarge:     NexusText.heading3,
+      bodyLarge:      NexusText.body,
+      bodyMedium:     NexusText.small,
+      bodySmall:      NexusText.caption,
+      labelSmall:     NexusText.label,
+    ).apply(bodyColor: NexusDarkColors.ink, displayColor: NexusDarkColors.ink),
     appBarTheme: const AppBarTheme(
       elevation: 0,
       scrolledUnderElevation: 0,
@@ -209,7 +329,6 @@ ThemeData nexusDarkTheme() {
         borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
         borderSide: const BorderSide(color: NexusColors.danger, width: 1.5),
       ),
-      labelStyle: const TextStyle(fontSize: 13, color: NexusDarkColors.inkSecondary),
       hintStyle: const TextStyle(fontSize: 13, color: NexusDarkColors.inkTertiary),
       errorStyle: TextStyle(fontSize: 12, color: NexusColors.danger),
     ),
@@ -251,15 +370,14 @@ Widget nexusEstadoBadge(String texto, {required Color bg, required Color textCol
 }
 
 Widget nexusCard({required Widget child, EdgeInsets? padding, BuildContext? context}) {
-  final isDark = context != null && Theme.of(context).brightness == Brightness.dark;
+  final ext = context != null
+      ? (Theme.of(context).extension<NexusThemeExt>() ?? NexusThemeExt.light)
+      : NexusThemeExt.light;
   return Container(
     padding: padding ?? const EdgeInsets.all(NexusSizes.spaceLG),
     decoration: BoxDecoration(
-      color: isDark ? NexusDarkColors.surface : NexusColors.surface,
-      border: Border.all(
-        color: isDark ? NexusDarkColors.border : NexusColors.border,
-        width: NexusSizes.borderWidth,
-      ),
+      color: ext.surface,
+      border: Border.all(color: ext.border, width: NexusSizes.borderWidth),
       borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
     ),
     child: child,

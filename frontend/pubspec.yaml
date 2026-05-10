@@ -57,6 +57,13 @@ dependencies:
   # Chat WebSocket/STOMP en tiempo real (web_socket_channel funciona en Flutter web)
   web_socket_channel: ^2.4.0
 
+  # Gráficos — donut de progreso y barras de horas por semana
+  fl_chart: ^0.69.0
+
+  # Exportar PDF del informe FCT
+  pdf: ^3.10.8
+  printing: ^5.12.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

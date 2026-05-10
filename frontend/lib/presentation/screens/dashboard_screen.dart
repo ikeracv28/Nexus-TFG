@@ -11,6 +11,7 @@ import '../providers/practica_provider.dart';
 import '../widgets/seguimiento_tile.dart';
 import '../widgets/incidencia_tile.dart';
 import '../widgets/ausencia_tile.dart';
+import '../widgets/nexus_charts.dart';
 import 'seguimiento_screen.dart';
 import 'seguimientos_screen.dart';
 import 'incidencias_screen.dart';
@@ -120,16 +121,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         Builder(builder: (ctx) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
-          final iconColor = isDark ? const Color(0xFFA8A6A0) : NexusColors.inkSecondary;
           return Row(mainAxisSize: MainAxisSize.min, children: [
             IconButton(
               icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                  size: 20, color: iconColor),
+                  size: 20, color: ctx.nxt.inkSecondary),
               tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
               onPressed: () => ctx.read<ThemeProvider>().toggle(),
             ),
             IconButton(
-              icon: Icon(Icons.logout_outlined, size: 20, color: iconColor),
+              icon: Icon(Icons.logout_outlined, size: 20, color: ctx.nxt.inkSecondary),
               tooltip: 'Cerrar sesión',
               onPressed: () => auth.logout(),
             ),
@@ -189,6 +189,10 @@ class _InicioTab extends StatelessWidget {
               _PracticaCard(practica: practica.practicaActiva!)
             else
               const _EmptyState(),
+            if (practica.practicaActiva != null && practica.seguimientos.isNotEmpty) ...[
+              const SizedBox(height: NexusSizes.spaceLG),
+              _HorasSemanaCard(practica: practica),
+            ],
             const SizedBox(height: NexusSizes.space2XL),
             _SectionGrid(
               practica: practica.practicaActiva,
@@ -305,14 +309,14 @@ class _PracticaCard extends StatelessWidget {
             ),
           ],
 
-          // Barra de progreso de horas (solo seguimientos COMPLETADOS)
+          // Donut de progreso de horas (solo seguimientos COMPLETADOS)
           if (horas > 0) ...[
             const SizedBox(height: NexusSizes.spaceLG),
             Divider(height: 1, thickness: 0.5, color: context.nxt.border),
             const SizedBox(height: NexusSizes.spaceLG),
             Consumer<PracticaProvider>(
-              builder: (_, p, __) => _ProgressBar(
-                horasRealizadas: p.horasCompletadas,
+              builder: (_, p, __) => ProgresoDonutChart(
+                horasCompletadas: p.horasCompletadas,
                 horasTotales: horas,
               ),
             ),
@@ -404,6 +408,46 @@ class _ProgressBar extends StatelessWidget {
           style: NexusText.caption,
         ),
       ],
+    );
+  }
+}
+
+// Card de horas por semana
+
+class _HorasSemanaCard extends StatelessWidget {
+  final PracticaProvider practica;
+  const _HorasSemanaCard({required this.practica});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(NexusSizes.space2XL),
+      decoration: BoxDecoration(
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('Horas por semana',
+                  style: NexusText.small.copyWith(fontWeight: FontWeight.w600)),
+              const Spacer(),
+              Text(
+                'Solo partes validados',
+                style: NexusText.caption.copyWith(color: context.nxt.inkTertiary),
+              ),
+            ],
+          ),
+          const SizedBox(height: NexusSizes.spaceLG),
+          HorasSemanaChart(
+            seguimientos: practica.seguimientos,
+            fechaInicio: practica.practicaActiva?.fechaInicio,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -721,7 +721,7 @@ class _Sidebar extends StatelessWidget {
             message: 'Cerrar sesión',
             child: IconButton(
               onPressed: () => auth.logout(),
-              icon: Icon(Icons.logout_outlined, size: 18, color: iconColor),
+              icon: Icon(Icons.logout_outlined, size: 18, color: context.nxt.inkSecondary),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
             ),

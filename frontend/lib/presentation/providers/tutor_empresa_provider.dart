@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../data/models/ausencia_model.dart';
+import '../../data/models/evaluacion_final_model.dart';
 import '../../data/models/practica_model.dart';
 import '../../data/models/seguimiento_model.dart';
 import '../../data/services/ausencia_service.dart';
+import '../../data/services/evaluacion_service.dart';
 import '../../data/services/practica_tutor_service.dart';
 import '../../data/services/seguimiento_service.dart';
 
@@ -10,10 +12,12 @@ class TutorEmpresaProvider extends ChangeNotifier {
   final PracticaTutorService _practicaService = PracticaTutorService();
   final SeguimientoService _seguimientoService = SeguimientoService();
   final AusenciaService _ausenciaService = AusenciaService();
+  final EvaluacionService _evaluacionService = EvaluacionService();
 
   List<Practica> _practicas = [];
   Map<int, List<Seguimiento>> _todosSeguimientosPorPractica = {};
   Map<int, List<Ausencia>> _todasAusenciasPorPractica = {};
+  Map<int, EvaluacionFinalModel?> _evaluacionPorPractica = {};
   bool _isLoading = false;
   String? _error;
 
@@ -69,6 +73,9 @@ class TutorEmpresaProvider extends ChangeNotifier {
   List<Seguimiento> seguimientosDe(int practicaId) =>
       _todosSeguimientosPorPractica[practicaId] ?? [];
 
+  EvaluacionFinalModel? evaluacionDe(int practicaId) =>
+      _evaluacionPorPractica[practicaId];
+
   Future<void> cargar() async {
     _isLoading = true;
     _error = null;
@@ -78,20 +85,51 @@ class TutorEmpresaProvider extends ChangeNotifier {
       _practicas = await _practicaService.getMisPracticasComoTutorEmpresa();
       _todosSeguimientosPorPractica = {};
       _todasAusenciasPorPractica = {};
+      _evaluacionPorPractica = {};
 
       for (final practica in _practicas) {
         final results = await Future.wait([
           _seguimientoService.getSeguimientosPorPractica(practica.id),
           _ausenciaService.getAusenciasPorPractica(practica.id),
+          _evaluacionService.getEvaluacion(practica.id),
         ]);
         _todosSeguimientosPorPractica[practica.id] = results[0] as List<Seguimiento>;
         _todasAusenciasPorPractica[practica.id] = results[1] as List<Ausencia>;
+        _evaluacionPorPractica[practica.id] = results[2] as EvaluacionFinalModel?;
       }
     } catch (e) {
       _error = e.toString().replaceFirst('Exception: ', '');
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<bool> evaluar(int practicaId, {
+    double? actitudPuntualidad,
+    double? competenciaTecnica,
+    double? iniciativaAutonomia,
+    double? trabajoEquipo,
+    double? cumplimientoTareas,
+    required double notaGlobal,
+    String? comentario,
+  }) async {
+    try {
+      final ev = await _evaluacionService.evaluar(
+        practicaId,
+        actitudPuntualidad: actitudPuntualidad,
+        competenciaTecnica: competenciaTecnica,
+        iniciativaAutonomia: iniciativaAutonomia,
+        trabajoEquipo: trabajoEquipo,
+        cumplimientoTareas: cumplimientoTareas,
+        notaGlobal: notaGlobal,
+        comentario: comentario,
+      );
+      _evaluacionPorPractica[practicaId] = ev;
+      notifyListeners();
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 

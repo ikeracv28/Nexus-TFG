@@ -33,7 +33,7 @@ class MensajeService {
 
     try {
       _channel = WebSocketChannel.connect(
-        Uri.parse('ws://localhost:8080/ws'),
+        Uri.parse(ApiClient.wsBaseUrl),
       );
 
       _sub = _channel!.stream.listen(

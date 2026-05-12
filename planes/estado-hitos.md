@@ -67,10 +67,20 @@ Actualizado: 10/05/2026
 - [x] [FLUTTER] Foto de perfil — FotoCache + NexusAvatar widget + PerfilScreen + PerfilProvider global
 - [x] [FLUTTER] Sistema notificaciones — NotificacionProvider + NotificacionesScreen + badge en 4 paneles
 
+### Completado (12/05/2026)
+
+- [x] [FLUTTER] Polling notificaciones cada 30s — `NotificacionProvider` con Timer + flag `_cargado`
+- [x] [FLUTTER] WebSocket URL dinámica — `ApiClient.wsBaseUrl` derivado de `API_URL` env var
+- [x] [INFRA] `application-prod.properties` — HikariCP pool 10/5 + Actuator solo health,info
+- [x] [FLUTTER] Paquete `excel: ^4.0.6` añadido para exportación Excel
+
 ### Pendiente para Hito 4
 
-- [ ] [BACKEND+FLUTTER] Feature 4: Evaluación final del alumno (formulario tutor centro, V14 migration)
-- [ ] [FLUTTER] Feature 5: Exportar PDF de la ficha del alumno (paquete `pdf` + `printing` ya instalados)
+- [ ] [BACKEND+FLUTTER] Feature 4: Evaluación final del alumno — V14 migration + EvaluacionFinal entity + controller/service + formulario Flutter tutor centro + vista alumno
+- [ ] [FLUTTER] Feature 5: Exportar PDF + Excel desde `ficha_alumno_screen.dart` — paquetes ya instalados, botón PDF ya existe en AppBar con `onPressed: null`
+- [ ] [TEST] Subir cobertura JaCoCo del 69% a ≥80% — tests de integración para NotificacionController, UsuarioController, AusenciaController, MensajeController
+- [ ] [FLUTTER] Verificar que chat WebSocket cubre caso tutor empresa ↔ tutor centro (requisito tutoría 12/05)
+- [ ] [DOC] Manual de usuario por rol con capturas
 - [ ] [FLUTTER] Pulido visual final, pruebas cross-device
 
 ---

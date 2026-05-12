@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/ausencia_model.dart';
+import '../../data/models/evaluacion_final_model.dart';
 import '../../data/models/incidencia_model.dart';
 import '../../data/models/practica_model.dart';
 import '../../data/models/seguimiento_model.dart';
@@ -234,7 +235,14 @@ class FichaAlumnoScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                 ],
 
+                // ── Evaluación final (solo lectura para tutor centro) ───────
+                _SectionTitle('Evaluación final'),
                 const SizedBox(height: 8),
+                Consumer<TutorCentroProvider>(
+                  builder: (_, prov, __) =>
+                      _EvaluacionCard(evaluacion: prov.evaluacionDe(practica.id)),
+                ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -242,6 +250,7 @@ class FichaAlumnoScreen extends StatelessWidget {
       ),
     );
   }
+
 
   String _initials(String nombre) {
     final parts =
@@ -257,6 +266,105 @@ class FichaAlumnoScreen extends StatelessWidget {
     if (inicio == null) return 'Sin fecha de inicio';
     if (fin == null) return 'Desde ${fmt(inicio)}';
     return '${fmt(inicio)} → ${fmt(fin)}';
+  }
+}
+
+// ── Evaluación widgets ─────────────────────────────────────────────────────────
+
+class _EvaluacionCard extends StatelessWidget {
+  final EvaluacionFinalModel? evaluacion;
+  const _EvaluacionCard({required this.evaluacion});
+
+  @override
+  Widget build(BuildContext context) {
+    if (evaluacion == null) {
+      return _FichaCard(
+        child: Row(
+          children: [
+            Icon(Icons.grade_outlined, color: context.nxt.inkTertiary, size: 22),
+            const SizedBox(width: 12),
+            Text('Pendiente de evaluación por el tutor de empresa',
+                style: NexusText.body.copyWith(color: context.nxt.inkSecondary)),
+          ],
+        ),
+      );
+    }
+
+    final nota = evaluacion!.notaGlobal;
+    final color = nota >= 9
+        ? NexusColors.success
+        : nota >= 7
+            ? NexusColors.primary
+            : nota >= 5
+                ? NexusColors.warning
+                : NexusColors.danger;
+
+    final criterios = <String, double?>{
+      'Actitud y puntualidad': evaluacion!.actitudPuntualidad,
+      'Competencia técnica': evaluacion!.competenciaTecnica,
+      'Iniciativa y autonomía': evaluacion!.iniciativaAutonomia,
+      'Trabajo en equipo': evaluacion!.trabajoEquipo,
+      'Cumplimiento de tareas': evaluacion!.cumplimientoTareas,
+    }.entries.where((e) => e.value != null).toList();
+
+    return _FichaCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 64, height: 64,
+                decoration: BoxDecoration(
+                  color: color.withAlpha(20),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Text(nota.toStringAsFixed(2),
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: color)),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Nota global', style: NexusText.small.copyWith(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text('Por ${evaluacion!.tutorEmpresaNombre}',
+                        style: NexusText.caption.copyWith(color: context.nxt.inkSecondary)),
+                    Text(DateFormat('d MMM yyyy', 'es_ES').format(evaluacion!.fechaEvaluacion),
+                        style: NexusText.caption.copyWith(color: context.nxt.inkTertiary)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (criterios.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Divider(height: 1, thickness: 0.5, color: context.nxt.border),
+            const SizedBox(height: 12),
+            ...criterios.map((e) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                children: [
+                  Expanded(child: Text(e.key, style: NexusText.caption)),
+                  Text(e.value!.toStringAsFixed(1),
+                      style: NexusText.caption.copyWith(fontWeight: FontWeight.w600)),
+                  Text('/10', style: NexusText.caption.copyWith(color: context.nxt.inkTertiary)),
+                ],
+              ),
+            )),
+          ],
+          if (evaluacion!.comentario != null && evaluacion!.comentario!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Divider(height: 1, thickness: 0.5, color: context.nxt.border),
+            const SizedBox(height: 10),
+            Text(evaluacion!.comentario!,
+                style: NexusText.body.copyWith(color: context.nxt.inkSecondary)),
+          ],
+        ],
+      ),
+    );
   }
 }
 

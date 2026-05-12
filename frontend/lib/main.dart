@@ -41,8 +41,13 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProxyProvider<AuthProvider, NotificacionProvider>(
           create: (_) => NotificacionProvider(),
           update: (_, auth, notif) {
-            if (auth.isAuthenticated && !notif!.cargando) notif.cargar();
-            return notif!;
+            if (auth.isAuthenticated) {
+              notif!.cargar();
+              notif.iniciarPolling();
+            } else {
+              notif!.detenerPolling();
+            }
+            return notif;
           },
         ),
         // PerfilProvider global: se auto-carga cuando el usuario está autenticado

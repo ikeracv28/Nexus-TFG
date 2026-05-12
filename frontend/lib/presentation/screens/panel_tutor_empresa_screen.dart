@@ -5,7 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../../core/theme/app_theme.dart';
+import 'package:flutter/services.dart';
 import '../../data/models/ausencia_model.dart';
+import '../../data/models/evaluacion_final_model.dart';
 import '../../data/models/practica_model.dart';
 import '../../data/models/seguimiento_model.dart';
 import '../../data/services/ausencia_service.dart';
@@ -253,9 +255,21 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
           else
             ...provider.practicas.map((p) {
               final seguimientos = provider.seguimientosDe(p.id);
+              final evaluacion = provider.evaluacionDe(p.id);
               return Padding(
                 padding: const EdgeInsets.only(bottom: 20),
-                child: _ProgresoCard(practica: p, seguimientos: seguimientos),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _ProgresoCard(practica: p, seguimientos: seguimientos),
+                    const SizedBox(height: 12),
+                    _EvaluacionResumenCard(
+                      practica: p,
+                      evaluacion: evaluacion,
+                      onEvaluar: () => _mostrarFormEvaluacion(p.id, evaluacion),
+                    ),
+                  ],
+                ),
               );
             }),
         ],
@@ -264,6 +278,17 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
   }
 
   // ── Acciones ───────────────────────────────────────────────────────────────
+
+  void _mostrarFormEvaluacion(int practicaId, EvaluacionFinalModel? actual) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => _EvaluarDialog(
+        practicaId: practicaId,
+        actual: actual,
+        provider: context.read<TutorEmpresaProvider>(),
+      ),
+    );
+  }
 
   Future<void> _confirmarValidar(int id) async {
     final confirmar = await showDialog<bool>(
@@ -1301,6 +1326,252 @@ class _StatusPill extends StatelessWidget {
       ),
       child: Text(label,
           style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: color)),
+    );
+  }
+}
+
+// ── Evaluación resumen card ────────────────────────────────────────────────────
+
+class _EvaluacionResumenCard extends StatelessWidget {
+  final Practica practica;
+  final EvaluacionFinalModel? evaluacion;
+  final VoidCallback onEvaluar;
+
+  const _EvaluacionResumenCard({
+    required this.practica,
+    required this.evaluacion,
+    required this.onEvaluar,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: context.nxt.surface,
+        borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Icon(Icons.grade_outlined,
+              color: evaluacion != null ? NexusColors.warning : context.nxt.inkTertiary,
+              size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: evaluacion == null
+                ? Text('Sin evaluación final — puedes registrarla ahora',
+                    style: NexusText.body.copyWith(color: context.nxt.inkSecondary))
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Evaluación registrada',
+                          style: NexusText.small.copyWith(fontWeight: FontWeight.w600)),
+                      Text('Nota global: ${evaluacion!.notaGlobal.toStringAsFixed(2)}/10',
+                          style: NexusText.caption.copyWith(color: context.nxt.inkSecondary)),
+                    ],
+                  ),
+          ),
+          TextButton(
+            onPressed: onEvaluar,
+            child: Text(evaluacion == null ? 'Evaluar' : 'Modificar'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Diálogo cuestionario de evaluación ────────────────────────────────────────
+
+class _EvaluarDialog extends StatefulWidget {
+  final int practicaId;
+  final EvaluacionFinalModel? actual;
+  final TutorEmpresaProvider provider;
+
+  const _EvaluarDialog({
+    required this.practicaId,
+    required this.actual,
+    required this.provider,
+  });
+
+  @override
+  State<_EvaluarDialog> createState() => _EvaluarDialogState();
+}
+
+class _EvaluarDialogState extends State<_EvaluarDialog> {
+  final _formKey = GlobalKey<FormState>();
+
+  late final TextEditingController _actitudCtrl;
+  late final TextEditingController _tecnicaCtrl;
+  late final TextEditingController _iniciativaCtrl;
+  late final TextEditingController _equipoCtrl;
+  late final TextEditingController _cumplimientoCtrl;
+  late final TextEditingController _globalCtrl;
+  late final TextEditingController _comentarioCtrl;
+  bool _guardando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final a = widget.actual;
+    _actitudCtrl      = TextEditingController(text: a?.actitudPuntualidad?.toStringAsFixed(1) ?? '');
+    _tecnicaCtrl      = TextEditingController(text: a?.competenciaTecnica?.toStringAsFixed(1) ?? '');
+    _iniciativaCtrl   = TextEditingController(text: a?.iniciativaAutonomia?.toStringAsFixed(1) ?? '');
+    _equipoCtrl       = TextEditingController(text: a?.trabajoEquipo?.toStringAsFixed(1) ?? '');
+    _cumplimientoCtrl = TextEditingController(text: a?.cumplimientoTareas?.toStringAsFixed(1) ?? '');
+    _globalCtrl       = TextEditingController(text: a != null ? a.notaGlobal.toStringAsFixed(2) : '');
+    _comentarioCtrl   = TextEditingController(text: a?.comentario ?? '');
+  }
+
+  @override
+  void dispose() {
+    for (final c in [_actitudCtrl, _tecnicaCtrl, _iniciativaCtrl,
+        _equipoCtrl, _cumplimientoCtrl, _globalCtrl, _comentarioCtrl]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        widget.actual == null ? 'Evaluar al alumno' : 'Modificar evaluación',
+        style: NexusText.heading3,
+      ),
+      content: SizedBox(
+        width: 480,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Criterios de evaluación (1–10, opcionales)',
+                    style: NexusText.caption.copyWith(color: context.nxt.inkSecondary)),
+                const SizedBox(height: 12),
+                _CriterioField(label: 'Actitud y puntualidad', ctrl: _actitudCtrl),
+                _CriterioField(label: 'Competencia técnica', ctrl: _tecnicaCtrl),
+                _CriterioField(label: 'Iniciativa y autonomía', ctrl: _iniciativaCtrl),
+                _CriterioField(label: 'Trabajo en equipo', ctrl: _equipoCtrl),
+                _CriterioField(label: 'Cumplimiento de tareas', ctrl: _cumplimientoCtrl),
+                const Divider(height: 24),
+                Text('Nota global *',
+                    style: NexusText.small.copyWith(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _globalCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}(\.\d{0,2})?'))
+                  ],
+                  decoration: const InputDecoration(
+                    labelText: 'Nota global (0.00 – 10.00)',
+                    hintText: 'Ej: 7.50',
+                    prefixIcon: Icon(Icons.star_outline),
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Obligatoria';
+                    final n = double.tryParse(v.replaceAll(',', '.'));
+                    if (n == null) return 'Formato inválido';
+                    if (n < 0 || n > 10) return 'Entre 0 y 10';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _comentarioCtrl,
+                  maxLines: 4,
+                  maxLength: 2000,
+                  decoration: const InputDecoration(
+                    labelText: 'Observaciones (opcional)',
+                    hintText:
+                        'Valoración general sobre el desempeño del alumno durante las prácticas...',
+                    alignLabelWithHint: true,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _guardando ? null : () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _guardando ? null : _guardar,
+          child: _guardando
+              ? const SizedBox(
+                  width: 16, height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2))
+              : const Text('Guardar evaluación'),
+        ),
+      ],
+    );
+  }
+
+  double? _parseOpt(TextEditingController c) {
+    final v = c.text.trim().replaceAll(',', '.');
+    if (v.isEmpty) return null;
+    return double.tryParse(v);
+  }
+
+  Future<void> _guardar() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _guardando = true);
+    final ok = await widget.provider.evaluar(
+      widget.practicaId,
+      actitudPuntualidad: _parseOpt(_actitudCtrl),
+      competenciaTecnica: _parseOpt(_tecnicaCtrl),
+      iniciativaAutonomia: _parseOpt(_iniciativaCtrl),
+      trabajoEquipo: _parseOpt(_equipoCtrl),
+      cumplimientoTareas: _parseOpt(_cumplimientoCtrl),
+      notaGlobal: double.parse(_globalCtrl.text.trim().replaceAll(',', '.')),
+      comentario:
+          _comentarioCtrl.text.trim().isEmpty ? null : _comentarioCtrl.text.trim(),
+    );
+    if (mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(ok ? 'Evaluación guardada correctamente' : 'Error al guardar'),
+        backgroundColor: ok ? NexusColors.success : NexusColors.danger,
+      ));
+    }
+  }
+}
+
+class _CriterioField extends StatelessWidget {
+  final String label;
+  final TextEditingController ctrl;
+  const _CriterioField({required this.label, required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: TextFormField(
+        controller: ctrl,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}(\.\d)?'))
+        ],
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: '1–10',
+          suffixText: '/10',
+        ),
+        validator: (v) {
+          if (v == null || v.trim().isEmpty) return null;
+          final n = double.tryParse(v.replaceAll(',', '.'));
+          if (n == null) return 'Formato inválido';
+          if (n < 1 || n > 10) return 'Entre 1 y 10';
+          return null;
+        },
+      ),
     );
   }
 }

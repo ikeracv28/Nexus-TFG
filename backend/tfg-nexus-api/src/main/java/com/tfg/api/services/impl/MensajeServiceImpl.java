@@ -58,12 +58,14 @@ public class MensajeServiceImpl implements MensajeService {
         auditService.registrar("MENSAJES", "ENVIAR", guardado.getId(),
                 "Practica=" + practicaId, emailRemitente);
 
+        // Solo notifica al interlocutor directo: alumno→tutorEmpresa, cualquier tutor→alumno
         String nombreRemitente = remitente.getNombre() + " " + remitente.getApellidos();
-        List.of(practica.getAlumno(), practica.getTutorCentro(), practica.getTutorEmpresa())
-                .stream()
-                .filter(u -> !u.getEmail().equals(emailRemitente))
-                .forEach(u -> notificacionService.crear(u.getId(), "CHAT",
-                        "Nuevo mensaje de " + nombreRemitente + " en tu práctica."));
+        boolean esAlumno = emailRemitente.equals(practica.getAlumno().getEmail());
+        Long destinatarioId = esAlumno
+                ? practica.getTutorEmpresa().getId()
+                : practica.getAlumno().getId();
+        notificacionService.crear(destinatarioId, "CHAT",
+                "Nuevo mensaje de " + nombreRemitente + " en tu práctica.");
 
         return toResponse(guardado);
     }

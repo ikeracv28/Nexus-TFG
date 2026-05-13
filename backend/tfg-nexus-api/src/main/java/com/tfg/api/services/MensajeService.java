@@ -5,6 +5,6 @@ import com.tfg.api.models.dto.MensajeResponse;
 import java.util.List;
 
 public interface MensajeService {
-    MensajeResponse guardar(MensajeRequest request, String emailRemitente, Long practicaId);
-    List<MensajeResponse> listarPorPractica(Long practicaId);
+    MensajeResponse guardar(MensajeRequest request, String emailRemitente, Long practicaId, String canal);
+    List<MensajeResponse> listarPorPractica(Long practicaId, String canal);
 }

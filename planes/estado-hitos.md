@@ -74,18 +74,33 @@ Actualizado: 10/05/2026
 - [x] [INFRA] `application-prod.properties` — HikariCP pool 10/5 + Actuator solo health,info
 - [x] [FLUTTER] Paquete `excel: ^4.0.6` añadido para exportación Excel
 
+### Completado (12/05/2026) — sesión tarde
+
+- [x] [BACKEND+FLUTTER] Evaluación final del alumno — V14 migration + EvaluacionFinal entity + EvaluacionFinalRepository + EvaluacionService + EvaluacionFinalController (5 endpoints) + formulario slider tutor empresa + vista lectura en ficha alumno tutor centro
+- [x] [TEST] Cobertura JaCoCo: 69% → 80% — 254 tests, 0 fallos (13 ficheros de test nuevos: 8 @WebMvcTest + 5 @SpringBootTest)
+- [x] [FLUTTER] Rediseño diálogo evaluación — _EvaluarDialog con Slider por criterio (color rojo/ámbar/verde), Switch enable/disable, nota global slider 0-10; elimina TextFormField numérico anterior
+- [x] [BUGFIX] FichaAlumnoScreen → StatefulWidget + initState cargarEvaluacionDe() — corrige "pendiente por evaluar" al abrir ficha aunque ya exista evaluación
+
+### Completado (13/05/2026)
+
+- [x] [BACKEND] V16 migration: columna `canal VARCHAR(20)` en `mensajes` + índice compuesto (practica_id, canal)
+- [x] [BACKEND] Chat dual-canal: MensajeController (2 @MessageMapping + GET con ?canal=), MensajeService refactorizado; canal ALUMNO (alumno ↔ tutor centro), canal TUTORES (tutor empresa ↔ tutor centro)
+- [x] [BACKEND] WebSocketAuthInterceptor: validación SUBSCRIBE con TOPIC_ALUMNO + TOPIC_TUTORES (regex separados)
+- [x] [TEST] MensajeServiceTest + MensajeControllerTest actualizados con nuevas firmas; 2 nuevos tests de separación de canales
+- [x] [FLUTTER] ChatPlaceholderScreen con parámetro `canal`, instancia local de ChatProvider por pantalla
+- [x] [FLUTTER] PanelTutorCentroScreen: modo `chatTutores` en sidebar + mobile navbar; canal TUTORES con icono supervisor_account
+- [x] [FLUTTER] PanelTutorEmpresaScreen: Tab 2 = chat canal TUTORES
+- [x] [FLUTTER] Feature 5: Exportar PDF + Excel desde `ficha_alumno_screen.dart` — botón PDF (rojo) + botón Excel (verde) en AppBar; `pdf`, `printing`, `excel` packages
+
 ### Pendiente para Hito 4
 
-- [ ] [BACKEND+FLUTTER] Feature 4: Evaluación final del alumno — V14 migration + EvaluacionFinal entity + controller/service + formulario Flutter tutor centro + vista alumno
-- [ ] [FLUTTER] Feature 5: Exportar PDF + Excel desde `ficha_alumno_screen.dart` — paquetes ya instalados, botón PDF ya existe en AppBar con `onPressed: null`
-- [ ] [TEST] Subir cobertura JaCoCo del 69% a ≥80% — tests de integración para NotificacionController, UsuarioController, AusenciaController, MensajeController
-- [ ] [FLUTTER] Verificar que chat WebSocket cubre caso tutor empresa ↔ tutor centro (requisito tutoría 12/05)
+- [ ] [FLUTTER] Chat WebSocket tutor empresa ↔ tutor centro verificado end-to-end en demo
 - [ ] [DOC] Manual de usuario por rol con capturas
 - [ ] [FLUTTER] Pulido visual final, pruebas cross-device
 
 ---
 
-## Estado técnico actual (10/05/2026)
+## Estado técnico actual (13/05/2026)
 
 ### Lo que funciona end-to-end en Docker
 
@@ -95,14 +110,16 @@ Actualizado: 10/05/2026
 | Alumno: dashboard, seguimientos, incidencias, ausencias, chat | ✅ |
 | Alumno: foto de perfil — subir y ver | ✅ |
 | Alumno: notificaciones cuando se valida/rechaza su parte o llega mensaje | ✅ |
-| Tutor empresa: ver partes, validar/rechazar, ver ausencias, chat | ✅ |
-| Tutor empresa: notificaciones cuando el alumno le envía mensajes | ✅ |
-| Tutor centro: dashboard, alumnos, partes, incidencias, chat | ✅ |
+| Tutor empresa: ver partes, validar/rechazar, ver ausencias, chat tutores, evaluar alumno | ✅ |
+| Tutor empresa: notificaciones cuando llega mensaje en canal TUTORES | ✅ |
+| Tutor centro: dashboard, alumnos, partes, incidencias, chat alumno, chat tutores | ✅ |
+| Tutor centro: exportar expediente alumno en PDF y Excel | ✅ |
 | Tutor centro: notificaciones cuando el alumno le envía mensajes | ✅ |
 | Admin: gestión usuarios, prácticas, empresas (CRUD completo) | ✅ |
-| Chat WebSocket STOMP en tiempo real — 3 participantes | ✅ |
+| Chat WebSocket STOMP — canal ALUMNO (alumno ↔ tutor centro) | ✅ |
+| Chat WebSocket STOMP — canal TUTORES (tutor empresa ↔ tutor centro) | ✅ |
 | Logout server-side con JTI blacklist | ✅ |
-| WebSocket SUBSCRIBE con verificación de participante | ✅ |
+| WebSocket SUBSCRIBE con verificación de canal por participante | ✅ |
 | Foto de perfil sincronizada entre todos los paneles (FotoCache) | ✅ |
 
 ### Problemas conocidos

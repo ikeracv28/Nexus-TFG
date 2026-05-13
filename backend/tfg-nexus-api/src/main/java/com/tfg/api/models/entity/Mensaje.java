@@ -28,6 +28,9 @@ public class Mensaje {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String contenido;
 
+    @Column(nullable = false, length = 20)
+    private String canal = "ALUMNO";
+
     @Column(name = "fecha_envio", nullable = false)
     private LocalDateTime fechaEnvio;
 

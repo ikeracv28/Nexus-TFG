@@ -34,62 +34,89 @@ public class MensajeServiceImpl implements MensajeService {
 
     @Override
     @Transactional
-    public MensajeResponse guardar(MensajeRequest request, String emailRemitente, Long practicaId) {
+    public MensajeResponse guardar(MensajeRequest request, String emailRemitente, Long practicaId, String canal) {
         Practica practica = practicaRepository.findById(practicaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Práctica no encontrada"));
 
         Usuario remitente = usuarioRepository.findByEmail(emailRemitente)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        boolean esParticipante = emailRemitente.equals(practica.getAlumno().getEmail())
-                || emailRemitente.equals(practica.getTutorCentro().getEmail())
-                || emailRemitente.equals(practica.getTutorEmpresa().getEmail());
-        if (!esParticipante) {
-            throw new BusinessRuleException("No tienes acceso al chat de esta práctica");
-        }
+        String canalEfectivo = (canal != null && !canal.isBlank()) ? canal.toUpperCase() : "ALUMNO";
+
+        // A01: verificar que el remitente puede usar este canal
+        validarAccesoCanal(practica, emailRemitente, canalEfectivo);
 
         Mensaje mensaje = Mensaje.builder()
                 .practica(practica)
                 .remitente(remitente)
                 .contenido(request.contenido())
+                .canal(canalEfectivo)
                 .build();
 
         Mensaje guardado = mensajeRepository.save(mensaje);
         auditService.registrar("MENSAJES", "ENVIAR", guardado.getId(),
-                "Practica=" + practicaId, emailRemitente);
+                "Practica=" + practicaId + " Canal=" + canalEfectivo, emailRemitente);
 
-        // Solo notifica al interlocutor directo: alumno→tutorEmpresa, cualquier tutor→alumno
         String nombreRemitente = remitente.getNombre() + " " + remitente.getApellidos();
-        boolean esAlumno = emailRemitente.equals(practica.getAlumno().getEmail());
-        Long destinatarioId = esAlumno
-                ? practica.getTutorEmpresa().getId()
-                : practica.getAlumno().getId();
-        notificacionService.crear(destinatarioId, "CHAT",
-                "Nuevo mensaje de " + nombreRemitente + " en tu práctica.");
+        enviarNotificacion(practica, emailRemitente, canalEfectivo, nombreRemitente);
 
         return toResponse(guardado);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<MensajeResponse> listarPorPractica(Long practicaId) {
+    public List<MensajeResponse> listarPorPractica(Long practicaId, String canal) {
         Practica practica = practicaRepository.findById(practicaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Práctica no encontrada"));
 
-        // A01: solo participantes de la práctica o admin
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
         boolean isAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        if (!isAdmin
-                && !practica.getAlumno().getEmail().equals(email)
-                && !practica.getTutorCentro().getEmail().equals(email)
-                && !practica.getTutorEmpresa().getEmail().equals(email)) {
-            throw new AccessDeniedException("No tienes acceso al chat de esta práctica");
+
+        String canalEfectivo = (canal != null && !canal.isBlank()) ? canal.toUpperCase() : "ALUMNO";
+
+        if (!isAdmin) {
+            validarAccesoCanal(practica, email, canalEfectivo);
         }
 
-        return mensajeRepository.findByPracticaIdOrderByFechaEnvioAsc(practicaId)
+        return mensajeRepository
+                .findByPracticaIdAndCanalOrderByFechaEnvioAsc(practicaId, canalEfectivo)
                 .stream().map(this::toResponse).toList();
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void validarAccesoCanal(Practica practica, String email, String canal) {
+        boolean acceso = switch (canal) {
+            case "TUTORES" ->
+                email.equals(practica.getTutorCentro().getEmail())
+                || email.equals(practica.getTutorEmpresa().getEmail());
+            default -> // ALUMNO
+                email.equals(practica.getAlumno().getEmail())
+                || email.equals(practica.getTutorCentro().getEmail());
+        };
+        if (!acceso) {
+            throw new BusinessRuleException("No tienes acceso al canal " + canal + " de esta práctica");
+        }
+    }
+
+    private void enviarNotificacion(Practica practica, String emailRemitente,
+                                    String canal, String nombreRemitente) {
+        Long destinatarioId;
+        if ("TUTORES".equals(canal)) {
+            // Tutor empresa → notifica tutor centro; tutor centro → notifica tutor empresa
+            destinatarioId = emailRemitente.equals(practica.getTutorEmpresa().getEmail())
+                    ? practica.getTutorCentro().getId()
+                    : practica.getTutorEmpresa().getId();
+        } else {
+            // Canal ALUMNO: alumno → tutor centro; tutor centro → alumno
+            destinatarioId = emailRemitente.equals(practica.getAlumno().getEmail())
+                    ? practica.getTutorCentro().getId()
+                    : practica.getAlumno().getId();
+        }
+        notificacionService.crear(destinatarioId, "CHAT",
+                "Nuevo mensaje de " + nombreRemitente + " en tu práctica.");
     }
 
     private MensajeResponse toResponse(Mensaje m) {
@@ -100,6 +127,7 @@ public class MensajeServiceImpl implements MensajeService {
                 m.getRemitente().getNombre(),
                 m.getRemitente().getApellidos(),
                 m.getContenido(),
-                m.getFechaEnvio());
+                m.getFechaEnvio(),
+                m.getCanal());
     }
 }

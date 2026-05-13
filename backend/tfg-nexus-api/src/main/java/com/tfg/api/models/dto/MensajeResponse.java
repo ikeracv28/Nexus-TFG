@@ -9,5 +9,6 @@ public record MensajeResponse(
     String remitenteNombre,
     String remitenteApellidos,
     String contenido,
-    LocalDateTime fechaEnvio
+    LocalDateTime fechaEnvio,
+    String canal
 ) {}

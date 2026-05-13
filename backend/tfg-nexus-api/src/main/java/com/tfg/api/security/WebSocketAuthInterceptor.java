@@ -29,8 +29,8 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
     private final TokenBlacklistService tokenBlacklistService;
     private final PracticaRepository practicaRepository;
 
-    // Captura el practicaId del destino /topic/practica/{id}
-    private static final Pattern TOPIC_PRACTICA = Pattern.compile("^/topic/practica/(\\d+)$");
+    private static final Pattern TOPIC_ALUMNO   = Pattern.compile("^/topic/practica/(\\d+)$");
+    private static final Pattern TOPIC_TUTORES  = Pattern.compile("^/topic/practica/(\\d+)/tutores$");
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -88,16 +88,19 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         String destination = accessor.getDestination();
         if (destination == null) return;
 
-        Matcher m = TOPIC_PRACTICA.matcher(destination);
-        if (!m.matches()) return; // destino no sensible, se permite
+        Matcher mAlumno  = TOPIC_ALUMNO.matcher(destination);
+        Matcher mTutores = TOPIC_TUTORES.matcher(destination);
 
-        long practicaId = Long.parseLong(m.group(1));
+        boolean esAlumnoTopic   = mAlumno.matches();
+        boolean esTutoresTopic  = mTutores.matches();
+        if (!esAlumnoTopic && !esTutoresTopic) return; // destino no sensible
+
+        long practicaId = Long.parseLong(esAlumnoTopic ? mAlumno.group(1) : mTutores.group(1));
 
         Principal principal = accessor.getUser();
         if (principal == null) {
             throw new org.springframework.security.authentication
-                    .AuthenticationCredentialsNotFoundException(
-                    "No autenticado");
+                    .AuthenticationCredentialsNotFoundException("No autenticado");
         }
         String email = principal.getName();
 
@@ -107,19 +110,25 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
         if (isAdmin) return;
 
-        // JOIN FETCH para evitar LazyInitializationException fuera de sesión JPA
         Practica practica = practicaRepository.findByIdConParticipantes(practicaId)
                 .orElseThrow(() -> new org.springframework.security.access
                         .AccessDeniedException("Práctica no encontrada"));
 
-        boolean esParticipante = email.equals(practica.getAlumno().getEmail())
-                || email.equals(practica.getTutorCentro().getEmail())
-                || email.equals(practica.getTutorEmpresa().getEmail());
+        boolean acceso;
+        if (esTutoresTopic) {
+            // Canal tutores: solo tutor empresa y tutor centro
+            acceso = email.equals(practica.getTutorCentro().getEmail())
+                  || email.equals(practica.getTutorEmpresa().getEmail());
+        } else {
+            // Canal alumno: alumno y tutor centro
+            acceso = email.equals(practica.getAlumno().getEmail())
+                  || email.equals(practica.getTutorCentro().getEmail());
+        }
 
-        if (!esParticipante) {
+        if (!acceso) {
             throw new org.springframework.security.access
                     .AccessDeniedException(
-                    "No tienes acceso al chat de la práctica " + practicaId);
+                    "No tienes acceso al canal de chat de la práctica " + practicaId);
         }
     }
 }

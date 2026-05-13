@@ -25,17 +25,31 @@ public class MensajeController {
 
     @GetMapping("/practica/{practicaId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR_CENTRO', 'TUTOR_EMPRESA', 'ALUMNO')")
-    public ResponseEntity<List<MensajeResponse>> historial(@PathVariable Long practicaId) {
-        return ResponseEntity.ok(mensajeService.listarPorPractica(practicaId));
+    public ResponseEntity<List<MensajeResponse>> historial(
+            @PathVariable Long practicaId,
+            @RequestParam(defaultValue = "ALUMNO") String canal) {
+        return ResponseEntity.ok(mensajeService.listarPorPractica(practicaId, canal));
     }
 
+    /** Canal alumno ↔ tutor centro */
     @MessageMapping("/chat/{practicaId}")
-    public void enviarMensaje(
+    public void enviarMensajeAlumno(
             @DestinationVariable Long practicaId,
             @Payload MensajeRequest request,
             Principal principal) {
         if (principal == null) return;
-        MensajeResponse resp = mensajeService.guardar(request, principal.getName(), practicaId);
+        MensajeResponse resp = mensajeService.guardar(request, principal.getName(), practicaId, "ALUMNO");
         messagingTemplate.convertAndSend("/topic/practica/" + practicaId, resp);
+    }
+
+    /** Canal tutor empresa ↔ tutor centro */
+    @MessageMapping("/chat/{practicaId}/tutores")
+    public void enviarMensajeTutores(
+            @DestinationVariable Long practicaId,
+            @Payload MensajeRequest request,
+            Principal principal) {
+        if (principal == null) return;
+        MensajeResponse resp = mensajeService.guardar(request, principal.getName(), practicaId, "TUTORES");
+        messagingTemplate.convertAndSend("/topic/practica/" + practicaId + "/tutores", resp);
     }
 }

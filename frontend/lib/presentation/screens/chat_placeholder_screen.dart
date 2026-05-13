@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/mensaje_model.dart';
@@ -8,13 +8,21 @@ import '../providers/chat_provider.dart';
 
 class ChatPlaceholderScreen extends StatefulWidget {
   final int? practicaId;
-  const ChatPlaceholderScreen({super.key, this.practicaId});
+  final String canal; // 'ALUMNO' | 'TUTORES'
+
+  const ChatPlaceholderScreen({
+    super.key,
+    this.practicaId,
+    this.canal = 'ALUMNO',
+  });
 
   @override
   State<ChatPlaceholderScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatPlaceholderScreen> {
+  // Cada instancia de ChatPlaceholderScreen tiene su propio provider/conexión.
+  final ChatProvider _chat = ChatProvider();
   final TextEditingController _inputCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
 
@@ -22,16 +30,16 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Si practicaId viene por prop (tutor) lo usamos directamente.
       if (widget.practicaId != null) {
-        context.read<ChatProvider>().iniciar(widget.practicaId!);
+        _chat.iniciar(widget.practicaId!, canal: widget.canal);
+        _chat.addListener(_onChatUpdate);
         return;
       }
       // Para el alumno, practicaActiva puede tardar en cargarse.
-      // Intentamos inmediatamente y, si es null, escuchamos al provider.
       final id = context.read<PracticaProvider>().practicaActiva?.id;
       if (id != null) {
-        context.read<ChatProvider>().iniciar(id);
+        _chat.iniciar(id, canal: widget.canal);
+        _chat.addListener(_onChatUpdate);
       } else {
         context.read<PracticaProvider>().addListener(_onPracticaLoaded);
       }
@@ -43,14 +51,20 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
     final id = context.read<PracticaProvider>().practicaActiva?.id;
     if (id != null) {
       context.read<PracticaProvider>().removeListener(_onPracticaLoaded);
-      context.read<ChatProvider>().iniciar(id);
+      _chat.iniciar(id, canal: widget.canal);
+      _chat.addListener(_onChatUpdate);
     }
+  }
+
+  void _onChatUpdate() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
-    // Limpieza defensiva por si se destruye antes de que practicaActiva llegue
     context.read<PracticaProvider>().removeListener(_onPracticaLoaded);
+    _chat.removeListener(_onChatUpdate);
+    _chat.dispose();
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
@@ -71,7 +85,7 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
   void _enviar() {
     final texto = _inputCtrl.text.trim();
     if (texto.isEmpty) return;
-    context.read<ChatProvider>().enviar(texto);
+    _chat.enviar(texto);
     _inputCtrl.clear();
     _scrollAlFinal();
   }
@@ -79,10 +93,9 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.read<AuthProvider>();
-    final chat = context.watch<ChatProvider>();
     final practicaActiva = context.watch<PracticaProvider>().practicaActiva;
-    final codigoChat = practicaActiva?.codigo
-        ?? 'Práctica #${widget.practicaId}';
+    final codigoChat = practicaActiva?.codigo ?? 'Práctica #${widget.practicaId}';
+    final esCanalTutores = widget.canal == 'TUTORES';
 
     if (widget.practicaId == null && practicaActiva == null) {
       return Center(
@@ -93,7 +106,7 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
       );
     }
 
-    if (chat.mensajes.isNotEmpty) _scrollAlFinal();
+    if (_chat.mensajes.isNotEmpty) _scrollAlFinal();
 
     return Column(
       children: [
@@ -104,16 +117,31 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
               horizontal: NexusSizes.spaceLG, vertical: NexusSizes.spaceMD),
           child: Row(
             children: [
-              const Icon(Icons.chat_bubble_outline,
-                  size: 18, color: NexusColors.primary),
+              Icon(
+                esCanalTutores
+                    ? Icons.supervisor_account_outlined
+                    : Icons.chat_bubble_outline,
+                size: 18,
+                color: esCanalTutores ? NexusColors.success : NexusColors.primary,
+              ),
               const SizedBox(width: NexusSizes.spaceSM),
               Expanded(
-                child: Text(
-                  'Chat — $codigoChat',
-                  style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: context.nxt.ink),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      esCanalTutores ? 'Chat tutores — $codigoChat' : 'Chat — $codigoChat',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: context.nxt.ink),
+                    ),
+                    if (esCanalTutores)
+                      Text(
+                        'Canal privado entre tutores',
+                        style: TextStyle(fontSize: 10, color: context.nxt.inkTertiary),
+                      ),
+                  ],
                 ),
               ),
               Container(
@@ -121,19 +149,15 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
                 height: 8,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: chat.conectado
-                      ? NexusColors.success
-                      : NexusColors.neutral,
+                  color: _chat.conectado ? NexusColors.success : NexusColors.neutral,
                 ),
               ),
               const SizedBox(width: NexusSizes.spaceXS),
               Text(
-                chat.conectado ? 'Conectado' : 'Conectando…',
+                _chat.conectado ? 'Conectado' : 'Conectando…',
                 style: TextStyle(
                     fontSize: 11,
-                    color: chat.conectado
-                        ? NexusColors.success
-                        : NexusColors.inkTertiary),
+                    color: _chat.conectado ? NexusColors.success : NexusColors.inkTertiary),
               ),
             ],
           ),
@@ -142,14 +166,13 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
 
         // ---- Lista de mensajes ----
         Expanded(
-          child: chat.cargando
+          child: _chat.cargando
               ? const Center(child: CircularProgressIndicator())
-              : chat.mensajes.isEmpty
+              : _chat.mensajes.isEmpty
                   ? Center(
                       child: Text(
                         'Sé el primero en escribir.',
-                        style: TextStyle(
-                            color: context.nxt.inkTertiary, fontSize: 13),
+                        style: TextStyle(color: context.nxt.inkTertiary, fontSize: 13),
                       ),
                     )
                   : ListView.builder(
@@ -157,9 +180,9 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: NexusSizes.spaceLG,
                           vertical: NexusSizes.spaceMD),
-                      itemCount: chat.mensajes.length,
+                      itemCount: _chat.mensajes.length,
                       itemBuilder: (_, i) {
-                        final msg = chat.mensajes[i];
+                        final msg = _chat.mensajes[i];
                         final esMio = msg.remitenteId == auth.user?.id;
                         return _MensajeBurbuja(mensaje: msg, esMio: esMio);
                       },
@@ -185,23 +208,17 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
                   onSubmitted: (_) => _enviar(),
                   decoration: InputDecoration(
                     hintText: 'Escribe un mensaje…',
-                    hintStyle: TextStyle(
-                        color: context.nxt.inkTertiary, fontSize: 13),
+                    hintStyle: TextStyle(color: context.nxt.inkTertiary, fontSize: 13),
                     border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(NexusSizes.radiusFull),
-                      borderSide:
-                          BorderSide(color: context.nxt.border),
+                      borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                      borderSide: BorderSide(color: context.nxt.border),
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(NexusSizes.radiusFull),
-                      borderSide:
-                          BorderSide(color: context.nxt.border),
+                      borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                      borderSide: BorderSide(color: context.nxt.border),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: NexusSizes.spaceLG,
-                        vertical: NexusSizes.spaceSM),
+                        horizontal: NexusSizes.spaceLG, vertical: NexusSizes.spaceSM),
                     isDense: true,
                     counterText: '',
                   ),
@@ -209,15 +226,14 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
               ),
               const SizedBox(width: NexusSizes.spaceSM),
               FilledButton(
-                onPressed: chat.conectado ? _enviar : null,
+                onPressed: _chat.conectado ? _enviar : null,
                 style: FilledButton.styleFrom(
-                  backgroundColor: NexusColors.primary,
+                  backgroundColor: esCanalTutores ? NexusColors.success : NexusColors.primary,
                   minimumSize: const Size(44, 44),
                   padding: EdgeInsets.zero,
                   shape: const CircleBorder(),
                 ),
-                child: const Icon(Icons.send_rounded,
-                    size: 18, color: Colors.white),
+                child: const Icon(Icons.send_rounded, size: 18, color: Colors.white),
               ),
             ],
           ),
@@ -263,9 +279,8 @@ class _MensajeBurbuja extends StatelessWidget {
           ],
           Flexible(
             child: Column(
-              crossAxisAlignment: esMio
-                  ? CrossAxisAlignment.end
-                  : CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  esMio ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 if (!esMio)
                   Padding(
@@ -285,18 +300,15 @@ class _MensajeBurbuja extends StatelessWidget {
                       vertical: NexusSizes.spaceSM),
                   decoration: BoxDecoration(
                     color: esMio ? NexusColors.primary : NexusColors.surface,
-                    border: esMio
-                        ? null
-                        : Border.all(color: context.nxt.border),
+                    border:
+                        esMio ? null : Border.all(color: context.nxt.border),
                     borderRadius: BorderRadius.only(
-                      topLeft:
-                          const Radius.circular(NexusSizes.radiusMD),
-                      topRight:
-                          const Radius.circular(NexusSizes.radiusMD),
-                      bottomLeft: Radius.circular(
-                          esMio ? NexusSizes.radiusMD : 4),
-                      bottomRight: Radius.circular(
-                          esMio ? 4 : NexusSizes.radiusMD),
+                      topLeft: const Radius.circular(NexusSizes.radiusMD),
+                      topRight: const Radius.circular(NexusSizes.radiusMD),
+                      bottomLeft:
+                          Radius.circular(esMio ? NexusSizes.radiusMD : 4),
+                      bottomRight:
+                          Radius.circular(esMio ? 4 : NexusSizes.radiusMD),
                     ),
                   ),
                   child: Text(
@@ -313,8 +325,7 @@ class _MensajeBurbuja extends StatelessWidget {
                       right: NexusSizes.spaceXS),
                   child: Text(hora,
                       style: TextStyle(
-                          fontSize: 10,
-                          color: context.nxt.inkTertiary)),
+                          fontSize: 10, color: context.nxt.inkTertiary)),
                 ),
               ],
             ),

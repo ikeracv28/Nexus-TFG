@@ -16,7 +16,7 @@ import 'notificaciones_screen.dart';
 import '../widgets/nexus_avatar.dart';
 import '../providers/notificacion_provider.dart';
 
-enum _Mode { alumnos, partes, incidencias, chat }
+enum _Mode { alumnos, partes, incidencias, chat, chatTutores }
 
 class PanelTutorCentroScreen extends StatefulWidget {
   const PanelTutorCentroScreen({super.key});
@@ -57,22 +57,28 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
                   mode: _mode,
                   onChangeMode: (m) => setState(() => _mode = m),
                 ),
-                if (_mode == _Mode.alumnos || _mode == _Mode.chat) ...[
+                if (_mode == _Mode.alumnos || _mode == _Mode.chat || _mode == _Mode.chatTutores) ...[
                   _StudentList(provider: provider),
                   Expanded(
-                    child: _mode == _Mode.alumnos
-                        ? _DetailPanel(
-                            provider: provider,
-                            auth: auth,
-                            onValidar: _confirmarValidar,
-                            onCambiarEstadoIncidencia: _mostrarModalEstado,
-                            onChatTap: () =>
-                                setState(() => _mode = _Mode.chat),
-                          )
-                        : ChatPlaceholderScreen(
-                            key: ValueKey(provider.selectedPractica?.id),
-                            practicaId: provider.selectedPractica?.id,
-                          ),
+                    child: switch (_mode) {
+                      _Mode.chat => ChatPlaceholderScreen(
+                          key: ValueKey('alumno-${provider.selectedPractica?.id}'),
+                          practicaId: provider.selectedPractica?.id,
+                          canal: 'ALUMNO',
+                        ),
+                      _Mode.chatTutores => ChatPlaceholderScreen(
+                          key: ValueKey('tutores-${provider.selectedPractica?.id}'),
+                          practicaId: provider.selectedPractica?.id,
+                          canal: 'TUTORES',
+                        ),
+                      _ => _DetailPanel(
+                          provider: provider,
+                          auth: auth,
+                          onValidar: _confirmarValidar,
+                          onCambiarEstadoIncidencia: _mostrarModalEstado,
+                          onChatTap: () => setState(() => _mode = _Mode.chat),
+                        ),
+                    },
                   ),
                 ] else
                   Expanded(child: _buildWidePanel(provider)),
@@ -89,7 +95,7 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
                 mode: _mode,
                 onChangeMode: (m) => setState(() {
                   _mode = m;
-                  if (m != _Mode.alumnos && m != _Mode.chat) {
+                  if (m != _Mode.alumnos && m != _Mode.chat && m != _Mode.chatTutores) {
                     provider.seleccionar(-1);
                   }
                 }),
@@ -114,7 +120,14 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
             provider: provider, onCambiarEstado: _mostrarModalEstado);
       case _Mode.chat:
         return ChatPlaceholderScreen(
-            practicaId: provider.selectedPractica?.id);
+            key: ValueKey('alumno-${provider.selectedPractica?.id}'),
+            practicaId: provider.selectedPractica?.id,
+            canal: 'ALUMNO');
+      case _Mode.chatTutores:
+        return ChatPlaceholderScreen(
+            key: ValueKey('tutores-${provider.selectedPractica?.id}'),
+            practicaId: provider.selectedPractica?.id,
+            canal: 'TUTORES');
       default:
         return const SizedBox.shrink();
     }
@@ -132,8 +145,18 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
           return _StudentList(provider: provider, isMobile: true);
         }
         return ChatPlaceholderScreen(
-          key: ValueKey(provider.selectedPractica?.id),
+          key: ValueKey('alumno-${provider.selectedPractica?.id}'),
           practicaId: provider.selectedPractica?.id,
+          canal: 'ALUMNO',
+        );
+      case _Mode.chatTutores:
+        if (provider.selectedPractica == null) {
+          return _StudentList(provider: provider, isMobile: true);
+        }
+        return ChatPlaceholderScreen(
+          key: ValueKey('tutores-${provider.selectedPractica?.id}'),
+          practicaId: provider.selectedPractica?.id,
+          canal: 'TUTORES',
         );
       case _Mode.alumnos:
         if (provider.selectedPractica == null) {
@@ -341,9 +364,17 @@ class _Sidebar extends StatelessWidget {
           _NavBtn(
             icon: Icons.chat_bubble_outline,
             activeIcon: Icons.chat_bubble,
-            tooltip: 'Chat',
+            tooltip: 'Chat con alumno',
             isActive: mode == _Mode.chat,
             onTap: () => onChangeMode(_Mode.chat),
+          ),
+          const SizedBox(height: 4),
+          _NavBtn(
+            icon: Icons.supervisor_account_outlined,
+            activeIcon: Icons.supervisor_account,
+            tooltip: 'Chat con tutor empresa',
+            isActive: mode == _Mode.chatTutores,
+            onTap: () => onChangeMode(_Mode.chatTutores),
           ),
           const Spacer(),
           Tooltip(
@@ -1752,6 +1783,13 @@ class _MobileBottomNav extends StatelessWidget {
             label: 'Chat',
             isActive: mode == _Mode.chat,
             onTap: () => onChangeMode(_Mode.chat),
+          ),
+          _BottomItem(
+            icon: Icons.supervisor_account_outlined,
+            activeIcon: Icons.supervisor_account,
+            label: 'Tutores',
+            isActive: mode == _Mode.chatTutores,
+            onTap: () => onChangeMode(_Mode.chatTutores),
           ),
         ],
       ),

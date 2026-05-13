@@ -139,6 +139,14 @@ class TutorCentroProvider extends ChangeNotifier {
   }
 
 
+  Future<void> cargarEvaluacionDe(int practicaId) async {
+    try {
+      final ev = await _evaluacionService.getEvaluacion(practicaId);
+      _evaluacionPorPractica[practicaId] = ev;
+      notifyListeners();
+    } catch (_) {}
+  }
+
   Practica? practicaDe(int practicaId) {
     try {
       return _practicas.firstWhere((p) => p.id == practicaId);

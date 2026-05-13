@@ -4,6 +4,37 @@ Este documento registra las implementaciones técnicas realizadas a lo largo del
 
 ---
 
+## [13/05/2026] — Chat dual-canal + Exportar PDF y Excel del expediente FCT
+
+### Backend — Chat con dos canales separados
+
+- **V16 migration** (`V16__Canal_Chat.sql`): `ALTER TABLE mensajes ADD COLUMN canal VARCHAR(20) NOT NULL DEFAULT 'ALUMNO'` + índice compuesto `idx_mensajes_practica_canal(practica_id, canal)`.
+- **`Mensaje` entity**: campo `canal` (`@Column nullable=false, length=20`, default "ALUMNO").
+- **`MensajeRequest` / `MensajeResponse`**: añadido campo `canal` (8º campo del record MensajeResponse).
+- **`MensajeRepository`**: nuevo método `findByPracticaIdAndCanalOrderByFechaEnvioAsc(Long, String)`.
+- **`MensajeService` / `MensajeServiceImpl`**: firmas actualizadas `guardar(..., String canal)` y `listarPorPractica(Long, String canal)`. Lógica `validarAccesoCanal`: canal ALUMNO → alumno + tutor centro; canal TUTORES → tutor empresa + tutor centro.
+- **`MensajeController`**: GET acepta `@RequestParam(defaultValue="ALUMNO") canal`; `@MessageMapping("/chat/{id}")` envía a `/topic/practica/{id}`; `@MessageMapping("/chat/{id}/tutores")` envía a `/topic/practica/{id}/tutores`.
+- **`WebSocketAuthInterceptor`**: SUBSCRIBE separado con `TOPIC_ALUMNO = ^/topic/practica/(\\d+)$` y `TOPIC_TUTORES = ^/topic/practica/(\\d+)/tutores$`. Cada canal valida que el email del principal sea uno de los participantes autorizados.
+
+### Tests actualizados
+
+- **`MensajeControllerTest`**: `mensajeMock()` actualizado con 8 args; stubs `listarPorPractica(1L, "ALUMNO")`; tests `tutor_empresa_puede_ver_historial_tutores` y `sin_parametro_canal_usa_alumno_por_defecto` añadidos.
+- **`MensajeServiceTest`**: tests de separación de canales (`tutor_empresa_no_puede_usar_canal_alumno`, `alumno_no_puede_usar_canal_tutores`, `mensajes_canales_no_se_mezclan`).
+
+### Frontend — Chat dual-canal
+
+- **`mensaje_service.dart`**: `getHistorial(id, {canal})`, `conectar({canal})`, `enviarMensaje({canal})` — topic y destination cambian según canal.
+- **`chat_provider.dart`**: `iniciar(id, {canal})` guarda `_canal` y lo pasa al servicio.
+- **`chat_placeholder_screen.dart`**: parámetro `final String canal`; instancia **local** de `ChatProvider` por widget (evita conflicto entre los dos chats simultáneos); UI canal TUTORES diferenciada (color verde, icono supervisor_account).
+- **`panel_tutor_centro_screen.dart`**: `enum _Mode` añade `chatTutores`; sidebar + mobile navbar con nuevo botón "Chat con tutor empresa".
+- **`panel_tutor_empresa_screen.dart`**: Tab 2 = `ChatPlaceholderScreen(canal: 'TUTORES')`.
+
+### Feature 5: Exportar expediente FCT
+
+- **`ficha_alumno_screen.dart`**: botón PDF (rojo) + botón Excel (verde) en AppBar. `_exportarPdf()` genera un PDF A4 multipágina con cabecera/pie, datos de práctica, seguimientos en tabla, incidencias, ausencias y evaluación final; usa `pdf: ^3.10.8` + `printing: ^5.12.0` (`Printing.sharePdf()`). `_exportarExcel()` crea un libro `.xlsx` con hojas Información/Seguimientos/Incidencias/Ausencias/Evaluación; usa `excel: ^4.0.6` + `dart:html` `Blob`/`AnchorElement` para la descarga web.
+
+---
+
 ## [10/05/2026] — Correcciones feedback profesor (75%) + Foto de perfil + Notificaciones
 
 ### Correcciones OWASP — Feedback del profesor

@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:excel/excel.dart' hide Border;
 import 'package:provider/provider.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+import 'dart:typed_data';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/ausencia_model.dart';
 import '../../data/models/evaluacion_final_model.dart';
@@ -10,19 +17,34 @@ import '../../data/models/seguimiento_model.dart';
 import '../providers/tutor_centro_provider.dart';
 import '../widgets/nexus_charts.dart';
 
-class FichaAlumnoScreen extends StatelessWidget {
+class FichaAlumnoScreen extends StatefulWidget {
   final Practica practica;
 
   const FichaAlumnoScreen({super.key, required this.practica});
 
   @override
+  State<FichaAlumnoScreen> createState() => _FichaAlumnoScreenState();
+}
+
+class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<TutorCentroProvider>().cargarEvaluacionDe(widget.practica.id);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final provider = context.read<TutorCentroProvider>();
-    final seguimientos = provider.seguimientosDe(practica.id);
-    final incidencias = provider.incidenciasDe(practica.id);
-    final ausencias = provider.ausenciasDe(practica.id);
-    final horasCompletadas = provider.horasCompletadasDe(practica.id);
-    final horasTotales = practica.horasTotales ?? 0;
+    final seguimientos = provider.seguimientosDe(widget.practica.id);
+    final incidencias = provider.incidenciasDe(widget.practica.id);
+    final ausencias = provider.ausenciasDe(widget.practica.id);
+    final horasCompletadas = provider.horasCompletadasDe(widget.practica.id);
+    final horasTotales = widget.practica.horasTotales ?? 0;
 
     return Scaffold(
       backgroundColor: context.nxt.surfaceAlt,
@@ -39,7 +61,7 @@ class FichaAlumnoScreen extends StatelessWidget {
           children: [
             Text('Expediente FCT',
                 style: NexusText.small.copyWith(fontWeight: FontWeight.w600)),
-            Text(practica.alumnoNombre,
+            Text(widget.practica.alumnoNombre,
                 style: NexusText.caption.copyWith(color: context.nxt.inkSecondary)),
           ],
         ),
@@ -47,15 +69,28 @@ class FichaAlumnoScreen extends StatelessWidget {
           preferredSize: const Size.fromHeight(0.5),
           child: Divider(height: 0.5, thickness: 0.5, color: context.nxt.border),
         ),
-        // Botón PDF — se activará en la feature 5
         actions: [
+          OutlinedButton.icon(
+            onPressed: () => _exportarExcel(context),
+            icon: const Icon(Icons.table_chart_outlined, size: 16),
+            label: const Text('Excel'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF217346),
+              side: const BorderSide(color: Color(0xFF217346)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
+          const SizedBox(width: 8),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: OutlinedButton.icon(
-              onPressed: null, // TODO: Feature 5 — PDF export
+              onPressed: () => _exportarPdf(context),
               icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
               label: const Text('PDF'),
               style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFFD32F2F),
+                side: const BorderSide(color: Color(0xFFD32F2F)),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
               ),
@@ -83,7 +118,7 @@ class FichaAlumnoScreen extends StatelessWidget {
                             radius: 26,
                             backgroundColor: NexusColors.primaryLight,
                             child: Text(
-                              _initials(practica.alumnoNombre),
+                              _initials(widget.practica.alumnoNombre),
                               style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
@@ -95,19 +130,19 @@ class FichaAlumnoScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(practica.alumnoNombre,
+                                Text(widget.practica.alumnoNombre,
                                     style: NexusText.heading2
                                         .copyWith(letterSpacing: -0.3)),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '${practica.empresaNombre}  ·  ${practica.codigo}',
+                                  '${widget.practica.empresaNombre}  ·  ${widget.practica.codigo}',
                                   style: NexusText.body.copyWith(
                                       color: context.nxt.inkSecondary),
                                 ),
                               ],
                             ),
                           ),
-                          _EstadoBadge(estado: practica.estado),
+                          _EstadoBadge(estado: widget.practica.estado),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -120,19 +155,19 @@ class FichaAlumnoScreen extends StatelessWidget {
                         icon: Icons.calendar_today_outlined,
                         label: 'Periodo',
                         value: _formatPeriodo(
-                            practica.fechaInicio, practica.fechaFin),
+                            widget.practica.fechaInicio, widget.practica.fechaFin),
                       ),
                       const SizedBox(height: 8),
                       _FichaRow(
                         icon: Icons.school_outlined,
                         label: 'Tutor centro',
-                        value: practica.tutorCentroNombre,
+                        value: widget.practica.tutorCentroNombre,
                       ),
                       const SizedBox(height: 8),
                       _FichaRow(
                         icon: Icons.business_center_outlined,
                         label: 'Tutor empresa',
-                        value: practica.tutorEmpresaNombre,
+                        value: widget.practica.tutorEmpresaNombre,
                       ),
                       if (horasTotales > 0) ...[
                         const SizedBox(height: 8),
@@ -175,7 +210,7 @@ class FichaAlumnoScreen extends StatelessWidget {
                           const SizedBox(height: 8),
                           HorasSemanaChart(
                             seguimientos: seguimientos,
-                            fechaInicio: practica.fechaInicio,
+                            fechaInicio: widget.practica.fechaInicio,
                           ),
                         ],
                       ],
@@ -240,7 +275,7 @@ class FichaAlumnoScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Consumer<TutorCentroProvider>(
                   builder: (_, prov, __) =>
-                      _EvaluacionCard(evaluacion: prov.evaluacionDe(practica.id)),
+                      _EvaluacionCard(evaluacion: prov.evaluacionDe(widget.practica.id)),
                 ),
                 const SizedBox(height: 24),
               ],
@@ -251,6 +286,351 @@ class FichaAlumnoScreen extends StatelessWidget {
     );
   }
 
+  // ── Export helpers ───────────────────────────────────────────────────────
+
+  String _estadoLabel(String estado) => switch (estado) {
+        'COMPLETADO' => 'Validado',
+        'PENDIENTE_CENTRO' => 'Pte. centro',
+        'PENDIENTE_EMPRESA' => 'Pte. empresa',
+        'RECHAZADO' => 'Rechazado',
+        _ => estado,
+      };
+
+  Future<void> _exportarPdf(BuildContext ctx) async {
+    final provider = ctx.read<TutorCentroProvider>();
+    final practica = widget.practica;
+    final seguimientos = provider.seguimientosDe(practica.id);
+    final incidencias = provider.incidenciasDe(practica.id);
+    final ausencias = provider.ausenciasDe(practica.id);
+    final evaluacion = provider.evaluacionDe(practica.id);
+    final horasCompletadas = provider.horasCompletadasDe(practica.id);
+
+    final doc = pw.Document();
+    final fechaGen = DateFormat("d 'de' MMMM yyyy", 'es_ES').format(DateTime.now());
+
+    doc.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.symmetric(horizontal: 36, vertical: 40),
+      header: (_) => pw.Align(
+        alignment: pw.Alignment.centerRight,
+        child: pw.Text('Generado el $fechaGen',
+            style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+      ),
+      footer: (ctx) => pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text('Nexus FCT — Expediente ${practica.codigo}',
+              style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+          pw.Text('Pág. ${ctx.pageNumber} / ${ctx.pagesCount}',
+              style: const pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+        ],
+      ),
+      build: (_) => [
+        // Título
+        pw.Text('EXPEDIENTE FCT',
+            style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 4),
+        pw.Text(practica.alumnoNombre,
+            style: const pw.TextStyle(fontSize: 14, color: PdfColors.grey700)),
+        pw.SizedBox(height: 16),
+        // Información práctica
+        pw.Container(
+          padding: const pw.EdgeInsets.all(12),
+          decoration: pw.BoxDecoration(
+              color: PdfColors.grey100,
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4))),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              _pdfRow('Empresa', practica.empresaNombre),
+              _pdfRow('Código', practica.codigo),
+              _pdfRow('Estado', practica.estado),
+              _pdfRow('Periodo',
+                  _formatPeriodo(practica.fechaInicio, practica.fechaFin)),
+              _pdfRow('Tutor centro', practica.tutorCentroNombre),
+              _pdfRow('Tutor empresa', practica.tutorEmpresaNombre),
+              if (practica.horasTotales != null && practica.horasTotales! > 0)
+                _pdfRow('Progreso',
+                    '$horasCompletadas h / ${practica.horasTotales} h  (${(horasCompletadas / practica.horasTotales! * 100).round()}%)'),
+            ],
+          ),
+        ),
+        pw.SizedBox(height: 20),
+        // Seguimientos
+        _pdfSection('SEGUIMIENTOS  ·  ${seguimientos.length} partes'),
+        pw.SizedBox(height: 8),
+        if (seguimientos.isEmpty)
+          pw.Text('Sin partes registrados',
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey))
+        else
+          pw.TableHelper.fromTextArray(
+            headers: ['Fecha', 'Horas', 'Estado', 'Descripción'],
+            headerStyle:
+                pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            cellAlignments: {
+              0: pw.Alignment.centerLeft,
+              1: pw.Alignment.center,
+              2: pw.Alignment.center,
+              3: pw.Alignment.centerLeft,
+            },
+            data: seguimientos
+                .map((s) => [
+                      DateFormat('d MMM yy', 'es_ES').format(s.fechaRegistro),
+                      '${s.horasRealizadas}h',
+                      _estadoLabel(s.estado),
+                      (s.descripcion ?? '').length > 55
+                          ? '${(s.descripcion ?? '').substring(0, 55)}…'
+                          : (s.descripcion ?? ''),
+                    ])
+                .toList(),
+          ),
+        pw.SizedBox(height: 20),
+        // Incidencias
+        if (incidencias.isNotEmpty) ...[
+          _pdfSection('INCIDENCIAS  ·  ${incidencias.length}'),
+          pw.SizedBox(height: 8),
+          pw.TableHelper.fromTextArray(
+            headers: ['Fecha', 'Estado', 'Descripción'],
+            headerStyle:
+                pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            data: incidencias
+                .map((i) => [
+                      DateFormat('d MMM yy', 'es_ES').format(i.fechaCreacion),
+                      i.estado,
+                      i.descripcion.length > 70
+                          ? '${i.descripcion.substring(0, 70)}…'
+                          : i.descripcion,
+                    ])
+                .toList(),
+          ),
+          pw.SizedBox(height: 20),
+        ],
+        // Ausencias
+        if (ausencias.isNotEmpty) ...[
+          _pdfSection('AUSENCIAS  ·  ${ausencias.length}'),
+          pw.SizedBox(height: 8),
+          pw.TableHelper.fromTextArray(
+            headers: ['Fecha', 'Tipo', 'Motivo'],
+            headerStyle:
+                pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            data: ausencias
+                .map((a) => [
+                      DateFormat('d MMM yy', 'es_ES').format(a.fecha),
+                      a.tipo,
+                      a.motivo.length > 70
+                          ? '${a.motivo.substring(0, 70)}…'
+                          : a.motivo,
+                    ])
+                .toList(),
+          ),
+          pw.SizedBox(height: 20),
+        ],
+        // Evaluación
+        _pdfSection('EVALUACIÓN FINAL'),
+        pw.SizedBox(height: 8),
+        if (evaluacion == null)
+          pw.Text('Pendiente de evaluación por el tutor de empresa',
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey))
+        else
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+                color: PdfColors.grey100,
+                borderRadius:
+                    const pw.BorderRadius.all(pw.Radius.circular(4))),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                    'Nota global: ${evaluacion.notaGlobal.toStringAsFixed(2)} / 10',
+                    style: pw.TextStyle(
+                        fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                    'Por ${evaluacion.tutorEmpresaNombre}  ·  ${DateFormat("d MMM yyyy", "es_ES").format(evaluacion.fechaEvaluacion)}',
+                    style: const pw.TextStyle(
+                        fontSize: 8, color: PdfColors.grey700)),
+                pw.SizedBox(height: 8),
+                if (evaluacion.actitudPuntualidad != null)
+                  _pdfCrit('Actitud y puntualidad',
+                      evaluacion.actitudPuntualidad!),
+                if (evaluacion.competenciaTecnica != null)
+                  _pdfCrit(
+                      'Competencia técnica', evaluacion.competenciaTecnica!),
+                if (evaluacion.iniciativaAutonomia != null)
+                  _pdfCrit(
+                      'Iniciativa y autonomía', evaluacion.iniciativaAutonomia!),
+                if (evaluacion.trabajoEquipo != null)
+                  _pdfCrit('Trabajo en equipo', evaluacion.trabajoEquipo!),
+                if (evaluacion.cumplimientoTareas != null)
+                  _pdfCrit('Cumplimiento de tareas',
+                      evaluacion.cumplimientoTareas!),
+                if (evaluacion.comentario != null &&
+                    evaluacion.comentario!.isNotEmpty) ...[
+                  pw.SizedBox(height: 8),
+                  pw.Text('Comentario:',
+                      style: pw.TextStyle(
+                          fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(evaluacion.comentario!,
+                      style: const pw.TextStyle(fontSize: 9)),
+                ],
+              ],
+            ),
+          ),
+      ],
+    ));
+
+    final bytes = await doc.save();
+    await Printing.sharePdf(
+        bytes: bytes, filename: 'expediente_${practica.codigo}.pdf');
+  }
+
+  pw.Widget _pdfRow(String label, String value) => pw.Padding(
+        padding: const pw.EdgeInsets.only(bottom: 4),
+        child: pw.Row(children: [
+          pw.SizedBox(
+              width: 100,
+              child: pw.Text(label,
+                  style: pw.TextStyle(
+                      fontSize: 9,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.grey700))),
+          pw.Expanded(
+              child: pw.Text(value, style: const pw.TextStyle(fontSize: 9))),
+        ]),
+      );
+
+  pw.Widget _pdfSection(String title) => pw.Text(title,
+      style: pw.TextStyle(
+          fontSize: 10,
+          fontWeight: pw.FontWeight.bold,
+          color: PdfColors.grey700));
+
+  pw.Widget _pdfCrit(String label, double value) => pw.Padding(
+        padding: const pw.EdgeInsets.only(bottom: 3),
+        child: pw.Row(children: [
+          pw.Expanded(
+              child: pw.Text('• $label',
+                  style: const pw.TextStyle(fontSize: 9))),
+          pw.Text('${value.toStringAsFixed(1)} / 10',
+              style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+        ]),
+      );
+
+  Future<void> _exportarExcel(BuildContext ctx) async {
+    final provider = ctx.read<TutorCentroProvider>();
+    final practica = widget.practica;
+    final seguimientos = provider.seguimientosDe(practica.id);
+    final incidencias = provider.incidenciasDe(practica.id);
+    final ausencias = provider.ausenciasDe(practica.id);
+    final evaluacion = provider.evaluacionDe(practica.id);
+
+    final wb = Excel.createExcel();
+    wb.delete('Sheet1');
+
+    // Sheet: Información
+    final info = wb['Información'];
+    _xlRow(info, ['Campo', 'Valor']);
+    _xlRow(info, ['Alumno', practica.alumnoNombre]);
+    _xlRow(info, ['Empresa', practica.empresaNombre]);
+    _xlRow(info, ['Código', practica.codigo]);
+    _xlRow(info, ['Estado', practica.estado]);
+    _xlRow(info, ['Tutor centro', practica.tutorCentroNombre]);
+    _xlRow(info, ['Tutor empresa', practica.tutorEmpresaNombre]);
+    if (practica.fechaInicio != null)
+      _xlRow(info,
+          ['Fecha inicio', DateFormat('dd/MM/yyyy').format(practica.fechaInicio!)]);
+    if (practica.fechaFin != null)
+      _xlRow(info,
+          ['Fecha fin', DateFormat('dd/MM/yyyy').format(practica.fechaFin!)]);
+    if (practica.horasTotales != null)
+      _xlRow(info, ['Horas totales', '${practica.horasTotales}']);
+
+    // Sheet: Seguimientos
+    final segSheet = wb['Seguimientos'];
+    _xlRow(segSheet, ['Fecha', 'Horas', 'Estado', 'Descripción', 'Validado por', 'Comentario tutor']);
+    for (final s in seguimientos) {
+      _xlRow(segSheet, [
+        DateFormat('dd/MM/yyyy').format(s.fechaRegistro),
+        '${s.horasRealizadas}',
+        _estadoLabel(s.estado),
+        s.descripcion ?? '',
+        s.validadoPorNombre ?? '',
+        s.comentarioTutor ?? '',
+      ]);
+    }
+
+    // Sheet: Incidencias
+    if (incidencias.isNotEmpty) {
+      final incSheet = wb['Incidencias'];
+      _xlRow(incSheet, ['Fecha', 'Estado', 'Descripción']);
+      for (final i in incidencias) {
+        _xlRow(incSheet, [
+          DateFormat('dd/MM/yyyy').format(i.fechaCreacion),
+          i.estado,
+          i.descripcion,
+        ]);
+      }
+    }
+
+    // Sheet: Ausencias
+    if (ausencias.isNotEmpty) {
+      final ausSheet = wb['Ausencias'];
+      _xlRow(ausSheet, ['Fecha', 'Tipo', 'Motivo']);
+      for (final a in ausencias) {
+        _xlRow(ausSheet, [
+          DateFormat('dd/MM/yyyy').format(a.fecha),
+          a.tipo,
+          a.motivo,
+        ]);
+      }
+    }
+
+    // Sheet: Evaluación
+    if (evaluacion != null) {
+      final evalSheet = wb['Evaluación'];
+      _xlRow(evalSheet, ['Criterio', 'Nota']);
+      _xlRow(evalSheet, ['Nota global', evaluacion.notaGlobal.toStringAsFixed(2)]);
+      if (evaluacion.actitudPuntualidad != null)
+        _xlRow(evalSheet, ['Actitud y puntualidad', evaluacion.actitudPuntualidad!.toStringAsFixed(1)]);
+      if (evaluacion.competenciaTecnica != null)
+        _xlRow(evalSheet, ['Competencia técnica', evaluacion.competenciaTecnica!.toStringAsFixed(1)]);
+      if (evaluacion.iniciativaAutonomia != null)
+        _xlRow(evalSheet, ['Iniciativa y autonomía', evaluacion.iniciativaAutonomia!.toStringAsFixed(1)]);
+      if (evaluacion.trabajoEquipo != null)
+        _xlRow(evalSheet, ['Trabajo en equipo', evaluacion.trabajoEquipo!.toStringAsFixed(1)]);
+      if (evaluacion.cumplimientoTareas != null)
+        _xlRow(evalSheet, ['Cumplimiento de tareas', evaluacion.cumplimientoTareas!.toStringAsFixed(1)]);
+      if (evaluacion.comentario != null && evaluacion.comentario!.isNotEmpty)
+        _xlRow(evalSheet, ['Comentario', evaluacion.comentario!]);
+      _xlRow(evalSheet, ['Evaluado por', evaluacion.tutorEmpresaNombre]);
+      _xlRow(evalSheet, [
+        'Fecha evaluación',
+        DateFormat('dd/MM/yyyy').format(evaluacion.fechaEvaluacion)
+      ]);
+    }
+
+    final rawBytes = wb.save();
+    if (rawBytes == null) return;
+    final blob = html.Blob([Uint8List.fromList(rawBytes)]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    html.AnchorElement(href: url)
+      ..setAttribute('download', 'expediente_${practica.codigo}.xlsx')
+      ..click();
+    html.Url.revokeObjectUrl(url);
+  }
+
+  void _xlRow(Sheet sheet, List<String> values) {
+    final row = sheet.maxRows;
+    for (int i = 0; i < values.length; i++) {
+      sheet
+          .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: row))
+          .value = TextCellValue(values[i]);
+    }
+  }
 
   String _initials(String nombre) {
     final parts =

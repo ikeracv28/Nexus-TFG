@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../../core/theme/app_theme.dart';
-import 'package:flutter/services.dart';
 import '../../data/models/ausencia_model.dart';
 import '../../data/models/evaluacion_final_model.dart';
 import '../../data/models/practica_model.dart';
@@ -13,6 +12,7 @@ import '../../data/models/seguimiento_model.dart';
 import '../../data/services/ausencia_service.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tutor_empresa_provider.dart';
+import 'chat_placeholder_screen.dart';
 import 'perfil_screen.dart';
 import 'notificaciones_screen.dart';
 import '../widgets/nexus_avatar.dart';
@@ -27,7 +27,8 @@ class PanelTutorEmpresaScreen extends StatefulWidget {
 }
 
 class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
-  int _tab = 0; // 0 = pendientes, 1 = progreso
+  int _tab = 0; // 0 = pendientes, 1 = progreso, 2 = chat
+  int? _chatPracticaId;
 
   @override
   void initState() {
@@ -86,7 +87,9 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
       );
     }
 
-    return RefreshIndicator(
+    if (_tab == 2) return _buildChat(provider);
+
+  return RefreshIndicator(
       onRefresh: () => context.read<TutorEmpresaProvider>().cargar(),
       child: _tab == 0
           ? _buildPendientes(auth, provider)
@@ -274,6 +277,50 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
             }),
         ],
       ),
+    );
+  }
+
+  // ── TAB 2: Chat ───────────────────────────────────────────────────────────
+
+  Widget _buildChat(TutorEmpresaProvider provider) {
+    final practicas = provider.practicas;
+    if (practicas.isEmpty) {
+      return Center(
+        child: Text('Sin prácticas asignadas', style: NexusText.body),
+      );
+    }
+    final practicaId = _chatPracticaId ?? practicas.first.id;
+    return Column(
+      children: [
+        if (practicas.length > 1)
+          Container(
+            color: context.nxt.surface,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                Text('Práctica:',
+                    style: NexusText.small.copyWith(color: context.nxt.inkSecondary)),
+                const SizedBox(width: 8),
+                ...practicas.map((p) => Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: ChoiceChip(
+                        label: Text(p.codigo, style: NexusText.small),
+                        selected: practicaId == p.id,
+                        onSelected: (_) =>
+                            setState(() => _chatPracticaId = p.id),
+                      ),
+                    )),
+              ],
+            ),
+          ),
+        Expanded(
+          child: ChatPlaceholderScreen(
+            key: ValueKey(practicaId),
+            practicaId: practicaId,
+            canal: 'TUTORES',
+          ),
+        ),
+      ],
     );
   }
 
@@ -713,6 +760,13 @@ class _Sidebar extends StatelessWidget {
             selected: tab == 1,
             onTap: () => onTab(1),
           ),
+          const SizedBox(height: 6),
+          _NavItem(
+            icon: Icons.chat_bubble_outline_rounded,
+            tooltip: 'Chat',
+            selected: tab == 2,
+            onTap: () => onTab(2),
+          ),
           const Spacer(),
           Tooltip(
             message: 'Mi perfil',
@@ -849,6 +903,14 @@ class _MobileBar extends StatelessWidget {
                 icon: Icons.bar_chart_rounded,
                 label: 'Progreso',
                 selected: tab == 1),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => onTab(2),
+            child: _MobileTab(
+                icon: Icons.chat_bubble_outline_rounded,
+                label: 'Chat',
+                selected: tab == 2),
           ),
           const Spacer(),
           Builder(builder: (ctx) {
@@ -1400,37 +1462,50 @@ class _EvaluarDialog extends StatefulWidget {
 }
 
 class _EvaluarDialogState extends State<_EvaluarDialog> {
-  final _formKey = GlobalKey<FormState>();
+  // Criterios opcionales — null = no incluido
+  late bool _actitudEnabled;
+  late double _actitud;
+  late bool _tecnicaEnabled;
+  late double _tecnica;
+  late bool _iniciativaEnabled;
+  late double _iniciativa;
+  late bool _equipoEnabled;
+  late double _equipo;
+  late bool _cumplimientoEnabled;
+  late double _cumplimiento;
 
-  late final TextEditingController _actitudCtrl;
-  late final TextEditingController _tecnicaCtrl;
-  late final TextEditingController _iniciativaCtrl;
-  late final TextEditingController _equipoCtrl;
-  late final TextEditingController _cumplimientoCtrl;
-  late final TextEditingController _globalCtrl;
-  late final TextEditingController _comentarioCtrl;
+  late double _global;
+  final _comentarioCtrl = TextEditingController();
   bool _guardando = false;
 
   @override
   void initState() {
     super.initState();
     final a = widget.actual;
-    _actitudCtrl      = TextEditingController(text: a?.actitudPuntualidad?.toStringAsFixed(1) ?? '');
-    _tecnicaCtrl      = TextEditingController(text: a?.competenciaTecnica?.toStringAsFixed(1) ?? '');
-    _iniciativaCtrl   = TextEditingController(text: a?.iniciativaAutonomia?.toStringAsFixed(1) ?? '');
-    _equipoCtrl       = TextEditingController(text: a?.trabajoEquipo?.toStringAsFixed(1) ?? '');
-    _cumplimientoCtrl = TextEditingController(text: a?.cumplimientoTareas?.toStringAsFixed(1) ?? '');
-    _globalCtrl       = TextEditingController(text: a != null ? a.notaGlobal.toStringAsFixed(2) : '');
-    _comentarioCtrl   = TextEditingController(text: a?.comentario ?? '');
+    _actitudEnabled      = a?.actitudPuntualidad != null;
+    _actitud             = a?.actitudPuntualidad ?? 7.0;
+    _tecnicaEnabled      = a?.competenciaTecnica != null;
+    _tecnica             = a?.competenciaTecnica ?? 7.0;
+    _iniciativaEnabled   = a?.iniciativaAutonomia != null;
+    _iniciativa          = a?.iniciativaAutonomia ?? 7.0;
+    _equipoEnabled       = a?.trabajoEquipo != null;
+    _equipo              = a?.trabajoEquipo ?? 7.0;
+    _cumplimientoEnabled = a?.cumplimientoTareas != null;
+    _cumplimiento        = a?.cumplimientoTareas ?? 7.0;
+    _global              = a?.notaGlobal ?? 7.0;
+    _comentarioCtrl.text = a?.comentario ?? '';
   }
 
   @override
   void dispose() {
-    for (final c in [_actitudCtrl, _tecnicaCtrl, _iniciativaCtrl,
-        _equipoCtrl, _cumplimientoCtrl, _globalCtrl, _comentarioCtrl]) {
-      c.dispose();
-    }
+    _comentarioCtrl.dispose();
     super.dispose();
+  }
+
+  Color _color(double v) {
+    if (v >= 7) return NexusColors.success;
+    if (v >= 5) return NexusColors.warning;
+    return NexusColors.danger;
   }
 
   @override
@@ -1441,59 +1516,135 @@ class _EvaluarDialogState extends State<_EvaluarDialog> {
         style: NexusText.heading3,
       ),
       content: SizedBox(
-        width: 480,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Criterios de evaluación (1–10, opcionales)',
-                    style: NexusText.caption.copyWith(color: context.nxt.inkSecondary)),
-                const SizedBox(height: 12),
-                _CriterioField(label: 'Actitud y puntualidad', ctrl: _actitudCtrl),
-                _CriterioField(label: 'Competencia técnica', ctrl: _tecnicaCtrl),
-                _CriterioField(label: 'Iniciativa y autonomía', ctrl: _iniciativaCtrl),
-                _CriterioField(label: 'Trabajo en equipo', ctrl: _equipoCtrl),
-                _CriterioField(label: 'Cumplimiento de tareas', ctrl: _cumplimientoCtrl),
-                const Divider(height: 24),
-                Text('Nota global *',
-                    style: NexusText.small.copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _globalCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}(\.\d{0,2})?'))
+        width: 520,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Criterios de evaluación (opcionales — activa con el interruptor)',
+                  style: NexusText.caption.copyWith(color: context.nxt.inkSecondary)),
+              const SizedBox(height: 16),
+
+              _CriterioSlider(
+                label: 'Actitud y puntualidad',
+                icon: Icons.access_time_rounded,
+                enabled: _actitudEnabled,
+                value: _actitud,
+                color: _color(_actitud),
+                onToggle: (v) => setState(() => _actitudEnabled = v),
+                onChanged: (v) => setState(() => _actitud = v),
+              ),
+              _CriterioSlider(
+                label: 'Competencia técnica',
+                icon: Icons.build_outlined,
+                enabled: _tecnicaEnabled,
+                value: _tecnica,
+                color: _color(_tecnica),
+                onToggle: (v) => setState(() => _tecnicaEnabled = v),
+                onChanged: (v) => setState(() => _tecnica = v),
+              ),
+              _CriterioSlider(
+                label: 'Iniciativa y autonomía',
+                icon: Icons.lightbulb_outline,
+                enabled: _iniciativaEnabled,
+                value: _iniciativa,
+                color: _color(_iniciativa),
+                onToggle: (v) => setState(() => _iniciativaEnabled = v),
+                onChanged: (v) => setState(() => _iniciativa = v),
+              ),
+              _CriterioSlider(
+                label: 'Trabajo en equipo',
+                icon: Icons.group_outlined,
+                enabled: _equipoEnabled,
+                value: _equipo,
+                color: _color(_equipo),
+                onToggle: (v) => setState(() => _equipoEnabled = v),
+                onChanged: (v) => setState(() => _equipo = v),
+              ),
+              _CriterioSlider(
+                label: 'Cumplimiento de tareas',
+                icon: Icons.task_alt_outlined,
+                enabled: _cumplimientoEnabled,
+                value: _cumplimiento,
+                color: _color(_cumplimiento),
+                onToggle: (v) => setState(() => _cumplimientoEnabled = v),
+                onChanged: (v) => setState(() => _cumplimiento = v),
+              ),
+
+              const SizedBox(height: 8),
+              Divider(height: 1, thickness: 0.5, color: context.nxt.border),
+              const SizedBox(height: 20),
+
+              // ── Nota global obligatoria ───────────────────────────────────
+              Row(
+                children: [
+                  Icon(Icons.star_rounded, size: 18, color: _color(_global)),
+                  const SizedBox(width: 8),
+                  Text('Nota global *',
+                      style: NexusText.small.copyWith(fontWeight: FontWeight.w600)),
+                  const Spacer(),
+                  Container(
+                    width: 56,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: _color(_global).withAlpha(22),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      _global.toStringAsFixed(1),
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: _color(_global)),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  trackHeight: 4,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                  activeTrackColor: _color(_global),
+                  inactiveTrackColor: _color(_global).withAlpha(40),
+                  thumbColor: _color(_global),
+                  overlayColor: _color(_global).withAlpha(30),
+                ),
+                child: Slider(
+                  value: _global,
+                  min: 0,
+                  max: 10,
+                  divisions: 100,
+                  onChanged: (v) => setState(() => _global = v),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('0', style: NexusText.label.copyWith(color: context.nxt.inkTertiary)),
+                    Text('5', style: NexusText.label.copyWith(color: context.nxt.inkTertiary)),
+                    Text('10', style: NexusText.label.copyWith(color: context.nxt.inkTertiary)),
                   ],
-                  decoration: const InputDecoration(
-                    labelText: 'Nota global (0.00 – 10.00)',
-                    hintText: 'Ej: 7.50',
-                    prefixIcon: Icon(Icons.star_outline),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Obligatoria';
-                    final n = double.tryParse(v.replaceAll(',', '.'));
-                    if (n == null) return 'Formato inválido';
-                    if (n < 0 || n > 10) return 'Entre 0 y 10';
-                    return null;
-                  },
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _comentarioCtrl,
-                  maxLines: 4,
-                  maxLength: 2000,
-                  decoration: const InputDecoration(
-                    labelText: 'Observaciones (opcional)',
-                    hintText:
-                        'Valoración general sobre el desempeño del alumno durante las prácticas...',
-                    alignLabelWithHint: true,
-                  ),
+              ),
+
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _comentarioCtrl,
+                maxLines: 3,
+                maxLength: 2000,
+                decoration: const InputDecoration(
+                  labelText: 'Observaciones (opcional)',
+                  hintText: 'Valoración general del desempeño del alumno...',
+                  alignLabelWithHint: true,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1514,25 +1665,17 @@ class _EvaluarDialogState extends State<_EvaluarDialog> {
     );
   }
 
-  double? _parseOpt(TextEditingController c) {
-    final v = c.text.trim().replaceAll(',', '.');
-    if (v.isEmpty) return null;
-    return double.tryParse(v);
-  }
-
   Future<void> _guardar() async {
-    if (!_formKey.currentState!.validate()) return;
     setState(() => _guardando = true);
     final ok = await widget.provider.evaluar(
       widget.practicaId,
-      actitudPuntualidad: _parseOpt(_actitudCtrl),
-      competenciaTecnica: _parseOpt(_tecnicaCtrl),
-      iniciativaAutonomia: _parseOpt(_iniciativaCtrl),
-      trabajoEquipo: _parseOpt(_equipoCtrl),
-      cumplimientoTareas: _parseOpt(_cumplimientoCtrl),
-      notaGlobal: double.parse(_globalCtrl.text.trim().replaceAll(',', '.')),
-      comentario:
-          _comentarioCtrl.text.trim().isEmpty ? null : _comentarioCtrl.text.trim(),
+      actitudPuntualidad: _actitudEnabled ? _actitud : null,
+      competenciaTecnica: _tecnicaEnabled ? _tecnica : null,
+      iniciativaAutonomia: _iniciativaEnabled ? _iniciativa : null,
+      trabajoEquipo: _equipoEnabled ? _equipo : null,
+      cumplimientoTareas: _cumplimientoEnabled ? _cumplimiento : null,
+      notaGlobal: _global,
+      comentario: _comentarioCtrl.text.trim().isEmpty ? null : _comentarioCtrl.text.trim(),
     );
     if (mounted) {
       Navigator.pop(context);
@@ -1544,33 +1687,93 @@ class _EvaluarDialogState extends State<_EvaluarDialog> {
   }
 }
 
-class _CriterioField extends StatelessWidget {
+class _CriterioSlider extends StatelessWidget {
   final String label;
-  final TextEditingController ctrl;
-  const _CriterioField({required this.label, required this.ctrl});
+  final IconData icon;
+  final bool enabled;
+  final double value;
+  final Color color;
+  final ValueChanged<bool> onToggle;
+  final ValueChanged<double> onChanged;
+
+  const _CriterioSlider({
+    required this.label,
+    required this.icon,
+    required this.enabled,
+    required this.value,
+    required this.color,
+    required this.onToggle,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: TextFormField(
-        controller: ctrl,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d{0,2}(\.\d)?'))
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon,
+                  size: 15,
+                  color: enabled ? color : context.nxt.inkTertiary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  label,
+                  style: NexusText.small.copyWith(
+                    color: enabled ? context.nxt.ink : context.nxt.inkTertiary,
+                    fontWeight: enabled ? FontWeight.w500 : FontWeight.w400,
+                  ),
+                ),
+              ),
+              if (enabled)
+                Container(
+                  width: 42,
+                  height: 26,
+                  margin: const EdgeInsets.only(right: 6),
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(22),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    value.toStringAsFixed(1),
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: color),
+                  ),
+                ),
+              Switch(
+                value: enabled,
+                onChanged: onToggle,
+                activeColor: NexusColors.primary,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ],
+          ),
+          if (enabled)
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 3,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                activeTrackColor: color,
+                inactiveTrackColor: color.withAlpha(35),
+                thumbColor: color,
+                overlayColor: color.withAlpha(25),
+              ),
+              child: Slider(
+                value: value,
+                min: 1,
+                max: 10,
+                divisions: 18,
+                onChanged: onChanged,
+              ),
+            ),
         ],
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: '1–10',
-          suffixText: '/10',
-        ),
-        validator: (v) {
-          if (v == null || v.trim().isEmpty) return null;
-          final n = double.tryParse(v.replaceAll(',', '.'));
-          if (n == null) return 'Formato inválido';
-          if (n < 1 || n > 10) return 'Entre 1 y 10';
-          return null;
-        },
       ),
     );
   }

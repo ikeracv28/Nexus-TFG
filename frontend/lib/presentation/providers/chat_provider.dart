@@ -9,25 +9,28 @@ class ChatProvider extends ChangeNotifier {
   bool _cargando = false;
   bool _conectado = false;
   int? _practicaId;
+  String _canal = 'ALUMNO';
 
   List<MensajeModel> get mensajes => _mensajes;
   bool get cargando => _cargando;
   bool get conectado => _conectado;
 
-  Future<void> iniciar(int practicaId) async {
-    if (_practicaId == practicaId && _conectado) return;
+  Future<void> iniciar(int practicaId, {String canal = 'ALUMNO'}) async {
+    if (_practicaId == practicaId && _canal == canal && _conectado) return;
     _practicaId = practicaId;
+    _canal = canal;
     _cargando = true;
     notifyListeners();
 
     try {
-      _mensajes = await _service.getHistorial(practicaId);
+      _mensajes = await _service.getHistorial(practicaId, canal: canal);
     } catch (_) {
       _mensajes = [];
     }
 
     await _service.conectar(
       practicaId: practicaId,
+      canal: canal,
       onMensaje: (mensaje) {
         if (_mensajes.any((m) => m.id == mensaje.id)) return;
         _mensajes.add(mensaje);
@@ -52,6 +55,7 @@ class ChatProvider extends ChangeNotifier {
     _service.enviarMensaje(
       practicaId: _practicaId!,
       contenido: contenido.trim(),
+      canal: _canal,
     );
   }
 

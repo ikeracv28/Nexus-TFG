@@ -77,6 +77,7 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
                           onValidar: _confirmarValidar,
                           onCambiarEstadoIncidencia: _mostrarModalEstado,
                           onChatTap: () => setState(() => _mode = _Mode.chat),
+                          onChatTutoresTap: () => setState(() => _mode = _Mode.chatTutores),
                         ),
                     },
                   ),
@@ -102,7 +103,6 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
                 pendientePartes: provider.todosPendientesCentro.length,
                 pendienteIncidencias:
                     provider.todasIncidencias.where((i) => i.estaAbierta).length,
-                pendienteChat: 0,
               ),
             ],
           );
@@ -170,6 +170,7 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
           showBackButton: true,
           onBack: () => provider.seleccionar(-1),
           onChatTap: () => setState(() => _mode = _Mode.chat),
+          onChatTutoresTap: () => setState(() => _mode = _Mode.chatTutores),
         );
     }
   }
@@ -361,21 +362,6 @@ class _Sidebar extends StatelessWidget {
             onTap: () => onChangeMode(_Mode.incidencias),
           ),
           const SizedBox(height: 4),
-          _NavBtn(
-            icon: Icons.chat_bubble_outline,
-            activeIcon: Icons.chat_bubble,
-            tooltip: 'Chat con alumno',
-            isActive: mode == _Mode.chat,
-            onTap: () => onChangeMode(_Mode.chat),
-          ),
-          const SizedBox(height: 4),
-          _NavBtn(
-            icon: Icons.supervisor_account_outlined,
-            activeIcon: Icons.supervisor_account,
-            tooltip: 'Chat con tutor empresa',
-            isActive: mode == _Mode.chatTutores,
-            onTap: () => onChangeMode(_Mode.chatTutores),
-          ),
           const Spacer(),
           Tooltip(
             message: 'Mi perfil',
@@ -790,6 +776,7 @@ class _DetailPanel extends StatelessWidget {
   final bool showBackButton;
   final VoidCallback? onBack;
   final VoidCallback? onChatTap;
+  final VoidCallback? onChatTutoresTap;
 
   const _DetailPanel({
     required this.provider,
@@ -799,6 +786,7 @@ class _DetailPanel extends StatelessWidget {
     this.showBackButton = false,
     this.onBack,
     this.onChatTap,
+    this.onChatTutoresTap,
   });
 
   @override
@@ -1052,18 +1040,36 @@ class _DetailPanel extends StatelessWidget {
             ],
 
             // ── Chat ──────────────────────────────────────────────────────
-            _SectionLabel(label: 'CHAT'),
+            _SectionLabel(label: 'COMUNICACIÓN'),
             const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: onChatTap,
-                icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                label: const Text('Abrir chat con este alumno'),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onChatTap,
+                    icon: const Icon(Icons.chat_bubble_outline, size: 15),
+                    label: const Text('Chat alumno'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onChatTutoresTap,
+                    icon: const Icon(Icons.supervisor_account_outlined, size: 15),
+                    label: const Text('Chat empresa'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: NexusColors.success,
+                      side: const BorderSide(color: NexusColors.success),
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1733,14 +1739,12 @@ class _MobileBottomNav extends StatelessWidget {
   final ValueChanged<_Mode> onChangeMode;
   final int pendientePartes;
   final int pendienteIncidencias;
-  final int pendienteChat;
 
   const _MobileBottomNav({
     required this.mode,
     required this.onChangeMode,
     required this.pendientePartes,
     required this.pendienteIncidencias,
-    required this.pendienteChat,
   });
 
   @override
@@ -1776,20 +1780,6 @@ class _MobileBottomNav extends StatelessWidget {
                 : 'Incidencias',
             isActive: mode == _Mode.incidencias,
             onTap: () => onChangeMode(_Mode.incidencias),
-          ),
-          _BottomItem(
-            icon: Icons.chat_bubble_outline,
-            activeIcon: Icons.chat_bubble,
-            label: 'Chat',
-            isActive: mode == _Mode.chat,
-            onTap: () => onChangeMode(_Mode.chat),
-          ),
-          _BottomItem(
-            icon: Icons.supervisor_account_outlined,
-            activeIcon: Icons.supervisor_account,
-            label: 'Tutores',
-            isActive: mode == _Mode.chatTutores,
-            onTap: () => onChangeMode(_Mode.chatTutores),
           ),
         ],
       ),

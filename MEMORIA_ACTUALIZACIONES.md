@@ -391,3 +391,109 @@ La segunda mejora cierra un vector de abuso en el módulo de seguimientos (A04).
 La tercera mejora añade las cabeceras de seguridad HTTP que faltaban en el servidor Nginx del frontend (A05). Las cabeceras `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` y una `Content-Security-Policy` restringida protegen al navegador del usuario frente a ataques de clickjacking, MIME sniffing y ejecución de recursos de terceros no autorizados. Estas cabeceras complementan las que ya estaban configuradas en Spring Security para las respuestas de la API, completando la cobertura tanto en las peticiones a la API como en la carga de la aplicación web.
 
 Finalmente, se establecieron límites de tamaño de petición en la configuración de Spring Boot: 5 MB para peticiones multipart (ficheros adjuntos) y 1 MB para formularios, previniendo ataques de denegación de servicio por peticiones masivas.
+
+---
+
+## BLOQUE — Hito 4: Chat en tiempo real con WebSocket y protocolo STOMP
+**Sección destino en memoria**: Capítulo 4.1 (Backend — módulos funcionales) + Capítulo 5 (Interfaz — Chat)
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+### Para el capítulo del Backend
+
+La comunicación en tiempo real entre los tres participantes de una práctica —alumno, tutor de empresa y tutor del centro— era uno de los requisitos funcionales del sistema. La alternativa más inmediata habría sido el polling: el cliente consulta la API cada pocos segundos preguntando si hay mensajes nuevos. Esta solución es sencilla de implementar pero ineficiente: genera tráfico constante aunque no haya nada nuevo y añade latencia entre el envío y la recepción del mensaje. En cambio, WebSocket mantiene una conexión persistente bidireccional entre cliente y servidor, de modo que el servidor puede enviar datos al cliente en el momento en que ocurren, sin que el cliente tenga que preguntar.
+
+Sobre la conexión WebSocket base implementé el protocolo STOMP (Simple Text Oriented Messaging Protocol), que añade una capa de mensajería sobre WebSocket con semántica de suscripciones a canales. Cada práctica tiene su propio canal: `/topic/practica/{id}`. Los tres participantes se suscriben a este canal al entrar a la pantalla de chat, y cualquier mensaje enviado a ese canal llega a todos los suscriptores activos en tiempo real.
+
+La autenticación es el aspecto más delicado en WebSocket con Spring Security. Las peticiones HTTP normales pasan por el filtro JWT antes de llegar al controlador, pero los frames WebSocket siguen un ciclo de vida diferente. Para resolverlo implementé un `ChannelInterceptor` que intercepta específicamente dos tipos de frames: el `CONNECT`, que es el apretón de manos inicial donde el cliente envía el token JWT en la cabecera de STOMP, y el `SUBSCRIBE`, donde el cliente indica a qué canal quiere escuchar. El interceptor valida el JWT en el `CONNECT` y establece la autenticación en el contexto de seguridad. En el `SUBSCRIBE` comprueba que el email del usuario autenticado corresponde efectivamente a uno de los tres participantes de la práctica cuyo identificador aparece en el destino solicitado. Si no es participante, lanza `AccessDeniedException`, que Spring traduce en el cierre de la conexión.
+
+Los mensajes se persisten en la base de datos mediante la entidad `Mensaje`, con relación a la práctica, al remitente y con marca temporal. Al suscribirse al canal, el cliente también solicita el historial reciente mediante un endpoint REST convencional (`GET /mensajes/practica/{id}`), de modo que al abrir el chat se pueden ver los mensajes anteriores aunque no se estuviera conectado.
+
+### Para el capítulo del Frontend
+
+La pantalla de chat (`ChatScreen`) se integra en la cuarta pestaña del dashboard de cada rol. Al montarse, la pantalla establece una conexión STOMP utilizando el paquete `stomp_dart_client` y se suscribe al canal de la práctica. Antes de conectarse, solicita el historial de mensajes via REST para mostrar la conversación existente. La conexión se gestiona en `initState` y se cierra en `dispose`, siguiendo el ciclo de vida de Flutter: no hay fugas de conexión aunque el usuario cambie de pestaña, porque el widget se desmonta y la conexión se cierra.
+
+El cliente deriva la URL del WebSocket de la misma variable de entorno `API_URL` que usa para las peticiones REST, cambiando el esquema de `https://` por `wss://` o de `http://` por `ws://`. Esto garantiza que el mismo build de Flutter funciona en desarrollo local, en Docker Compose y en cualquier despliegue de producción sin modificaciones en el código.
+
+---
+
+## BLOQUE — Hito 4: Foto de perfil y sincronización entre paneles
+**Sección destino en memoria**: Capítulo 4.1 (Backend) + Capítulo 5 (Interfaz)
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+### Para el capítulo del Backend
+
+El módulo de foto de perfil permite a cada usuario personalizar su identidad visual dentro de la aplicación. La decisión de diseño más relevante fue dónde almacenar los bytes de la imagen. Las opciones habituales son: un servicio de almacenamiento externo (S3 o equivalente), el sistema de ficheros del servidor, o la propia base de datos. Para el alcance de un TFG con despliegue Docker autocontenido, opté por almacenar las imágenes como columnas `BYTEA` en la tabla `usuarios`, añadidas mediante la migración Flyway V12. Esta decisión simplifica radicalmente el despliegue: no hay que configurar buckets externos ni volúmenes de disco persistentes, y las imágenes forman parte del backup natural de la base de datos.
+
+Un aspecto técnico que requirió investigación fue el mapeo correcto de la columna en Hibernate 6. La anotación `@Lob` de JPA, que en versiones anteriores de Hibernate mapeaba a `bytea` en PostgreSQL, en Hibernate 6 mapea a OID (Object Identifier), un tipo diferente que requiere permisos especiales y no funciona correctamente con las operaciones estándar de JDBC. La solución fue usar `@Column(columnDefinition = "bytea")`, que fuerza el tipo exacto en la DDL y garantiza un comportamiento correcto independientemente de la versión de Hibernate.
+
+El endpoint `GET /usuarios/{id}/foto` devuelve los bytes de la imagen con el `Content-Type` original del fichero (JPEG, PNG o WebP), que se almacenó junto a los bytes en la columna `foto_content_type`. El `UsuarioResponse` incluye un campo booleano `tieneFoto` que permite al cliente saber si existe foto antes de hacer la petición de descarga, evitando una llamada HTTP innecesaria para los usuarios sin foto.
+
+### Para el capítulo del Frontend
+
+La sincronización de la foto entre todos los paneles fue el reto principal en el cliente. Flutter gestiona el estado con widgets independientes: el `NexusAvatar` del sidebar del panel de tutor empresa, el avatar del AppBar del alumno y el del panel de administración son instancias distintas en el árbol de widgets. Para que todos se actualicen al mismo tiempo cuando el usuario sube una foto nueva, implementé `FotoCache`: una clase estática con un `ValueNotifier<int>` cuyo valor incrementa cada vez que se sube una imagen. Cada instancia de `NexusAvatar` escucha este notifier a través de un `ValueListenableBuilder` y se reconstruye automáticamente cuando el valor cambia, forzando una nueva descarga de la imagen desde el servidor. Este patrón resuelve la sincronización sin necesidad de un provider global ni de pasar callbacks entre widgets distantes en el árbol.
+
+---
+
+## BLOQUE — Hito 4: Sistema de notificaciones
+**Sección destino en memoria**: Capítulo 4.1 (Backend — módulos funcionales) + Capítulo 5 (Interfaz)
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+### Para el capítulo del Backend
+
+El sistema de notificaciones comunica eventos relevantes a los usuarios sin que estos tengan que estar consultando activamente la aplicación. El diseño optó por un modelo de notificaciones REST con polling ligero en el cliente, en lugar de implementar un segundo canal WebSocket para las notificaciones. Esta decisión responde a que las notificaciones no son mensajes de tiempo real estricto como el chat, sino eventos asíncronos (un parte validado, un mensaje recibido) que el usuario puede consultar cuando conviene. Un polling cada 30 segundos introduce una latencia máxima de medio minuto, que es aceptable para este tipo de eventos.
+
+La entidad `Notificacion` almacena el identificador del destinatario, el tipo de notificación (SEGUIMIENTO, INCIDENCIA, CHAT, SISTEMA), el texto del mensaje, la marca temporal de creación y un booleano `leida`. Los tipos permiten al cliente mostrar un icono diferente por categoría y aplicar filtros en el futuro.
+
+Las notificaciones se generan automáticamente mediante hooks en los servicios existentes. Cuando `SeguimientoServiceImpl.validarEmpresa()` aprueba un parte, llama a `NotificacionService.crear()` para avisar al alumno. Lo mismo ocurre al rechazar, al completar la validación del centro, y cuando `MensajeServiceImpl.guardar()` registra un mensaje de chat: se notifica a todos los participantes de la práctica excepto al remitente. Esta integración garantiza que las notificaciones reflejan exactamente los eventos del sistema sin duplicar lógica.
+
+### Para el capítulo del Frontend
+
+El `NotificacionProvider` se registra con `ChangeNotifierProxyProvider` en el arranque de la aplicación, junto al `PerfilProvider`. Al autenticarse, el provider carga las notificaciones del servidor y arranca un `Timer.periodic` que consulta el contador de no leídas cada 30 segundos. El polling actualiza únicamente el contador (un endpoint ligero que devuelve un solo número), no la lista completa, minimizando el tráfico de red.
+
+El indicador visual es un badge rojo con el número de notificaciones no leídas, presente en el icono de la campana en el `AppBar` del alumno y en el sidebar de los tres paneles de tutor. Al pulsar la campana se navega a la `NotificacionesScreen`, que muestra la lista completa con un icono y color diferente por tipo. Marcar una notificación como leída se hace tocando su fila; el botón "Leer todas" limpia el badge de golpe. Esta pantalla responde al requisito del profesor formulado en la tutoría del tercer hito: los usuarios deben saber cuándo hay eventos pendientes sin tener que navegar por todas las secciones.
+
+---
+
+## BLOQUE — Hito 4: Evaluación final del alumno
+**Sección destino en memoria**: Capítulo 4.1 (Backend) + Capítulo 5 (Interfaz — Tutor empresa y Tutor centro)
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+### Para el capítulo del Backend
+
+La evaluación final es el módulo que cierra el ciclo formativo de las prácticas. Al finalizar el periodo, el tutor de empresa emite una valoración del alumno que queda registrada en el sistema y es visible para el tutor del centro. El diseño de la entidad `EvaluacionFinal` refleja la estructura real de la evaluación en FCT: una nota global obligatoria —que puede ser distinta de la media de los criterios, porque el tutor puede querer ponderar su valoración global por factores que van más allá de los criterios individuales— y cinco criterios optativos: actitud y puntualidad, competencia técnica, iniciativa y autonomía, trabajo en equipo y cumplimiento de tareas. Los criterios son opcionales porque no todos los tutores de empresa tienen la misma información sobre todos los aspectos del desempeño del alumno, y forzar una nota para criterios que no se han podido observar distorsionaría la evaluación.
+
+El sistema impone una única evaluación por práctica: si el tutor intenta enviar una segunda evaluación, el servicio detecta la existencia del registro y lo actualiza en lugar de crear uno nuevo. Esta decisión simplifica el contrato de la API desde el punto de vista del cliente, que no necesita distinguir entre crear y modificar, y garantiza la coherencia de los datos en la base de datos mediante una restricción de unicidad sobre el par `(practica_id, tutor_empresa_id)` en la migración Flyway V14.
+
+### Para el capítulo del Frontend
+
+El diseño del formulario de evaluación fue el aspecto que requirió más iteración. La primera versión usaba campos de texto numérico para introducir las notas, pero este enfoque presenta dos problemas: es propenso a errores de formato (comas vs puntos, valores fuera de rango) y resulta menos expresivo que una interfaz visual. La versión final utiliza controles deslizantes (`Slider`) para cada criterio y para la nota global, con un sistema de color que cambia en tiempo real: el rojo para notas por debajo de cinco, el ámbar entre cinco y siete, y el verde para notas de siete o superior. Cada criterio tiene un interruptor que permite activarlo o desactivarlo, reflejando el carácter opcional de los criterios en el modelo de datos. La nota global tiene siempre el slider activo, ya que es el único campo obligatorio.
+
+En la pantalla del tutor del centro, la evaluación se presenta en modo solo lectura dentro de la ficha del alumno. Para garantizar que la evaluación más reciente se muestra siempre, la pantalla implementa el ciclo de vida `StatefulWidget` y solicita los datos actualizados al servidor en el momento en que se abre, mediante `addPostFrameCallback`. Esta decisión fue necesaria tras detectar que la pantalla podía mostrar datos obsoletos (o ninguna evaluación) cuando el tutor del centro la abría inmediatamente después de que el tutor de empresa la completara.
+
+---
+
+## BLOQUE — Hito 4: Pruebas automatizadas y cobertura JaCoCo
+**Sección destino en memoria**: Capítulo 6 (Pruebas) — sección completa
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+El proyecto cuenta con una batería de 254 tests automatizados, todos pasando sin fallos, con una cobertura de instrucciones del 80 % medida por JaCoCo. Esta cifra se alcanzó de forma deliberada: el objetivo se estableció en un 80 % mínimo y la batería de tests se diseñó para cubrir de forma sistemática los módulos más críticos del sistema.
+
+Los tests se organizan en dos tipos con tecnologías diferentes. Los tests de integración de servicio (`@SpringBootTest + @Transactional + @ActiveProfiles("test")`) cargan el contexto completo de Spring con una base de datos H2 en memoria, ejecutan las operaciones reales contra la BD y revierten los cambios al terminar cada test. Este enfoque detecta problemas que los mocks no pueden revelar: inconsistencias entre la entidad JPA y el esquema Flyway, comportamiento inesperado de las consultas JPQL, y violaciones de restricciones de integridad referencial. Los tests de controlador (`@WebMvcTest + @MockBean`) cargan únicamente la capa web del contexto, sustituyen los servicios por mocks de Mockito y verifican la seguridad por roles, el mapeo de rutas, la serialización JSON y los códigos de respuesta HTTP.
+
+Los módulos cubiertos con tests de servicio incluyen: `PracticaService` (19 tests: ciclo de vida completo, estados, validaciones de rol), `UsuarioService` (11 tests: perfil, foto de perfil con tipos MIME y tamaños), `EvaluacionFinalService` (9 tests: crear, actualizar, consultar por práctica), `NotificacionService` (10 tests: creación, lectura, marcado) y `EmpresaService`/`CentroService` (4 tests). Los módulos cubiertos con tests de controlador incluyen todos los controladores REST: `PracticaController` (10 tests), `SeguimientoController` (13 tests), `IncidenciaController` (10 tests), `AusenciaController` (13 tests), `EvaluacionFinalController` (12 tests), `NotificacionController` (10 tests), `UsuarioController` (7 tests) y `EmpresaController`/`CentroController` (6 tests en total).
+
+Los tests de seguridad merecen mención especial. Se implementaron clases específicas de test de control de acceso (`A01AccessControlTest`) que verifican que un alumno no puede acceder a los recursos de otro alumno, que un tutor de empresa no puede actuar sobre prácticas que no supervisa, y que los intentos de escalada de privilegios devuelven exactamente el código HTTP 403, no 404 ni 500. Esta separación entre "recurso no encontrado" y "acceso denegado" es importante: devolver 404 en lugar de 403 cuando el recurso existe pero el usuario no tiene permiso oculta la denegación y puede enmascarar problemas de autorización en los logs.
+
+---
+
+## BLOQUE — Infraestructura: Docker Compose y despliegue en contenedores
+**Sección destino en memoria**: Capítulo 4.3 (Infraestructura y Despliegue) — sección nueva
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+El sistema completo se despliega mediante Docker Compose con tres contenedores que forman una red privada aislada. El contenedor `nexus-db` ejecuta PostgreSQL 16 con un volumen persistente y un `healthcheck` que verifica la disponibilidad del servidor antes de que arranquen los dependientes. El contenedor `nexus-api` contiene el backend Spring Boot, construido mediante un Dockerfile multi-stage: la primera etapa descarga las dependencias Maven y compila el JAR con `./mvnw package -DskipTests`; la segunda etapa copia únicamente el JAR al contenedor final basado en `eclipse-temurin:21-jre-alpine`, que ocupa significativamente menos espacio que incluir el JDK completo. El contenedor `nexus-web` sirve el bundle Flutter compilado a JavaScript mediante Nginx.
+
+El frontend también usa un build multi-stage: la primera etapa descarga el SDK de Flutter y compila la aplicación web con `flutter build web --release --dart-define=API_URL=...`; la segunda etapa copia los archivos estáticos resultantes al contenedor Nginx. La configuración de Nginx aplica tres políticas de caché diferentes: ningún cacheo para `index.html` (para garantizar que el navegador siempre obtiene el punto de entrada más reciente), validación de ETag para `main.dart.js` (el bundle principal de la aplicación), y un año de caché inmutable para los assets con hash en el nombre de fichero (imágenes, fuentes), que Flutter genera automáticamente durante la compilación.
+
+La variable de entorno `API_URL` se inyecta en tiempo de compilación del frontend. Esto permite que el mismo Dockerfile sirva tanto para desarrollo local (apuntando a `localhost:8080`) como para producción (apuntando al dominio real) cambiando únicamente el valor de la variable, sin tocar el código de la aplicación.
+
+Las credenciales de la base de datos y el secreto JWT se externalizan mediante variables de entorno definidas en un fichero `.env` que no se versionea en el repositorio. Esta separación entre configuración y código es una práctica estándar en aplicaciones en contenedores y previene la exposición accidental de secretos en el historial de Git.

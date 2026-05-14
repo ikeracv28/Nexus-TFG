@@ -290,29 +290,76 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
       );
     }
     final practicaId = _chatPracticaId ?? practicas.first.id;
+    final practica = practicas.firstWhere((p) => p.id == practicaId,
+        orElse: () => practicas.first);
+
     return Column(
       children: [
-        if (practicas.length > 1)
-          Container(
+        // ── Header de contexto ─────────────────────────────────────────────
+        Container(
+          decoration: BoxDecoration(
             color: context.nxt.surface,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                Text('Práctica:',
-                    style: NexusText.small.copyWith(color: context.nxt.inkSecondary)),
-                const SizedBox(width: 8),
-                ...practicas.map((p) => Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ChoiceChip(
-                        label: Text(p.codigo, style: NexusText.small),
-                        selected: practicaId == p.id,
-                        onSelected: (_) =>
-                            setState(() => _chatPracticaId = p.id),
-                      ),
-                    )),
-              ],
-            ),
+            border: Border(
+                bottom: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
           ),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: NexusColors.successLight,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.supervisor_account_outlined,
+                        size: 16, color: NexusColors.success),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Chat con tutor de centro',
+                          style: NexusText.small
+                              .copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          '${practica.tutorCentroNombre} · ${practica.codigo} · ${practica.alumnoNombre}',
+                          style: NexusText.caption
+                              .copyWith(color: context.nxt.inkSecondary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (practicas.length > 1)
+                    PopupMenuButton<int>(
+                      tooltip: 'Cambiar práctica',
+                      icon: Icon(Icons.swap_horiz_outlined,
+                          size: 18, color: context.nxt.inkSecondary),
+                      onSelected: (id) =>
+                          setState(() => _chatPracticaId = id),
+                      itemBuilder: (_) => practicas
+                          .map((p) => PopupMenuItem(
+                                value: p.id,
+                                child: Text(
+                                  '${p.codigo} — ${p.alumnoNombre}',
+                                  style: NexusText.small,
+                                ),
+                              ))
+                          .toList(),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
         Expanded(
           child: ChatPlaceholderScreen(
             key: ValueKey(practicaId),

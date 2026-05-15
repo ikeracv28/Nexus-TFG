@@ -256,7 +256,7 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
 
                 // ── Ausencias ───────────────────────────────────────────────
                 if (ausencias.isNotEmpty) ...[
-                  _SectionTitle('Ausencias  ·  ${ausencias.length}'),
+                  _SectionTitle(_ausenciasTitulo(ausencias)),
                   const SizedBox(height: 8),
                   _FichaCard(
                     child: Column(
@@ -304,6 +304,10 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
     final ausencias = provider.ausenciasDe(practica.id);
     final evaluacion = provider.evaluacionDe(practica.id);
     final horasCompletadas = provider.horasCompletadasDe(practica.id);
+
+    final ausJust = ausencias.where((a) => a.tipo == 'JUSTIFICADA').length;
+    final ausInjust = ausencias.where((a) => a.tipo == 'INJUSTIFICADA').length;
+    final ausPend = ausencias.where((a) => a.tipo == 'PENDIENTE').length;
 
     final doc = pw.Document();
     final fechaGen = DateFormat("d 'de' MMMM yyyy", 'es_ES').format(DateTime.now());
@@ -409,20 +413,28 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
         ],
         // Ausencias
         if (ausencias.isNotEmpty) ...[
-          _pdfSection('AUSENCIAS  ·  ${ausencias.length}'),
+          _pdfSection(
+              'AUSENCIAS  ·  ${ausencias.length}   (Justificadas: $ausJust  |  Injustificadas: $ausInjust  |  Pendientes: $ausPend)'),
           pw.SizedBox(height: 8),
           pw.TableHelper.fromTextArray(
-            headers: ['Fecha', 'Tipo', 'Motivo'],
+            headers: ['Fecha', 'Estado', 'Motivo', 'Revisada por'],
             headerStyle:
                 pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
             cellStyle: const pw.TextStyle(fontSize: 8),
+            cellAlignments: {
+              0: pw.Alignment.centerLeft,
+              1: pw.Alignment.center,
+              2: pw.Alignment.centerLeft,
+              3: pw.Alignment.centerLeft,
+            },
             data: ausencias
                 .map((a) => [
                       DateFormat('d MMM yy', 'es_ES').format(a.fecha),
-                      a.tipo,
-                      a.motivo.length > 70
-                          ? '${a.motivo.substring(0, 70)}…'
+                      _ausenciaLabel(a.tipo),
+                      a.motivo.length > 60
+                          ? '${a.motivo.substring(0, 60)}…'
                           : a.motivo,
+                      a.revisadaPorNombre ?? '—',
                     ])
                 .toList(),
           ),
@@ -579,12 +591,14 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
     // Sheet: Ausencias
     if (ausencias.isNotEmpty) {
       final ausSheet = wb['Ausencias'];
-      _xlRow(ausSheet, ['Fecha', 'Tipo', 'Motivo']);
+      _xlRow(ausSheet, ['Fecha', 'Estado', 'Motivo', 'Revisada por', 'Comentario revisión']);
       for (final a in ausencias) {
         _xlRow(ausSheet, [
           DateFormat('dd/MM/yyyy').format(a.fecha),
-          a.tipo,
+          _ausenciaLabel(a.tipo),
           a.motivo,
+          a.revisadaPorNombre ?? '',
+          a.comentarioRevision ?? '',
         ]);
       }
     }
@@ -646,6 +660,23 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
     if (inicio == null) return 'Sin fecha de inicio';
     if (fin == null) return 'Desde ${fmt(inicio)}';
     return '${fmt(inicio)} → ${fmt(fin)}';
+  }
+
+  String _ausenciaLabel(String tipo) => switch (tipo) {
+        'JUSTIFICADA' => 'Justificada',
+        'INJUSTIFICADA' => 'Injustificada',
+        _ => 'Pendiente',
+      };
+
+  String _ausenciasTitulo(List<Ausencia> ausencias) {
+    final just = ausencias.where((a) => a.tipo == 'JUSTIFICADA').length;
+    final injust = ausencias.where((a) => a.tipo == 'INJUSTIFICADA').length;
+    final pend = ausencias.where((a) => a.tipo == 'PENDIENTE').length;
+    final parts = <String>[];
+    if (just > 0) parts.add('$just justificada${just == 1 ? '' : 's'}');
+    if (injust > 0) parts.add('$injust injustificada${injust == 1 ? '' : 's'}');
+    if (pend > 0) parts.add('$pend pendiente${pend == 1 ? '' : 's'}');
+    return 'Ausencias  ·  ${ausencias.length}  (${parts.join(', ')})';
   }
 }
 

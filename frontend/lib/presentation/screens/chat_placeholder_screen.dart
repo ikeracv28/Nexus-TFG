@@ -5,6 +5,7 @@ import '../../data/models/mensaje_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/practica_provider.dart';
 import '../providers/chat_provider.dart';
+import '../widgets/nexus_avatar.dart';
 
 class ChatPlaceholderScreen extends StatefulWidget {
   final int? practicaId;
@@ -253,6 +254,7 @@ class _MensajeBurbuja extends StatelessWidget {
   Widget build(BuildContext context) {
     final hora =
         '${mensaje.fechaEnvio.hour.toString().padLeft(2, '0')}:${mensaje.fechaEnvio.minute.toString().padLeft(2, '0')}';
+    final auth = context.read<AuthProvider>();
 
     return Padding(
       padding: const EdgeInsets.only(bottom: NexusSizes.spaceSM),
@@ -262,18 +264,10 @@ class _MensajeBurbuja extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!esMio) ...[
-            CircleAvatar(
+            NexusAvatar(
+              userId: mensaje.remitenteId,
+              nombre: mensaje.nombreCompleto,
               radius: 14,
-              backgroundColor: NexusColors.primaryLight,
-              child: Text(
-                mensaje.remitenteNombre.isNotEmpty
-                    ? mensaje.remitenteNombre[0].toUpperCase()
-                    : '?',
-                style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: NexusColors.primaryText),
-              ),
             ),
             const SizedBox(width: NexusSizes.spaceXS),
           ],
@@ -330,6 +324,14 @@ class _MensajeBurbuja extends StatelessWidget {
               ],
             ),
           ),
+          if (esMio) ...[
+            const SizedBox(width: NexusSizes.spaceXS),
+            NexusAvatar(
+              userId: auth.user!.id,
+              nombre: auth.user!.nombreCompleto,
+              radius: 14,
+            ),
+          ],
         ],
       ),
     );

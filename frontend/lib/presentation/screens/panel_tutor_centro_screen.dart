@@ -362,6 +362,23 @@ class _Sidebar extends StatelessWidget {
             onTap: () => onChangeMode(_Mode.incidencias),
           ),
           const SizedBox(height: 4),
+          _NavBtn(
+            icon: Icons.chat_bubble_outline,
+            activeIcon: Icons.chat_bubble,
+            tooltip: 'Chat con alumno',
+            isActive: mode == _Mode.chat,
+            onTap: () => onChangeMode(_Mode.chat),
+          ),
+          const SizedBox(height: 4),
+          _NavBtn(
+            icon: Icons.supervisor_account_outlined,
+            activeIcon: Icons.supervisor_account,
+            tooltip: 'Chat con tutor empresa',
+            isActive: mode == _Mode.chatTutores,
+            activeColor: NexusColors.success,
+            activeBgColor: NexusColors.successLight,
+            onTap: () => onChangeMode(_Mode.chatTutores),
+          ),
           const Spacer(),
           Tooltip(
             message: 'Mi perfil',
@@ -450,6 +467,8 @@ class _NavBtn extends StatelessWidget {
   final String tooltip;
   final bool isActive;
   final VoidCallback onTap;
+  final Color? activeColor;
+  final Color? activeBgColor;
 
   const _NavBtn({
     required this.icon,
@@ -457,10 +476,14 @@ class _NavBtn extends StatelessWidget {
     required this.tooltip,
     required this.isActive,
     required this.onTap,
+    this.activeColor,
+    this.activeBgColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final color = activeColor ?? NexusColors.primary;
+    final bgColor = activeBgColor ?? NexusColors.primaryLight;
     return Tooltip(
       message: tooltip,
       child: GestureDetector(
@@ -470,14 +493,13 @@ class _NavBtn extends StatelessWidget {
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: isActive ? NexusColors.primaryLight : Colors.transparent,
+            color: isActive ? bgColor : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             isActive ? activeIcon : icon,
             size: 17,
-            color:
-                isActive ? NexusColors.primary : context.nxt.inkSecondary,
+            color: isActive ? color : context.nxt.inkSecondary,
           ),
         ),
       ),
@@ -1039,34 +1061,30 @@ class _DetailPanel extends StatelessWidget {
               const SizedBox(height: 16),
             ],
 
-            // ── Chat ──────────────────────────────────────────────────────
+            // ── Comunicación ──────────────────────────────────────────────
             _SectionLabel(label: 'COMUNICACIÓN'),
             const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onChatTap,
-                    icon: const Icon(Icons.chat_bubble_outline, size: 15),
-                    label: const Text('Chat alumno'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                    ),
+                  child: _ChatCard(
+                    icon: Icons.chat_bubble_outline,
+                    label: 'Chat alumno',
+                    subtitle: practica.alumnoNombre,
+                    color: NexusColors.primary,
+                    bgColor: NexusColors.primaryLight,
+                    onTap: onChatTap,
                   ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: onChatTutoresTap,
-                    icon: const Icon(Icons.supervisor_account_outlined, size: 15),
-                    label: const Text('Chat empresa'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: NexusColors.success,
-                      side: const BorderSide(color: NexusColors.success),
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                    ),
+                  child: _ChatCard(
+                    icon: Icons.supervisor_account_outlined,
+                    label: 'Chat empresa',
+                    subtitle: practica.empresaNombre,
+                    color: NexusColors.success,
+                    bgColor: NexusColors.successLight,
+                    onTap: onChatTutoresTap,
                   ),
                 ),
               ],
@@ -1776,10 +1794,17 @@ class _MobileBottomNav extends StatelessWidget {
             icon: Icons.warning_amber_outlined,
             activeIcon: Icons.warning_amber,
             label: pendienteIncidencias > 0
-                ? 'Incidencias ($pendienteIncidencias)'
-                : 'Incidencias',
+                ? 'Alertas ($pendienteIncidencias)'
+                : 'Alertas',
             isActive: mode == _Mode.incidencias,
             onTap: () => onChangeMode(_Mode.incidencias),
+          ),
+          _BottomItem(
+            icon: Icons.chat_bubble_outline,
+            activeIcon: Icons.chat_bubble,
+            label: 'Chat',
+            isActive: mode == _Mode.chat || mode == _Mode.chatTutores,
+            onTap: () => onChangeMode(_Mode.chat),
           ),
         ],
       ),
@@ -2121,6 +2146,70 @@ class _AusenciaInjustificadaRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ChatCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final Color color;
+  final Color bgColor;
+  final VoidCallback? onTap;
+
+  const _ChatCard({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.color,
+    required this.bgColor,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: bgColor,
+          border: Border.all(color: color.withAlpha(40)),
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: color.withAlpha(25),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 17, color: color),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: NexusText.small.copyWith(
+                          fontWeight: FontWeight.w600, color: color)),
+                  Text(subtitle,
+                      style: NexusText.caption
+                          .copyWith(color: color.withAlpha(160)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded,
+                size: 11, color: color.withAlpha(130)),
+          ],
+        ),
       ),
     );
   }

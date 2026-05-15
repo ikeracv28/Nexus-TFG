@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import '../../data/models/mensaje_model.dart';
 import '../../data/services/mensaje_service.dart';
@@ -58,6 +60,25 @@ class ChatProvider extends ChangeNotifier {
       canal: _canal,
     );
   }
+
+  Future<void> enviarAdjunto({
+    required Uint8List bytes,
+    required String nombre,
+    required String mimeType,
+  }) async {
+    if (_practicaId == null) return;
+    await _service.subirAdjunto(
+      practicaId: _practicaId!,
+      canal: _canal,
+      bytes: bytes,
+      nombre: nombre,
+      mimeType: mimeType,
+    );
+    // El backend hace broadcast vía WebSocket → onMensaje lo añadirá a la lista
+  }
+
+  Future<void> descargarAdjunto(int mensajeId, String nombre) =>
+      _service.descargarAdjunto(mensajeId, nombre);
 
   void limpiar() {
     _service.desconectar();

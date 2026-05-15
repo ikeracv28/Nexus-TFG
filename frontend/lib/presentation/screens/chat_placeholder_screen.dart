@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
@@ -26,6 +27,7 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
   final ChatProvider _chat = ChatProvider();
   final TextEditingController _inputCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
+  bool _subiendoAdjunto = false;
 
   @override
   void initState() {
@@ -89,6 +91,35 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
     _chat.enviar(texto);
     _inputCtrl.clear();
     _scrollAlFinal();
+  }
+
+  Future<void> _enviarAdjunto() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.first;
+    if (file.bytes == null) return;
+
+    setState(() => _subiendoAdjunto = true);
+    try {
+      await _chat.enviarAdjunto(
+        bytes: file.bytes!,
+        nombre: file.name,
+        mimeType: 'application/pdf',
+      );
+      _scrollAlFinal();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al subir el adjunto')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _subiendoAdjunto = false);
+    }
   }
 
   @override
@@ -199,6 +230,24 @@ class _ChatScreenState extends State<ChatPlaceholderScreen> {
               horizontal: NexusSizes.spaceMD, vertical: NexusSizes.spaceSM),
           child: Row(
             children: [
+              _subiendoAdjunto
+                  ? const SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : IconButton(
+                      onPressed: _chat.conectado ? _enviarAdjunto : null,
+                      icon: Icon(Icons.attach_file_rounded,
+                          color: context.nxt.inkSecondary, size: 20),
+                      tooltip: 'Adjuntar PDF',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    ),
+              const SizedBox(width: NexusSizes.spaceXS),
               Expanded(
                 child: TextField(
                   controller: _inputCtrl,
@@ -305,12 +354,14 @@ class _MensajeBurbuja extends StatelessWidget {
                           Radius.circular(esMio ? 4 : NexusSizes.radiusMD),
                     ),
                   ),
-                  child: Text(
-                    mensaje.contenido,
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: esMio ? Colors.white : NexusColors.ink),
-                  ),
+                  child: mensaje.esAdjunto
+                      ? _AdjuntoCard(mensaje: mensaje, esMio: esMio)
+                      : Text(
+                          mensaje.contenido,
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: esMio ? Colors.white : NexusColors.ink),
+                        ),
                 ),
                 Padding(
                   padding: const EdgeInsets.only(
@@ -334,6 +385,55 @@ class _MensajeBurbuja extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _AdjuntoCard extends StatelessWidget {
+  final MensajeModel mensaje;
+  final bool esMio;
+
+  const _AdjuntoCard({required this.mensaje, required this.esMio});
+
+  @override
+  Widget build(BuildContext context) {
+    final chat = context.read<ChatProvider>();
+    final nombre = mensaje.adjuntoNombre ?? 'documento.pdf';
+    final iconColor = esMio ? Colors.white70 : NexusColors.primary;
+    final textColor = esMio ? Colors.white : NexusColors.ink;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.picture_as_pdf_outlined, size: 28, color: iconColor),
+        const SizedBox(width: NexusSizes.spaceSM),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                nombre,
+                style: TextStyle(fontSize: 12, color: textColor, fontWeight: FontWeight.w500),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              GestureDetector(
+                onTap: () => chat.descargarAdjunto(mensaje.id, nombre),
+                child: Text(
+                  'Descargar',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: esMio ? Colors.white70 : NexusColors.primary,
+                    decoration: TextDecoration.underline,
+                    decorationColor: esMio ? Colors.white70 : NexusColors.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -30,17 +30,17 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
         foregroundColor: nxt.ink,
         elevation: 0,
         title: Text('Notificaciones',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: nxt.ink)),
+            style: NexusText.heading3.copyWith(color: nxt.ink)),
         actions: [
           TextButton(
             onPressed: () => context.read<NotificacionProvider>().marcarTodasLeidas(),
             child: Text('Leer todas',
-                style: TextStyle(fontSize: 13, color: NexusColors.primary)),
+                style: NexusText.small.copyWith(color: NexusColors.primary)),
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: nxt.border),
+          preferredSize: const Size.fromHeight(0.5),
+          child: Divider(height: 0.5, thickness: 0.5, color: nxt.border),
         ),
       ),
       body: Consumer<NotificacionProvider>(
@@ -53,9 +53,10 @@ class _NotificacionesScreenState extends State<NotificacionesScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.notifications_none_outlined, size: 56, color: nxt.inkTertiary),
-                  const SizedBox(height: 12),
-                  Text('Sin notificaciones', style: TextStyle(color: nxt.inkSecondary, fontSize: 15)),
+                  Icon(Icons.notifications_none_outlined, size: 48, color: nxt.inkTertiary),
+                  const SizedBox(height: NexusSizes.spaceMD),
+                  Text('Sin notificaciones',
+                      style: NexusText.small.copyWith(color: nxt.inkSecondary)),
                 ],
               ),
             );
@@ -108,8 +109,9 @@ class _NotificacionTile extends StatelessWidget {
     return InkWell(
       onTap: item.leida ? null : onTap,
       child: Container(
-        color: item.leida ? Colors.transparent : NexusColors.primaryLight.withOpacity(0.35),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        color: item.leida ? Colors.transparent : NexusColors.primaryLight.withAlpha(90),
+        padding: const EdgeInsets.symmetric(
+            horizontal: NexusSizes.spaceLG, vertical: NexusSizes.spaceMD),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -122,19 +124,18 @@ class _NotificacionTile extends StatelessWidget {
               ),
               child: Icon(_iconForTipo(item.tipo), size: 18, color: color),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: NexusSizes.spaceMD),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(item.mensaje,
-                      style: TextStyle(
-                          fontSize: 13,
+                      style: NexusText.small.copyWith(
                           color: nxt.ink,
-                          fontWeight: item.leida ? FontWeight.normal : FontWeight.w600)),
-                  const SizedBox(height: 4),
+                          fontWeight: item.leida ? FontWeight.w400 : FontWeight.w600)),
+                  const SizedBox(height: NexusSizes.spaceXS),
                   Text(fechaStr,
-                      style: TextStyle(fontSize: 11, color: nxt.inkTertiary)),
+                      style: NexusText.caption.copyWith(color: nxt.inkTertiary)),
                 ],
               ),
             ),

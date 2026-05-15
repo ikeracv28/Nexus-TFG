@@ -35,12 +35,15 @@ class _PerfilView extends StatelessWidget {
       body: Consumer<PerfilProvider>(
         builder: (context, prov, _) {
           if (prov.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: CircularProgressIndicator(
+                  color: NexusColors.primary, strokeWidth: 2),
+            );
           }
           if (prov.error != null && prov.usuario == null) {
             return Center(
               child: Text(prov.error!,
-                  style: TextStyle(color: NexusColors.danger)),
+                  style: NexusText.small.copyWith(color: NexusColors.danger)),
             );
           }
           return _PerfilContent(prov: prov);
@@ -61,14 +64,14 @@ class _PerfilContent extends StatelessWidget {
 
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(NexusSizes.space2XL),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _AvatarSection(prov: prov),
-              const SizedBox(height: 28),
+              const SizedBox(height: NexusSizes.space3XL),
 
               // Mensajes de feedback
               if (prov.error != null)
@@ -142,19 +145,15 @@ class _AvatarSection extends StatelessWidget {
             _EditAvatarBtn(prov: prov),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: NexusSizes.spaceMD),
         Text(
           usuario.nombreCompleto,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: nxt.ink,
-          ),
+          style: NexusText.heading2.copyWith(color: nxt.ink),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: NexusSizes.spaceXS),
         Text(
           usuario.email,
-          style: TextStyle(fontSize: 13, color: nxt.inkSecondary),
+          style: NexusText.small.copyWith(color: nxt.inkSecondary),
         ),
       ],
     );
@@ -218,8 +217,8 @@ class _InfoCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: nxt.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: nxt.border),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+        border: Border.all(color: nxt.border, width: NexusSizes.borderWidth),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -238,19 +237,19 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(
+          horizontal: NexusSizes.spaceLG, vertical: NexusSizes.spaceMD),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: 120,
             child: Text(label,
-                style: TextStyle(
-                    fontSize: 13, color: nxt.inkSecondary, fontWeight: FontWeight.w500)),
+                style: NexusText.small.copyWith(
+                    color: nxt.inkSecondary, fontWeight: FontWeight.w500)),
           ),
           Expanded(
-            child: Text(value,
-                style: TextStyle(fontSize: 14, color: nxt.ink)),
+            child: Text(value, style: NexusText.body.copyWith(color: nxt.ink)),
           ),
         ],
       ),
@@ -264,7 +263,8 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Divider(height: 1, thickness: 1, color: nxt.border, indent: 16, endIndent: 16);
+      Divider(height: 1, thickness: NexusSizes.borderWidth, color: nxt.border,
+          indent: NexusSizes.spaceLG, endIndent: NexusSizes.spaceLG);
 }
 
 class _Banner extends StatelessWidget {
@@ -278,16 +278,19 @@ class _Banner extends StatelessWidget {
     final bg = isError ? NexusColors.dangerLight : NexusColors.successLight;
     final fg = isError ? NexusColors.dangerText : NexusColors.successText;
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      margin: const EdgeInsets.only(bottom: NexusSizes.spaceLG),
+      padding: const EdgeInsets.symmetric(
+          horizontal: NexusSizes.spaceMD, vertical: NexusSizes.spaceSM),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: isError ? NexusColors.danger : NexusColors.success, width: .6),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        border: Border.all(
+            color: isError ? NexusColors.danger : NexusColors.success,
+            width: NexusSizes.borderWidth),
       ),
       child: Row(
         children: [
-          Expanded(child: Text(text, style: TextStyle(color: fg, fontSize: 13))),
+          Expanded(child: Text(text, style: NexusText.small.copyWith(color: fg))),
           GestureDetector(
             onTap: onClose,
             child: Icon(Icons.close, size: 16, color: fg),

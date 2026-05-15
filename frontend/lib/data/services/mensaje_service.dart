@@ -1,6 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http_parser/http_parser.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/mensaje_model.dart';
 import '../../core/config/api_client.dart';
@@ -19,6 +25,42 @@ class MensajeService {
     return (response.data as List)
         .map((j) => MensajeModel.fromJson(j as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<MensajeModel> subirAdjunto({
+    required int practicaId,
+    required String canal,
+    required Uint8List bytes,
+    required String nombre,
+    required String mimeType,
+  }) async {
+    final formData = FormData.fromMap({
+      'fichero': MultipartFile.fromBytes(
+        bytes,
+        filename: nombre,
+        contentType: MediaType.parse(mimeType),
+      ),
+    });
+    final response = await _apiClient.dio.post(
+      '/mensajes/practica/$practicaId/adjunto',
+      queryParameters: {'canal': canal},
+      data: formData,
+    );
+    return MensajeModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  Future<void> descargarAdjunto(int mensajeId, String nombre) async {
+    final response = await _apiClient.dio.get(
+      '/mensajes/$mensajeId/adjunto',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    final bytes = response.data as Uint8List;
+    final blob = html.Blob([bytes]);
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    html.AnchorElement(href: url)
+      ..setAttribute('download', nombre)
+      ..click();
+    html.Url.revokeObjectUrl(url);
   }
 
   Future<void> conectar({

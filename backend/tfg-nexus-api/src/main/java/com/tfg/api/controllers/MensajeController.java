@@ -11,7 +11,9 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 
@@ -51,5 +53,33 @@ public class MensajeController {
         if (principal == null) return;
         MensajeResponse resp = mensajeService.guardar(request, principal.getName(), practicaId, "TUTORES");
         messagingTemplate.convertAndSend("/topic/practica/" + practicaId + "/tutores", resp);
+    }
+
+    @PostMapping("/practica/{practicaId}/adjunto")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR_CENTRO', 'TUTOR_EMPRESA', 'ALUMNO')")
+    public ResponseEntity<MensajeResponse> subirAdjunto(
+            @PathVariable Long practicaId,
+            @RequestParam(defaultValue = "ALUMNO") String canal,
+            @RequestParam("fichero") MultipartFile fichero,
+            Principal principal) throws IOException {
+
+        MensajeResponse resp = mensajeService.guardarAdjunto(
+                practicaId, canal, principal.getName(),
+                fichero.getBytes(), fichero.getOriginalFilename(), fichero.getContentType());
+
+        String topic = "TUTORES".equalsIgnoreCase(canal)
+                ? "/topic/practica/" + practicaId + "/tutores"
+                : "/topic/practica/" + practicaId;
+        messagingTemplate.convertAndSend(topic, resp);
+
+        return ResponseEntity.ok(resp);
+    }
+
+    @GetMapping("/{mensajeId}/adjunto")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TUTOR_CENTRO', 'TUTOR_EMPRESA', 'ALUMNO')")
+    public ResponseEntity<byte[]> descargarAdjunto(
+            @PathVariable Long mensajeId,
+            Principal principal) {
+        return mensajeService.descargarAdjunto(mensajeId, principal.getName());
     }
 }

@@ -32,7 +32,7 @@ class MensajeControllerTest {
 
     private MensajeResponse mensajeMock() {
         return new MensajeResponse(1L, 1L, 2L, "Alumno", "Ejemplo",
-                "Hola desde el historial", LocalDateTime.now(), "ALUMNO");
+                "Hola desde el historial", LocalDateTime.now(), "ALUMNO", "TEXTO", null);
     }
 
     @Test
@@ -64,7 +64,7 @@ class MensajeControllerTest {
     @WithMockUser(roles = "TUTOR_EMPRESA")
     void tutor_empresa_puede_ver_historial() throws Exception {
         MensajeResponse mockTutores = new MensajeResponse(2L, 1L, 3L, "Tutor", "Empresa",
-                "Mensaje canal tutores", LocalDateTime.now(), "TUTORES");
+                "Mensaje canal tutores", LocalDateTime.now(), "TUTORES", "TEXTO", null);
         when(mensajeService.listarPorPractica(1L, "TUTORES")).thenReturn(List.of(mockTutores));
 
         mockMvc.perform(get("/api/v1/mensajes/practica/1").param("canal", "TUTORES"))

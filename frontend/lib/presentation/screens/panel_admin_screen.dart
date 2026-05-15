@@ -53,7 +53,7 @@ class _PanelAdminScreenState extends State<PanelAdminScreen> {
       return Scaffold(
         backgroundColor: context.nxt.surfaceAlt,
         appBar: AppBar(
-          backgroundColor: context.nxt.ink,
+          backgroundColor: NexusColors.primary,
           elevation: 0,
           title: Text(
             _modoLabel,
@@ -67,14 +67,13 @@ class _PanelAdminScreenState extends State<PanelAdminScreen> {
               final isDark = ctx.watch<ThemeProvider>().isDark;
               return IconButton(
                 icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                    color: Colors.white54, size: 20),
+                    color: Colors.white70, size: 20),
                 tooltip: isDark ? 'Modo claro' : 'Modo oscuro',
                 onPressed: () => ctx.read<ThemeProvider>().toggle(),
               );
             }),
             IconButton(
-              icon: const Icon(Icons.logout,
-                  color: Colors.white54, size: 20),
+              icon: const Icon(Icons.logout, color: Colors.white70, size: 20),
               tooltip: 'Cerrar sesión',
               onPressed: () => context.read<AuthProvider>().logout(),
             ),
@@ -131,11 +130,20 @@ class _Sidebar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 200,
-      color: NexusColors.ink,
+      decoration: BoxDecoration(
+        color: context.nxt.surface,
+        border: Border(right: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: NexusSizes.space2XL),
+          // Logo
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Image.asset('assets/images/nexus_logo.png', height: 28, fit: BoxFit.contain, alignment: Alignment.centerLeft),
+          ),
+          Divider(height: 1, color: context.nxt.border),
+          const SizedBox(height: NexusSizes.spaceSM),
           _NavBtn(
             icon: Icons.dashboard_outlined,
             label: 'Dashboard',
@@ -187,12 +195,12 @@ class _Sidebar extends StatelessWidget {
                         isLabelVisible: count > 0,
                         label: Text(count > 9 ? '9+' : '$count',
                             style: const TextStyle(fontSize: 10)),
-                        child: const Icon(Icons.notifications_none_outlined,
-                            size: 18, color: Colors.white70),
+                        child: Icon(Icons.notifications_none_outlined,
+                            size: 18, color: context.nxt.inkSecondary),
                       ),
                       const SizedBox(width: 12),
-                      const Text('Notificaciones',
-                          style: TextStyle(fontSize: 13, color: Colors.white70)),
+                      Text('Notificaciones',
+                          style: TextStyle(fontSize: 13, color: context.nxt.inkSecondary)),
                     ],
                   ),
                 ),
@@ -237,22 +245,20 @@ class _NavBtn extends StatelessWidget {
         height: 44,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: activo ? NexusColors.primary.withOpacity(0.25) : Colors.transparent,
-          border: activo
-              ? const Border(left: BorderSide(color: NexusColors.primary, width: 3))
-              : null,
+          color: activo ? NexusColors.surfaceContainerLow : Colors.transparent,
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
         ),
         child: Row(
           children: [
             Icon(icon, size: 18,
-                color: activo ? Colors.white : Colors.white70),
+                color: activo ? NexusColors.primary : context.nxt.inkSecondary),
             const SizedBox(width: 12),
             Expanded(
               child: Text(label,
                   style: TextStyle(
                       fontSize: 13,
                       fontWeight: activo ? FontWeight.w600 : FontWeight.w400,
-                      color: activo ? Colors.white : Colors.white70)),
+                      color: activo ? NexusColors.primary : context.nxt.inkSecondary)),
             ),
           ],
         ),
@@ -2343,7 +2349,10 @@ class _MobileBottomNavAdmin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: NexusColors.ink,
+      decoration: BoxDecoration(
+        color: context.nxt.surface,
+        border: Border(top: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
+      ),
       child: SafeArea(
         top: false,
         child: Row(
@@ -2411,16 +2420,15 @@ class _MobileNavItem extends StatelessWidget {
               Icon(
                 isActive ? activeIcon : icon,
                 size: 22,
-                color: isActive ? Colors.white : Colors.white38,
+                color: isActive ? NexusColors.primary : NexusColors.inkTertiary,
               ),
               const SizedBox(height: 2),
               Text(
                 label,
                 style: TextStyle(
                   fontSize: 10,
-                  color: isActive ? Colors.white : Colors.white38,
-                  fontWeight:
-                      isActive ? FontWeight.w600 : FontWeight.normal,
+                  color: isActive ? NexusColors.primary : NexusColors.inkTertiary,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ],

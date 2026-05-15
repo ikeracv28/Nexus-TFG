@@ -323,30 +323,9 @@ class _Sidebar extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const SizedBox(height: 12),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: NexusColors.primary,
-                    borderRadius: BorderRadius.circular(7),
-                  ),
-                  child: const Icon(Icons.star_outline, size: 13, color: Colors.white),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Nexus',
-                  style: NexusText.small.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: NexusColors.primary,
-                  ),
-                ),
-              ],
-            ),
+            padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
+            child: Image.asset('assets/images/nexus_logo.png', height: 26, fit: BoxFit.contain, alignment: Alignment.centerLeft),
           ),
           const SizedBox(height: 10),
           _NavBtn(

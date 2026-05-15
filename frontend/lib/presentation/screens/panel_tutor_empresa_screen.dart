@@ -793,7 +793,7 @@ class _Sidebar extends StatelessWidget {
                   width: 26,
                   height: 26,
                   decoration: BoxDecoration(
-                    color: NexusColors.success,
+                    color: NexusColors.primary,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(Icons.star_outline, size: 12, color: Colors.white),
@@ -936,22 +936,20 @@ class _NavItem extends StatelessWidget {
         height: 40,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: selected ? NexusColors.successLight : Colors.transparent,
-          border: selected
-              ? const Border(left: BorderSide(color: NexusColors.success, width: 3))
-              : null,
+          color: selected ? NexusColors.surfaceContainerLow : Colors.transparent,
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
         ),
         child: Row(
           children: [
             Icon(icon, size: 16,
-                color: selected ? NexusColors.success : context.nxt.inkSecondary),
+                color: selected ? NexusColors.primary : context.nxt.inkSecondary),
             const SizedBox(width: 10),
             Expanded(
               child: Text(label,
                   style: TextStyle(
                       fontSize: 13,
                       fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                      color: selected ? NexusColors.successText : context.nxt.inkSecondary)),
+                      color: selected ? NexusColors.primary : context.nxt.inkSecondary)),
             ),
           ],
         ),

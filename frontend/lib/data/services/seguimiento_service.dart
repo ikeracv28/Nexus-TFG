@@ -41,7 +41,10 @@ class SeguimientoService {
       final response = await _apiClient.dio.post('/seguimientos', data: body);
       return Seguimiento.fromJson(response.data);
     } on DioException catch (e) {
-      throw Exception('Error al registrar seguimiento: ${e.message}');
+      final msg = (e.response?.data is Map)
+          ? (e.response?.data['message'] ?? e.response?.data['error'] ?? 'Error al registrar el parte')
+          : 'Error al registrar el parte';
+      throw Exception(msg);
     }
   }
 
@@ -58,7 +61,10 @@ class SeguimientoService {
       );
       return Seguimiento.fromJson(response.data);
     } on DioException catch (e) {
-      throw Exception('Error al validar parte: ${e.message}');
+      final msg = (e.response?.data is Map)
+          ? (e.response?.data['message'] ?? 'Error al validar parte')
+          : 'Error al validar parte';
+      throw Exception(msg);
     }
   }
 
@@ -68,7 +74,10 @@ class SeguimientoService {
       final response = await _apiClient.dio.patch('/seguimientos/$id/validar-centro');
       return Seguimiento.fromJson(response.data);
     } on DioException catch (e) {
-      throw Exception('Error al completar parte: ${e.message}');
+      final msg = (e.response?.data is Map)
+          ? (e.response?.data['message'] ?? 'Error al completar parte')
+          : 'Error al completar parte';
+      throw Exception(msg);
     }
   }
 }

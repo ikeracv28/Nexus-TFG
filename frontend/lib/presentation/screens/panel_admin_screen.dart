@@ -105,7 +105,9 @@ class _PanelAdminScreenState extends State<PanelAdminScreen> {
   Widget _contenidoPorModo() {
     switch (_modo) {
       case _ModoAdmin.dashboard:
-        return const _VistaDashboard();
+        return _VistaDashboard(
+          onModoChanged: (m) => setState(() => _modo = m),
+        );
       case _ModoAdmin.practicas:
         return const _VistaPracticas();
       case _ModoAdmin.usuarios:
@@ -126,92 +128,85 @@ class _Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      width: 52,
+      width: 200,
       color: NexusColors.ink,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: NexusSizes.space2XL),
-          _IconBtn(
+          _NavBtn(
             icon: Icons.dashboard_outlined,
+            label: 'Dashboard',
             activo: modoActivo == _ModoAdmin.dashboard,
-            tooltip: 'Dashboard',
             onTap: () => onModoChanged(_ModoAdmin.dashboard),
           ),
-          const SizedBox(height: NexusSizes.spaceXS),
-          _IconBtn(
+          _NavBtn(
             icon: Icons.folder_open_outlined,
+            label: 'Prácticas',
             activo: modoActivo == _ModoAdmin.practicas,
-            tooltip: 'Prácticas',
             onTap: () => onModoChanged(_ModoAdmin.practicas),
           ),
-          const SizedBox(height: NexusSizes.spaceXS),
-          _IconBtn(
+          _NavBtn(
             icon: Icons.people_alt_outlined,
+            label: 'Usuarios',
             activo: modoActivo == _ModoAdmin.usuarios,
-            tooltip: 'Usuarios',
             onTap: () => onModoChanged(_ModoAdmin.usuarios),
           ),
-          const SizedBox(height: NexusSizes.spaceXS),
-          _IconBtn(
+          _NavBtn(
             icon: Icons.history_outlined,
+            label: 'Auditoría',
             activo: modoActivo == _ModoAdmin.auditoria,
-            tooltip: 'Auditoría',
             onTap: () => onModoChanged(_ModoAdmin.auditoria),
           ),
           const Spacer(),
-          _IconBtn(
+          _NavBtn(
             icon: Icons.person_outline,
-            tooltip: 'Mi perfil',
+            label: 'Mi perfil',
             onTap: () => Navigator.push(context,
                 MaterialPageRoute(builder: (_) => const PerfilScreen())),
           ),
-          const SizedBox(height: NexusSizes.spaceXS),
           Consumer<NotificacionProvider>(
             builder: (ctx, notifProv, _) {
               final count = notifProv.noLeidas;
-              return Tooltip(
-                message: 'Notificaciones',
-                child: InkWell(
-                  onTap: () async {
-                    await Navigator.push(ctx,
-                        MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
-                          value: notifProv,
-                          child: const NotificacionesScreen(),
-                        )));
-                    notifProv.cargar();
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: SizedBox(
-                    width: 34, height: 34,
-                    child: Center(
-                      child: Badge(
+              return InkWell(
+                onTap: () async {
+                  await Navigator.push(ctx,
+                      MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
+                        value: notifProv,
+                        child: const NotificacionesScreen(),
+                      )));
+                  notifProv.cargar();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      Badge(
                         isLabelVisible: count > 0,
                         label: Text(count > 9 ? '9+' : '$count',
                             style: const TextStyle(fontSize: 10)),
                         child: const Icon(Icons.notifications_none_outlined,
                             size: 18, color: Colors.white70),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      const Text('Notificaciones',
+                          style: TextStyle(fontSize: 13, color: Colors.white70)),
+                    ],
                   ),
                 ),
               );
             },
           ),
-          const SizedBox(height: NexusSizes.spaceXS),
-          _IconBtn(
-            icon: Theme.of(context).brightness == Brightness.dark
-                ? Icons.light_mode_outlined
-                : Icons.dark_mode_outlined,
-            tooltip: Theme.of(context).brightness == Brightness.dark
-                ? 'Modo claro'
-                : 'Modo oscuro',
+          _NavBtn(
+            icon: isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+            label: isDark ? 'Modo claro' : 'Modo oscuro',
             onTap: () => context.read<ThemeProvider>().toggle(),
           ),
-          const SizedBox(height: NexusSizes.spaceXS),
-          _IconBtn(
+          _NavBtn(
             icon: Icons.logout,
-            tooltip: 'Cerrar sesión',
+            label: 'Cerrar sesión',
             onTap: () => context.read<AuthProvider>().logout(),
           ),
           const SizedBox(height: NexusSizes.spaceLG),
@@ -221,32 +216,45 @@ class _Sidebar extends StatelessWidget {
   }
 }
 
-class _IconBtn extends StatelessWidget {
+class _NavBtn extends StatelessWidget {
   final IconData icon;
+  final String label;
   final bool activo;
-  final String tooltip;
   final VoidCallback onTap;
 
-  const _IconBtn({
+  const _NavBtn({
     required this.icon,
-    required this.tooltip,
+    required this.label,
     required this.onTap,
     this.activo = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      preferBelow: false,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 52,
-          height: 48,
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
           color: activo ? NexusColors.primary.withOpacity(0.25) : Colors.transparent,
-          child: Icon(icon,
-              color: activo ? Colors.white : Colors.white70, size: 20),
+          border: activo
+              ? const Border(left: BorderSide(color: NexusColors.primary, width: 3))
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 18,
+                color: activo ? Colors.white : Colors.white70),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(label,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: activo ? FontWeight.w600 : FontWeight.w400,
+                      color: activo ? Colors.white : Colors.white70)),
+            ),
+          ],
         ),
       ),
     );
@@ -256,7 +264,8 @@ class _IconBtn extends StatelessWidget {
 // ---- Vista Dashboard ----
 
 class _VistaDashboard extends StatelessWidget {
-  const _VistaDashboard();
+  final ValueChanged<_ModoAdmin> onModoChanged;
+  const _VistaDashboard({required this.onModoChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -300,13 +309,14 @@ class _VistaDashboard extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Stat cards
+              // Stat cards (clickable)
               Row(
                 children: [
                   _DashStatCard(
                       valor: admin.practicasActivas,
                       label: 'Prácticas activas',
-                      color: NexusColors.success),
+                      color: NexusColors.success,
+                      onTap: () => onModoChanged(_ModoAdmin.practicas)),
                   const SizedBox(width: 12),
                   _DashStatCard(
                       valor: admin.empresas.length,
@@ -316,12 +326,14 @@ class _VistaDashboard extends StatelessWidget {
                   _DashStatCard(
                       valor: admin.incidenciasAbiertas,
                       label: 'Incidencias abiertas',
-                      color: NexusColors.danger),
+                      color: NexusColors.danger,
+                      onTap: () => onModoChanged(_ModoAdmin.auditoria)),
                   const SizedBox(width: 12),
                   _DashStatCard(
                       valor: admin.alumnos.length,
                       label: 'Alumnos registrados',
-                      color: NexusColors.warning),
+                      color: NexusColors.warning,
+                      onTap: () => onModoChanged(_ModoAdmin.usuarios)),
                 ],
               ),
               const SizedBox(height: 20),
@@ -336,22 +348,32 @@ class _VistaDashboard extends StatelessWidget {
                         Expanded(
                             flex: 3,
                             child: _PracticasEnCurso(
-                                practicas: practicasActivas)),
+                                practicas: practicasActivas,
+                                onVerPracticas: () => onModoChanged(_ModoAdmin.practicas))),
                         const SizedBox(width: 16),
                         Expanded(
                             flex: 2,
-                            child: _IncidenciasRecientes(
-                                incidencias: incRecientes,
-                                admin: admin)),
+                            child: Column(
+                              children: [
+                                _IncidenciasRecientes(
+                                    incidencias: incRecientes,
+                                    admin: admin),
+                                const SizedBox(height: 16),
+                                _DistribucionTutores(practicas: practicasActivas),
+                              ],
+                            )),
                       ],
                     );
                   }
                   return Column(
                     children: [
-                      _PracticasEnCurso(practicas: practicasActivas),
+                      _PracticasEnCurso(practicas: practicasActivas,
+                          onVerPracticas: () => onModoChanged(_ModoAdmin.practicas)),
                       const SizedBox(height: 16),
                       _IncidenciasRecientes(
                           incidencias: incRecientes, admin: admin),
+                      const SizedBox(height: 16),
+                      _DistribucionTutores(practicas: practicasActivas),
                     ],
                   );
                 },
@@ -368,43 +390,63 @@ class _DashStatCard extends StatelessWidget {
   final int valor;
   final String label;
   final Color color;
-  const _DashStatCard(
-      {required this.valor, required this.label, required this.color});
+  final VoidCallback? onTap;
+
+  const _DashStatCard({
+    required this.valor,
+    required this.label,
+    required this.color,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: context.nxt.surface,
-          border: Border.all(
-              color: context.nxt.border, width: NexusSizes.borderWidth),
-          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withAlpha(5),
-                blurRadius: 4,
-                offset: const Offset(0, 1))
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '$valor',
-              style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                  letterSpacing: -0.5),
-            ),
-            const SizedBox(height: 4),
-            Text(label,
-                style:
-                    NexusText.caption.copyWith(color: context.nxt.inkSecondary),
-                maxLines: 2),
-          ],
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: context.nxt.surface,
+            border: Border.all(
+                color: onTap != null ? color.withOpacity(0.35) : context.nxt.border,
+                width: NexusSizes.borderWidth),
+            borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withAlpha(5),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1))
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '$valor',
+                style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                    letterSpacing: -0.5),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(label,
+                        style: NexusText.caption
+                            .copyWith(color: context.nxt.inkSecondary),
+                        maxLines: 2),
+                  ),
+                  if (onTap != null)
+                    Icon(Icons.arrow_forward_ios_rounded,
+                        size: 10, color: context.nxt.inkTertiary),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -413,7 +455,8 @@ class _DashStatCard extends StatelessWidget {
 
 class _PracticasEnCurso extends StatelessWidget {
   final List<Practica> practicas;
-  const _PracticasEnCurso({required this.practicas});
+  final VoidCallback? onVerPracticas;
+  const _PracticasEnCurso({required this.practicas, this.onVerPracticas});
 
   @override
   Widget build(BuildContext context) {
@@ -435,15 +478,30 @@ class _PracticasEnCurso extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-            child: Text('PRÁCTICAS EN CURSO',
-                style: NexusText.caption.copyWith(
-                    color: context.nxt.inkSecondary,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.6)),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text('PRÁCTICAS EN CURSO',
+                      style: NexusText.caption.copyWith(
+                          color: context.nxt.inkSecondary,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.6)),
+                ),
+                if (onVerPracticas != null)
+                  TextButton(
+                    onPressed: onVerPracticas,
+                    style: TextButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 24)),
+                    child: const Text('Ver todas',
+                        style: TextStyle(fontSize: 11, color: NexusColors.primary)),
+                  ),
+              ],
+            ),
           ),
           if (practicas.isEmpty)
             Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Text('No hay prácticas activas.',
                   style: TextStyle(color: context.nxt.inkSecondary)),
             )
@@ -458,50 +516,51 @@ class _PracticasEnCurso extends StatelessWidget {
                   .join();
               return Column(
                 children: [
-                  Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 17,
-                          backgroundColor: NexusColors.primaryLight,
-                          child: Text(initials,
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: NexusColors.primaryText)),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(p.alumnoNombre,
-                                  style: NexusText.small.copyWith(
-                                      fontWeight: FontWeight.w600)),
-                              Text(
-                                '${p.empresaNombre} · ${p.codigo}',
-                                style: NexusText.caption.copyWith(
-                                    color: context.nxt.inkSecondary),
-                              ),
-                            ],
+                  InkWell(
+                    onTap: onVerPracticas,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 17,
+                            backgroundColor: NexusColors.primaryLight,
+                            child: Text(initials,
+                                style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: NexusColors.primaryText)),
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: NexusColors.successLight,
-                            borderRadius:
-                                BorderRadius.circular(NexusSizes.radiusSM),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(p.alumnoNombre,
+                                    style: NexusText.small.copyWith(
+                                        fontWeight: FontWeight.w600)),
+                                Text(
+                                  '${p.empresaNombre} · ${p.codigo}',
+                                  style: NexusText.caption.copyWith(
+                                      color: context.nxt.inkSecondary),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Tutor: ${p.tutorCentroNombre}  ·  Empresa: ${p.tutorEmpresaNombre}',
+                                  style: NexusText.caption.copyWith(
+                                      color: context.nxt.inkTertiary,
+                                      fontSize: 10),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
                           ),
-                          child: Text('Activa',
-                              style: NexusText.caption.copyWith(
-                                  color: NexusColors.successText,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Icon(Icons.chevron_right_rounded,
+                              size: 16, color: context.nxt.inkTertiary),
+                        ],
+                      ),
                     ),
                   ),
                   if (p != practicas.last)
@@ -616,6 +675,88 @@ class _IncidenciasRecientes extends StatelessWidget {
               );
             }),
           const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+}
+
+// ---- Distribución por Tutor de Centro ----
+
+class _DistribucionTutores extends StatelessWidget {
+  final List<Practica> practicas;
+  const _DistribucionTutores({required this.practicas});
+
+  @override
+  Widget build(BuildContext context) {
+    final Map<String, int> conteo = {};
+    for (final p in practicas) {
+      conteo[p.tutorCentroNombre] = (conteo[p.tutorCentroNombre] ?? 0) + 1;
+    }
+    final entries = conteo.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final maxVal = entries.isEmpty ? 1 : entries.first.value;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withAlpha(5), blurRadius: 4, offset: const Offset(0, 1))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Text('DISTRIBUCIÓN POR TUTOR DE CENTRO',
+                style: NexusText.caption.copyWith(
+                    color: context.nxt.inkSecondary,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.6)),
+          ),
+          if (entries.isEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text('Sin datos.', style: TextStyle(color: context.nxt.inkSecondary)),
+            )
+          else
+            ...entries.map((e) => Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(e.key,
+                                style: NexusText.small,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis),
+                          ),
+                          const SizedBox(width: 8),
+                          Text('${e.value}',
+                              style: NexusText.small.copyWith(
+                                  color: NexusColors.primary,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: e.value / maxVal,
+                          minHeight: 5,
+                          backgroundColor: context.nxt.border,
+                          color: NexusColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+          const SizedBox(height: 8),
         ],
       ),
     );

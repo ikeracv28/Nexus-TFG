@@ -16,7 +16,7 @@ import 'notificaciones_screen.dart';
 import '../widgets/nexus_avatar.dart';
 import '../providers/notificacion_provider.dart';
 
-enum _Mode { alumnos, partes, incidencias, chat, chatTutores }
+enum _Mode { alumnos, partes, incidencias, chat }
 
 class PanelTutorCentroScreen extends StatefulWidget {
   const PanelTutorCentroScreen({super.key});
@@ -28,6 +28,7 @@ class PanelTutorCentroScreen extends StatefulWidget {
 
 class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
   _Mode _mode = _Mode.alumnos;
+  String _canalChat = 'ALUMNO'; // 'ALUMNO' | 'TUTORES'
 
   @override
   void initState() {
@@ -57,27 +58,30 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
                   mode: _mode,
                   onChangeMode: (m) => setState(() => _mode = m),
                 ),
-                if (_mode == _Mode.alumnos || _mode == _Mode.chat || _mode == _Mode.chatTutores) ...[
+                if (_mode == _Mode.alumnos || _mode == _Mode.chat) ...[
                   _StudentList(provider: provider),
                   Expanded(
                     child: switch (_mode) {
-                      _Mode.chat => ChatPlaceholderScreen(
-                          key: ValueKey('alumno-${provider.selectedPractica?.id}'),
+                      _Mode.chat => _ChatDualPane(
                           practicaId: provider.selectedPractica?.id,
-                          canal: 'ALUMNO',
-                        ),
-                      _Mode.chatTutores => ChatPlaceholderScreen(
-                          key: ValueKey('tutores-${provider.selectedPractica?.id}'),
-                          practicaId: provider.selectedPractica?.id,
-                          canal: 'TUTORES',
+                          canalActivo: _canalChat,
+                          onCanalChanged: (c) => setState(() => _canalChat = c),
+                          alumnoNombre: provider.selectedPractica?.alumnoNombre ?? '',
+                          empresaNombre: provider.selectedPractica?.empresaNombre ?? '',
                         ),
                       _ => _DetailPanel(
                           provider: provider,
                           auth: auth,
                           onValidar: _confirmarValidar,
                           onCambiarEstadoIncidencia: _mostrarModalEstado,
-                          onChatTap: () => setState(() => _mode = _Mode.chat),
-                          onChatTutoresTap: () => setState(() => _mode = _Mode.chatTutores),
+                          onChatTap: () => setState(() {
+                            _mode = _Mode.chat;
+                            _canalChat = 'ALUMNO';
+                          }),
+                          onChatTutoresTap: () => setState(() {
+                            _mode = _Mode.chat;
+                            _canalChat = 'TUTORES';
+                          }),
                         ),
                     },
                   ),
@@ -96,7 +100,7 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
                 mode: _mode,
                 onChangeMode: (m) => setState(() {
                   _mode = m;
-                  if (m != _Mode.alumnos && m != _Mode.chat && m != _Mode.chatTutores) {
+                  if (m != _Mode.alumnos && m != _Mode.chat) {
                     provider.seleccionar(-1);
                   }
                 }),
@@ -119,15 +123,13 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
         return _AllIncidenciasPanel(
             provider: provider, onCambiarEstado: _mostrarModalEstado);
       case _Mode.chat:
-        return ChatPlaceholderScreen(
-            key: ValueKey('alumno-${provider.selectedPractica?.id}'),
-            practicaId: provider.selectedPractica?.id,
-            canal: 'ALUMNO');
-      case _Mode.chatTutores:
-        return ChatPlaceholderScreen(
-            key: ValueKey('tutores-${provider.selectedPractica?.id}'),
-            practicaId: provider.selectedPractica?.id,
-            canal: 'TUTORES');
+        return _ChatDualPane(
+          practicaId: provider.selectedPractica?.id,
+          canalActivo: _canalChat,
+          onCanalChanged: (c) => setState(() => _canalChat = c),
+          alumnoNombre: provider.selectedPractica?.alumnoNombre ?? '',
+          empresaNombre: provider.selectedPractica?.empresaNombre ?? '',
+        );
       default:
         return const SizedBox.shrink();
     }
@@ -144,19 +146,12 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
         if (provider.selectedPractica == null) {
           return _StudentList(provider: provider, isMobile: true);
         }
-        return ChatPlaceholderScreen(
-          key: ValueKey('alumno-${provider.selectedPractica?.id}'),
+        return _ChatDualPane(
           practicaId: provider.selectedPractica?.id,
-          canal: 'ALUMNO',
-        );
-      case _Mode.chatTutores:
-        if (provider.selectedPractica == null) {
-          return _StudentList(provider: provider, isMobile: true);
-        }
-        return ChatPlaceholderScreen(
-          key: ValueKey('tutores-${provider.selectedPractica?.id}'),
-          practicaId: provider.selectedPractica?.id,
-          canal: 'TUTORES',
+          canalActivo: _canalChat,
+          onCanalChanged: (c) => setState(() => _canalChat = c),
+          alumnoNombre: provider.selectedPractica?.alumnoNombre ?? '',
+          empresaNombre: provider.selectedPractica?.empresaNombre ?? '',
         );
       case _Mode.alumnos:
         if (provider.selectedPractica == null) {
@@ -169,8 +164,14 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
           onCambiarEstadoIncidencia: _mostrarModalEstado,
           showBackButton: true,
           onBack: () => provider.seleccionar(-1),
-          onChatTap: () => setState(() => _mode = _Mode.chat),
-          onChatTutoresTap: () => setState(() => _mode = _Mode.chatTutores),
+          onChatTap: () => setState(() {
+            _mode = _Mode.chat;
+            _canalChat = 'ALUMNO';
+          }),
+          onChatTutoresTap: () => setState(() {
+            _mode = _Mode.chat;
+            _canalChat = 'TUTORES';
+          }),
         );
     }
   }
@@ -312,7 +313,7 @@ class _Sidebar extends StatelessWidget {
     final partesPendientes = provider.todosPendientesCentro.length;
 
     return Container(
-      width: 52,
+      width: 180,
       decoration: BoxDecoration(
         color: context.nxt.surface,
         border: Border(
@@ -323,15 +324,29 @@ class _Sidebar extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 12),
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: NexusColors.primary,
-              borderRadius: BorderRadius.circular(7),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: NexusColors.primary,
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: const Icon(Icons.star_outline, size: 13, color: Colors.white),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Nexus',
+                  style: NexusText.small.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: NexusColors.primary,
+                  ),
+                ),
+              ],
             ),
-            child:
-                const Icon(Icons.star_outline, size: 13, color: Colors.white),
           ),
           const SizedBox(height: 10),
           _NavBtn(
@@ -365,41 +380,53 @@ class _Sidebar extends StatelessWidget {
           _NavBtn(
             icon: Icons.chat_bubble_outline,
             activeIcon: Icons.chat_bubble,
-            tooltip: 'Chat con alumno',
+            tooltip: 'Chat',
             isActive: mode == _Mode.chat,
             onTap: () => onChangeMode(_Mode.chat),
           ),
-          const SizedBox(height: 4),
-          _NavBtn(
-            icon: Icons.supervisor_account_outlined,
-            activeIcon: Icons.supervisor_account,
-            tooltip: 'Chat con tutor empresa',
-            isActive: mode == _Mode.chatTutores,
-            activeColor: NexusColors.success,
-            activeBgColor: NexusColors.successLight,
-            onTap: () => onChangeMode(_Mode.chatTutores),
-          ),
           const Spacer(),
+          // Perfil
           Tooltip(
             message: 'Mi perfil',
             child: GestureDetector(
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const PerfilScreen())),
-              child: NexusAvatar(
-                userId: auth.user!.id,
-                nombre: auth.user!.nombreCompleto,
-                radius: 15,
+              child: Container(
+                width: double.infinity,
+                height: 36,
+                margin: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Row(
+                  children: [
+                    NexusAvatar(
+                      userId: auth.user!.id,
+                      nombre: auth.user!.nombreCompleto,
+                      radius: 12,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        auth.user!.nombreCompleto.split(' ').first,
+                        style: NexusText.small.copyWith(
+                          color: context.nxt.inkSecondary,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
+          // Notificaciones
           Consumer<NotificacionProvider>(
             builder: (ctx, notifProv, _) {
               final count = notifProv.noLeidas;
               return Tooltip(
                 message: 'Notificaciones',
-                child: IconButton(
-                  onPressed: () async {
+                child: GestureDetector(
+                  onTap: () async {
                     await Navigator.push(ctx,
                         MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
                           value: notifProv,
@@ -407,41 +434,92 @@ class _Sidebar extends StatelessWidget {
                         )));
                     notifProv.cargar();
                   },
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
-                  icon: Badge(
-                    isLabelVisible: count > 0,
-                    label: Text(count > 9 ? '9+' : '$count',
-                        style: const TextStyle(fontSize: 10)),
-                    child: Icon(Icons.notifications_none_outlined,
-                        size: 18, color: ctx.nxt.inkSecondary),
+                  child: Container(
+                    width: double.infinity,
+                    height: 36,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      children: [
+                        Badge(
+                          isLabelVisible: count > 0,
+                          label: Text(count > 9 ? '9+' : '$count',
+                              style: const TextStyle(fontSize: 10)),
+                          child: Icon(Icons.notifications_none_outlined,
+                              size: 16, color: ctx.nxt.inkSecondary),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Notificaciones',
+                            style: NexusText.small.copyWith(
+                              color: ctx.nxt.inkSecondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
             },
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
+          // Tema y logout
           Builder(builder: (ctx) {
             final isDark = Theme.of(ctx).brightness == Brightness.dark;
             final iconColor = ctx.nxt.inkSecondary;
             return Column(children: [
               Tooltip(
                 message: isDark ? 'Modo claro' : 'Modo oscuro',
-                child: IconButton(
-                  onPressed: () => ctx.read<ThemeProvider>().toggle(),
-                  icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                      size: 18, color: iconColor),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                child: GestureDetector(
+                  onTap: () => ctx.read<ThemeProvider>().toggle(),
+                  child: Container(
+                    width: double.infinity,
+                    height: 36,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      children: [
+                        Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                            size: 16, color: iconColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            isDark ? 'Modo claro' : 'Modo oscuro',
+                            style: NexusText.small.copyWith(color: iconColor),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               Tooltip(
                 message: 'Cerrar sesión',
-                child: IconButton(
-                  onPressed: () => auth.logout(),
-                  icon: Icon(Icons.logout_outlined, size: 18, color: iconColor),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                child: GestureDetector(
+                  onTap: () => auth.logout(),
+                  child: Container(
+                    width: double.infinity,
+                    height: 36,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Row(
+                      children: [
+                        Icon(Icons.logout_outlined, size: 16, color: iconColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Cerrar sesión',
+                            style: NexusText.small.copyWith(color: iconColor),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ]);
@@ -490,16 +568,33 @@ class _NavBtn extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          width: 34,
-          height: 34,
+          width: double.infinity,
+          height: 36,
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
             color: isActive ? bgColor : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            isActive ? activeIcon : icon,
-            size: 17,
-            color: isActive ? color : context.nxt.inkSecondary,
+          child: Row(
+            children: [
+              Icon(
+                isActive ? activeIcon : icon,
+                size: 16,
+                color: isActive ? color : context.nxt.inkSecondary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  tooltip,
+                  style: NexusText.small.copyWith(
+                    color: isActive ? color : context.nxt.inkSecondary,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -532,41 +627,76 @@ class _NavBadgeBtn extends StatelessWidget {
       message: tooltip,
       child: GestureDetector(
         onTap: onTap,
-        child: Stack(
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color:
-                    isActive ? NexusColors.primaryLight : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                isActive ? activeIcon : icon,
-                size: 17,
-                color: isActive
-                    ? NexusColors.primary
-                    : context.nxt.inkSecondary,
-              ),
-            ),
-            if (badgeCount > 0)
-              Positioned(
-                top: 4,
-                right: 4,
-                child: Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: badgeColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                        color: context.nxt.surface, width: 1.5),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: double.infinity,
+          height: 36,
+          margin: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: isActive ? NexusColors.primaryLight : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    isActive ? activeIcon : icon,
+                    size: 16,
+                    color: isActive
+                        ? NexusColors.primary
+                        : context.nxt.inkSecondary,
                   ),
+                  if (badgeCount > 0)
+                    Positioned(
+                      top: -3,
+                      right: -4,
+                      child: Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: badgeColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: context.nxt.surface, width: 1.5),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  tooltip,
+                  style: NexusText.small.copyWith(
+                    color: isActive
+                        ? NexusColors.primary
+                        : context.nxt.inkSecondary,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-          ],
+              if (badgeCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: badgeColor.withAlpha(26),
+                    borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                  ),
+                  child: Text(
+                    '$badgeCount',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: badgeColor,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -1803,7 +1933,7 @@ class _MobileBottomNav extends StatelessWidget {
             icon: Icons.chat_bubble_outline,
             activeIcon: Icons.chat_bubble,
             label: 'Chat',
-            isActive: mode == _Mode.chat || mode == _Mode.chatTutores,
+            isActive: mode == _Mode.chat,
             onTap: () => onChangeMode(_Mode.chat),
           ),
         ],
@@ -1855,6 +1985,130 @@ class _BottomItem extends StatelessWidget {
                           ? FontWeight.w600
                           : FontWeight.normal),
                   overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Chat dual pane ─────────────────────────────────────────────────────────────
+
+class _ChatDualPane extends StatelessWidget {
+  final int? practicaId;
+  final String canalActivo;
+  final ValueChanged<String> onCanalChanged;
+  final String alumnoNombre;
+  final String empresaNombre;
+
+  const _ChatDualPane({
+    required this.practicaId,
+    required this.canalActivo,
+    required this.onCanalChanged,
+    required this.alumnoNombre,
+    required this.empresaNombre,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Canal switcher
+        Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: context.nxt.surface,
+            border: Border(
+              bottom: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth),
+            ),
+          ),
+          child: Row(
+            children: [
+              _CanalTab(
+                label: 'Con alumno',
+                icon: Icons.chat_bubble_outline,
+                activo: canalActivo == 'ALUMNO',
+                accentColor: NexusColors.primary,
+                onTap: () => onCanalChanged('ALUMNO'),
+              ),
+              _CanalTab(
+                label: 'Con empresa',
+                icon: Icons.supervisor_account_outlined,
+                activo: canalActivo == 'TUTORES',
+                accentColor: NexusColors.success,
+                onTap: () => onCanalChanged('TUTORES'),
+              ),
+            ],
+          ),
+        ),
+        // Chat activo
+        Expanded(
+          child: IndexedStack(
+            index: canalActivo == 'ALUMNO' ? 0 : 1,
+            children: [
+              ChatPlaceholderScreen(
+                key: ValueKey('alumno-$practicaId'),
+                practicaId: practicaId,
+                canal: 'ALUMNO',
+              ),
+              ChatPlaceholderScreen(
+                key: ValueKey('tutores-$practicaId'),
+                practicaId: practicaId,
+                canal: 'TUTORES',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CanalTab extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool activo;
+  final Color accentColor;
+  final VoidCallback onTap;
+
+  const _CanalTab({
+    required this.label,
+    required this.icon,
+    required this.activo,
+    required this.accentColor,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          decoration: BoxDecoration(
+            color: activo ? accentColor.withAlpha(18) : Colors.transparent,
+            border: Border(
+              bottom: BorderSide(
+                color: activo ? accentColor : Colors.transparent,
+                width: 2,
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14,
+                  color: activo ? accentColor : context.nxt.inkTertiary),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: NexusText.small.copyWith(
+                  color: activo ? accentColor : context.nxt.inkTertiary,
+                  fontWeight: activo ? FontWeight.w600 : FontWeight.w400,
+                ),
+              ),
             ],
           ),
         ),

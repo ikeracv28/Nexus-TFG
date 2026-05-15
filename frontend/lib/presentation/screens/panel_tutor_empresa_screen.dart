@@ -776,103 +776,142 @@ class _Sidebar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      width: 52,
+      width: 180,
       decoration: BoxDecoration(
         color: context.nxt.surface,
         border: Border(right: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 12),
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: NexusColors.success,
-              borderRadius: BorderRadius.circular(7),
+          // Logo marca
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: NexusColors.success,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(Icons.star_outline, size: 12, color: Colors.white),
+                ),
+                const SizedBox(width: 8),
+                Text('Tutor empresa',
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: context.nxt.inkSecondary)),
+              ],
             ),
-            child: const Icon(Icons.star_outline, size: 13, color: Colors.white),
           ),
-          const SizedBox(height: 10),
+          Divider(height: 1, color: context.nxt.border),
+          const SizedBox(height: 6),
           _NavItem(
             icon: Icons.list_alt_outlined,
-            tooltip: 'Partes pendientes',
+            label: 'Partes pendientes',
             selected: tab == 0,
             onTap: () => onTab(0),
           ),
-          const SizedBox(height: 6),
           _NavItem(
             icon: Icons.bar_chart_rounded,
-            tooltip: 'Progreso del alumno',
+            label: 'Progreso',
             selected: tab == 1,
             onTap: () => onTab(1),
           ),
-          const SizedBox(height: 6),
           _NavItem(
             icon: Icons.chat_bubble_outline_rounded,
-            tooltip: 'Chat',
+            label: 'Chat tutores',
             selected: tab == 2,
             onTap: () => onTab(2),
           ),
           const Spacer(),
-          Tooltip(
-            message: 'Mi perfil',
-            child: GestureDetector(
-              onTap: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const PerfilScreen())),
-              child: NexusAvatar(
-                userId: auth.user!.id,
-                nombre: auth.user!.nombreCompleto,
-                radius: 15,
+          Divider(height: 1, color: context.nxt.border),
+          // Perfil
+          InkWell(
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const PerfilScreen())),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  NexusAvatar(
+                    userId: auth.user!.id,
+                    nombre: auth.user!.nombreCompleto,
+                    radius: 13,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(auth.user!.nombreCompleto,
+                        style: TextStyle(fontSize: 12, color: context.nxt.ink),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 4),
           Consumer<NotificacionProvider>(
             builder: (ctx, notifProv, _) {
               final count = notifProv.noLeidas;
-              return Tooltip(
-                message: 'Notificaciones',
-                child: IconButton(
-                  onPressed: () async {
-                    await Navigator.push(ctx,
-                        MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
-                          value: notifProv,
-                          child: const NotificacionesScreen(),
-                        )));
-                    notifProv.cargar();
-                  },
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
-                  icon: Badge(
-                    isLabelVisible: count > 0,
-                    label: Text(count > 9 ? '9+' : '$count',
-                        style: const TextStyle(fontSize: 10)),
-                    child: Icon(Icons.notifications_none_outlined,
-                        size: 18, color: ctx.nxt.inkSecondary),
+              return InkWell(
+                onTap: () async {
+                  await Navigator.push(ctx,
+                      MaterialPageRoute(builder: (_) => ChangeNotifierProvider.value(
+                        value: notifProv,
+                        child: const NotificacionesScreen(),
+                      )));
+                  notifProv.cargar();
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Row(
+                    children: [
+                      Badge(
+                        isLabelVisible: count > 0,
+                        label: Text(count > 9 ? '9+' : '$count',
+                            style: const TextStyle(fontSize: 10)),
+                        child: Icon(Icons.notifications_none_outlined,
+                            size: 17, color: ctx.nxt.inkSecondary),
+                      ),
+                      const SizedBox(width: 10),
+                      Text('Notificaciones',
+                          style: TextStyle(fontSize: 12, color: context.nxt.inkSecondary)),
+                    ],
                   ),
                 ),
               );
             },
           ),
-          const SizedBox(height: 4),
-          Tooltip(
-            message: isDark ? 'Modo claro' : 'Modo oscuro',
-            child: IconButton(
-              onPressed: () => context.read<ThemeProvider>().toggle(),
-              icon: Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                  size: 18, color: context.nxt.inkSecondary),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+          InkWell(
+            onTap: () => context.read<ThemeProvider>().toggle(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  Icon(isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                      size: 17, color: context.nxt.inkSecondary),
+                  const SizedBox(width: 10),
+                  Text(isDark ? 'Modo claro' : 'Modo oscuro',
+                      style: TextStyle(fontSize: 12, color: context.nxt.inkSecondary)),
+                ],
+              ),
             ),
           ),
-          Tooltip(
-            message: 'Cerrar sesión',
-            child: IconButton(
-              onPressed: () => auth.logout(),
-              icon: Icon(Icons.logout_outlined, size: 18, color: context.nxt.inkSecondary),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+          InkWell(
+            onTap: () => auth.logout(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  Icon(Icons.logout_outlined, size: 17, color: context.nxt.inkSecondary),
+                  const SizedBox(width: 10),
+                  Text('Cerrar sesión',
+                      style: TextStyle(fontSize: 12, color: context.nxt.inkSecondary)),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -880,38 +919,41 @@ class _Sidebar extends StatelessWidget {
       ),
     );
   }
-
-  String _getInitials(String nombre) {
-    final parts = nombre.trim().split(' ').where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-  }
 }
 
 class _NavItem extends StatelessWidget {
   final IconData icon;
-  final String tooltip;
+  final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _NavItem({required this.icon, required this.tooltip, required this.selected, required this.onTap});
+  const _NavItem({required this.icon, required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: selected ? NexusColors.successLight : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon,
-              size: 17,
-              color: selected ? NexusColors.success : context.nxt.inkSecondary),
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: selected ? NexusColors.successLight : Colors.transparent,
+          border: selected
+              ? const Border(left: BorderSide(color: NexusColors.success, width: 3))
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 16,
+                color: selected ? NexusColors.success : context.nxt.inkSecondary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(label,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                      color: selected ? NexusColors.successText : context.nxt.inkSecondary)),
+            ),
+          ],
         ),
       ),
     );

@@ -47,7 +47,7 @@ class _PanelTutorCentroScreenState extends State<PanelTutorCentroScreen> {
       backgroundColor: context.nxt.surfaceAlt,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final isWide = constraints.maxWidth > 600;
+          final isWide = MediaQuery.sizeOf(context).width > 600;
 
           if (isWide) {
             return Row(
@@ -814,18 +814,20 @@ class _StudentItem extends StatelessWidget {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
-      color: isSelected ? NexusColors.primary : Colors.transparent,
+      color: isSelected ? NexusColors.primary.withAlpha(14) : Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: EdgeInsets.fromLTRB(isSelected ? 9 : 12, 11, 12, 11),
           decoration: BoxDecoration(
             border: Border(
-                bottom: BorderSide(
-                    color: isSelected
-                        ? NexusColors.primary.withAlpha(77)
-                        : context.nxt.border,
-                    width: NexusSizes.borderWidth)),
+              left: BorderSide(
+                  color: isSelected ? NexusColors.primary : Colors.transparent,
+                  width: 3),
+              bottom: BorderSide(
+                  color: context.nxt.border,
+                  width: NexusSizes.borderWidth),
+            ),
           ),
           child: Row(
             children: [
@@ -833,8 +835,8 @@ class _StudentItem extends StatelessWidget {
                 userId: practica.alumnoId,
                 nombre: practica.alumnoNombre,
                 radius: 14,
-                backgroundColor: isSelected ? Colors.white.withAlpha(51) : NexusColors.primaryLight,
-                textColor: isSelected ? Colors.white : NexusColors.primaryText,
+                backgroundColor: NexusColors.primaryLight,
+                textColor: NexusColors.primaryText,
               ),
               const SizedBox(width: 9),
               Expanded(
@@ -843,17 +845,13 @@ class _StudentItem extends StatelessWidget {
                   children: [
                     Text(practica.alumnoNombre,
                         style: NexusText.small.copyWith(
-                            fontWeight: FontWeight.w500,
-                            color: isSelected
-                                ? Colors.white
-                                : context.nxt.ink),
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            color: isSelected ? NexusColors.primary : context.nxt.ink),
                         overflow: TextOverflow.ellipsis),
                     Text(practica.empresaNombre,
                         style: NexusText.caption.copyWith(
                             fontSize: 10,
-                            color: isSelected
-                                ? Colors.white.withAlpha(179)
-                                : context.nxt.inkSecondary),
+                            color: context.nxt.inkSecondary),
                         overflow: TextOverflow.ellipsis),
                   ],
                 ),
@@ -950,12 +948,13 @@ class _DetailPanel extends StatelessWidget {
       onRefresh: () => context.read<TutorCentroProvider>().cargar(),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 48),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Alumno header ─────────────────────────────────────────────
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (showBackButton) ...[
                   IconButton(
@@ -966,6 +965,12 @@ class _DetailPanel extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                 ],
+                NexusAvatar(
+                  userId: practica.alumnoId,
+                  nombre: practica.alumnoNombre,
+                  radius: 22,
+                ),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -973,7 +978,7 @@ class _DetailPanel extends StatelessWidget {
                       Text(practica.alumnoNombre,
                           style: NexusText.heading2
                               .copyWith(letterSpacing: -0.3)),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       Text(
                         '${practica.empresaNombre} · ${practica.codigo}',
                         style: NexusText.body
@@ -1009,7 +1014,7 @@ class _DetailPanel extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 28),
 
             // ── Progreso FCT ──────────────────────────────────────────────
             Container(
@@ -1077,7 +1082,7 @@ class _DetailPanel extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
             // ── Partes pendientes ─────────────────────────────────────────
             if (pendientes.isNotEmpty) ...[
@@ -1223,7 +1228,7 @@ class _AllPartesPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: NexusColors.primary));
     }
     final pendientes = provider.todosPendientesCentro;
     if (pendientes.isEmpty) {
@@ -1234,172 +1239,536 @@ class _AllPartesPanel extends StatelessWidget {
         iconColor: Color.fromRGBO(59, 109, 17, 0.5),
       );
     }
+    final incAbiertas = provider.todasIncidencias.where((i) => i.estaAbierta).length;
+    final totalAlumnos = provider.practicas.length;
+    final ultimo = pendientes.isNotEmpty ? pendientes.first : null;
+    final ultimoPractica = ultimo != null ? provider.practicaDe(ultimo.practicaId) : null;
+
     return RefreshIndicator(
       onRefresh: () => context.read<TutorCentroProvider>().cargar(),
-      child: ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: pendientes.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, i) {
-          final s = pendientes[i];
-          final practica = provider.practicaDe(s.practicaId);
-          return _FullParteCard(
-            seguimiento: s,
-            alumnoNombre: practica?.alumnoNombre ?? 'Alumno',
-            empresaNombre: practica?.empresaNombre ?? '',
-            onValidar: () => onValidar(s.id),
-          );
-        },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(NexusSizes.space2XL),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Validación de Partes',
+                              style: NexusText.heading2.copyWith(letterSpacing: -0.3)),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Tienes ${pendientes.length} ${pendientes.length == 1 ? 'parte pendiente' : 'partes pendientes'} de validación hoy.',
+                            style: NexusText.body.copyWith(color: context.nxt.inkSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: NexusSizes.space2XL),
+                // Tabla
+                Container(
+                  decoration: BoxDecoration(
+                    color: context.nxt.surface,
+                    border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+                    borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: context.nxt.surfaceAlt,
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(NexusSizes.radiusLG - 1)),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: NexusSizes.space2XL, vertical: 10),
+                        child: Row(
+                          children: const [
+                            _ColH('Alumno', flex: 3),
+                            _ColH('Empresa', flex: 3),
+                            _ColH('Fecha', flex: 2),
+                            _ColH('Horas', flex: 1),
+                            _ColH('Descripción', flex: 4),
+                            _ColH('Acción', flex: 2),
+                          ],
+                        ),
+                      ),
+                      Divider(height: 1, thickness: NexusSizes.borderWidth, color: context.nxt.border),
+                      ...pendientes.map((s) {
+                        final p = provider.practicaDe(s.practicaId);
+                        return _ParteTableRow(
+                          seguimiento: s,
+                          alumnoNombre: p?.alumnoNombre ?? 'Alumno',
+                          alumnoId: p?.alumnoId ?? 0,
+                          empresaNombre: p?.empresaNombre ?? '',
+                          onValidar: () => onValidar(s.id),
+                        );
+                      }),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            NexusSizes.space2XL, NexusSizes.spaceMD,
+                            NexusSizes.space2XL, NexusSizes.spaceMD),
+                        child: Text(
+                          'Mostrando ${pendientes.length} ${pendientes.length == 1 ? 'registro' : 'registros'}',
+                          style: NexusText.caption,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Bottom row: Detalle + Resumen Semanal
+                LayoutBuilder(builder: (ctx, cst) {
+                  final wide = cst.maxWidth > 600;
+                  final detalle = ultimo == null
+                      ? Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: context.nxt.surface,
+                            border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+                            borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+                          ),
+                          child: Text('Sin actividad reciente',
+                              style: NexusText.body.copyWith(color: context.nxt.inkSecondary)),
+                        )
+                      : Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: context.nxt.surface,
+                            border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+                            borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: NexusColors.warningLight,
+                                      borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                                    ),
+                                    child: Text('Pendiente validación',
+                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: NexusColors.warningText)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text('Detalle de Última Actividad',
+                                  style: NexusText.small.copyWith(fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 6),
+                              Text(
+                                ultimo.descripcion?.isNotEmpty == true ? ultimo.descripcion! : 'Sin descripción.',
+                                style: NexusText.body.copyWith(color: context.nxt.inkSecondary),
+                                maxLines: 4,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  Icon(Icons.calendar_today_outlined, size: 13, color: context.nxt.inkTertiary),
+                                  const SizedBox(width: 5),
+                                  Text(DateFormat('d MMM yyyy', 'es_ES').format(ultimo.fechaRegistro),
+                                      style: NexusText.caption),
+                                  const SizedBox(width: 12),
+                                  Icon(Icons.access_time, size: 13, color: context.nxt.inkTertiary),
+                                  const SizedBox(width: 5),
+                                  Text('${fmtH(ultimo.horasRealizadas)} declaradas',
+                                      style: NexusText.caption),
+                                  if (ultimoPractica != null) ...[
+                                    const SizedBox(width: 12),
+                                    Icon(Icons.person_outline, size: 13, color: context.nxt.inkTertiary),
+                                    const SizedBox(width: 5),
+                                    Expanded(
+                                      child: Text(ultimoPractica.alumnoNombre,
+                                          style: NexusText.caption, overflow: TextOverflow.ellipsis),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+
+                  final resumen = Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: context.nxt.surface,
+                      border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+                      borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Resumen',
+                            style: NexusText.small.copyWith(fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 16),
+                        _ResumenItem(
+                          icon: Icons.pending_actions_outlined,
+                          color: NexusColors.warning,
+                          label: 'Partes pendientes',
+                          value: '${pendientes.length}',
+                        ),
+                        const SizedBox(height: 12),
+                        _ResumenItem(
+                          icon: Icons.people_outline,
+                          color: NexusColors.primary,
+                          label: 'Total alumnos',
+                          value: '$totalAlumnos',
+                        ),
+                        const SizedBox(height: 12),
+                        _ResumenItem(
+                          icon: Icons.warning_amber_outlined,
+                          color: NexusColors.danger,
+                          label: 'Incidencias abiertas',
+                          value: '$incAbiertas',
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (wide) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 3, child: detalle),
+                        const SizedBox(width: 16),
+                        SizedBox(width: 220, child: resumen),
+                      ],
+                    );
+                  }
+                  return Column(children: [detalle, const SizedBox(height: 16), resumen]);
+                }),
+              ],
+            ),
+          ),
+        ),
       ),
+    );
+  }
+}
+
+class _ResumenItem extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+  const _ResumenItem({required this.icon, required this.color, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: color.withAlpha(20),
+            borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
+          ),
+          child: Icon(icon, size: 16, color: color),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(label,
+              style: NexusText.caption.copyWith(color: context.nxt.inkSecondary)),
+        ),
+        Text(value,
+            style: TextStyle(
+                fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w700, color: context.nxt.ink)),
+      ],
     );
   }
 }
 
 // ── All incidencias panel ──────────────────────────────────────────────────────
 
-class _AllIncidenciasPanel extends StatelessWidget {
+class _AllIncidenciasPanel extends StatefulWidget {
   final TutorCentroProvider provider;
   final void Function(Incidencia) onCambiarEstado;
   const _AllIncidenciasPanel(
       {required this.provider, required this.onCambiarEstado});
 
-  static const _ordenEstados = ['ABIERTA', 'EN_PROCESO', 'RESUELTA', 'CERRADA'];
-  static const _labelEstados = {
-    'ABIERTA': 'Abiertas',
-    'EN_PROCESO': 'En proceso',
-    'RESUELTA': 'Resueltas',
-    'CERRADA': 'Cerradas',
-  };
-  static const _colorEstados = {
-    'ABIERTA': NexusColors.danger,
-    'EN_PROCESO': NexusColors.primary,
-    'RESUELTA': NexusColors.success,
-    'CERRADA': NexusColors.inkTertiary,
-  };
+  @override
+  State<_AllIncidenciasPanel> createState() => _AllIncidenciasPanelState();
+}
+
+class _AllIncidenciasPanelState extends State<_AllIncidenciasPanel> {
+  int _tab = 0; // 0=Todas, 1=Pendientes, 2=Resueltas, 3=Cerradas
 
   @override
   Widget build(BuildContext context) {
+    final provider = widget.provider;
     if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: NexusColors.primary));
     }
     final todas = provider.todasIncidencias;
-    if (todas.isEmpty) {
-      return _EmptyState(
-        icon: Icons.shield_outlined,
-        mensaje: 'Sin incidencias',
-        detalle: 'No hay incidencias registradas.',
-        iconColor: Color.fromRGBO(24, 95, 165, 0.4),
-      );
-    }
+    final pendientes = todas.where((i) => i.estado == 'ABIERTA' || i.estado == 'EN_PROCESO').toList();
+    final resueltas = todas.where((i) => i.estado == 'RESUELTA').toList();
+    final cerradas = todas.where((i) => i.estado == 'CERRADA').toList();
 
-    // Agrupar por estado en el orden definido
-    final grupos = <String, List<Incidencia>>{};
-    for (final est in _ordenEstados) {
-      final items = todas.where((i) => i.estado == est).toList();
-      if (items.isNotEmpty) grupos[est] = items;
-    }
+    final filtered = switch (_tab) {
+      1 => pendientes,
+      2 => resueltas,
+      3 => cerradas,
+      _ => todas,
+    };
 
-    final abiertas = todas.where((i) => i.estaAbierta).length;
+    final abiertas = todas.where((i) => i.estado == 'ABIERTA').length;
+    final enProceso = todas.where((i) => i.estado == 'EN_PROCESO').length;
 
     return RefreshIndicator(
       onRefresh: () => context.read<TutorCentroProvider>().cargar(),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Resumen
-            Row(
+        padding: const EdgeInsets.all(NexusSizes.space2XL),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
+                // Header
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Gestión de Incidencias',
+                              style: NexusText.heading2.copyWith(letterSpacing: -0.3)),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Monitoriza y resuelve las incidencias reportadas.',
+                            style: NexusText.body.copyWith(color: context.nxt.inkSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                // Stat cards (responsive)
+                LayoutBuilder(builder: (ctx, cst) {
+                  final statusCard = Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: abiertas == 0 ? NexusColors.successLight : context.nxt.surface,
+                      border: Border.all(
+                          color: abiertas == 0 ? NexusColors.success.withAlpha(60) : context.nxt.border,
+                          width: NexusSizes.borderWidth),
+                      borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          abiertas == 0 ? Icons.check_circle_outline : Icons.error_outline,
+                          size: 18,
+                          color: abiertas == 0 ? NexusColors.success : NexusColors.warning,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Estado',
+                                  style: NexusText.caption.copyWith(fontWeight: FontWeight.w600)),
+                              Text(
+                                abiertas == 0 ? 'Todo correcto' : '$abiertas requieren atención',
+                                style: NexusText.caption.copyWith(
+                                    color: abiertas == 0 ? NexusColors.success : NexusColors.warning,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (cst.maxWidth < 480) {
+                    return Column(
+                      children: [
+                        Row(children: [
+                          _IncStatCard(valor: '$abiertas', label: 'ABIERTAS', color: NexusColors.danger, icon: Icons.warning_amber_outlined),
+                          const SizedBox(width: 10),
+                          _IncStatCard(valor: '$enProceso', label: 'EN PROCESO', color: NexusColors.primary, icon: Icons.sync_outlined),
+                        ]),
+                        const SizedBox(height: 10),
+                        statusCard,
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      _IncStatCard(valor: '$abiertas', label: 'INCIDENCIAS ABIERTAS', color: NexusColors.danger, icon: Icons.warning_amber_outlined),
+                      const SizedBox(width: 12),
+                      _IncStatCard(valor: '$enProceso', label: 'EN PROCESO', color: NexusColors.primary, icon: Icons.sync_outlined),
+                      const SizedBox(width: 12),
+                      Expanded(child: statusCard),
+                    ],
+                  );
+                }),
+                const SizedBox(height: NexusSizes.space2XL),
+                Container(
+                  decoration: BoxDecoration(
+                    color: context.nxt.surface,
+                    border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+                    borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Incidencias',
-                          style: NexusText.heading2
-                              .copyWith(letterSpacing: -0.3)),
-                      Text('${todas.length} en total · $abiertas sin resolver',
-                          style: NexusText.body
-                              .copyWith(color: context.nxt.inkSecondary)),
+                      // Tabs
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                              bottom: BorderSide(
+                                  color: context.nxt.border,
+                                  width: NexusSizes.borderWidth)),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: NexusSizes.space2XL),
+                        child: Row(
+                          children: [
+                            _IncTab('Todas', todas.length, 0, _tab, (i) => setState(() => _tab = i)),
+                            _IncTab('Pendientes', pendientes.length, 1, _tab,
+                                (i) => setState(() => _tab = i),
+                                accent: NexusColors.danger),
+                            _IncTab('Resueltas', resueltas.length, 2, _tab,
+                                (i) => setState(() => _tab = i)),
+                            _IncTab('Cerradas', cerradas.length, 3, _tab,
+                                (i) => setState(() => _tab = i)),
+                          ],
+                        ),
+                      ),
+                      // Table header
+                      Container(
+                        color: context.nxt.surfaceAlt,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: NexusSizes.space2XL, vertical: 10),
+                        child: Row(
+                          children: const [
+                            _ColH('Alumno / Incidencia', flex: 4),
+                            _ColH('Tipo', flex: 2),
+                            _ColH('Estado', flex: 2),
+                            _ColH('Fecha', flex: 2),
+                            _ColH('Acción', flex: 2),
+                          ],
+                        ),
+                      ),
+                      Divider(height: 1, thickness: NexusSizes.borderWidth, color: context.nxt.border),
+                      if (filtered.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: NexusSizes.space3XL),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(Icons.shield_outlined,
+                                    size: 32, color: context.nxt.inkTertiary),
+                                const SizedBox(height: NexusSizes.spaceMD),
+                                Text('Sin incidencias en este filtro',
+                                    style: NexusText.small
+                                        .copyWith(fontWeight: FontWeight.w500)),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        ...filtered.map((inc) {
+                          final practica = provider.practicaDe(inc.practicaId);
+                          return _IncidenciaTableRow(
+                            incidencia: inc,
+                            alumnoId: practica?.alumnoId ?? 0,
+                            alumnoNombre: practica?.alumnoNombre ?? 'Alumno',
+                            onGestionar: inc.estado == 'CERRADA'
+                                ? null
+                                : () => widget.onCambiarEstado(inc),
+                          );
+                        }),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                            NexusSizes.space2XL, NexusSizes.spaceMD,
+                            NexusSizes.space2XL, NexusSizes.spaceMD),
+                        child: Text('${filtered.length} registros',
+                            style: NexusText.caption),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            // Grupos
-            ...grupos.entries.map((entry) {
-              final estado = entry.key;
-              final items = entry.value;
-              final color = _colorEstados[estado] ?? context.nxt.inkSecondary;
-              final label = _labelEstados[estado] ?? estado;
+// ── Stat card de incidencias ──────────────────────────────────────────────────
 
-              return Column(
+class _IncStatCard extends StatelessWidget {
+  final String valor;
+  final String label;
+  final Color color;
+  final IconData icon;
+  const _IncStatCard({required this.valor, required this.label, required this.color, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: context.nxt.surface,
+          border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withAlpha(20),
+                borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Etiqueta de grupo
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
+                  Text(valor,
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
                           color: color,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        label.toUpperCase(),
-                        style: NexusText.label.copyWith(
-                          color: color,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text('${items.length}',
-                          style: NexusText.label
-                              .copyWith(color: context.nxt.inkTertiary)),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Tabla/lista del grupo
-                  Container(
-                    decoration: BoxDecoration(
-                      color: context.nxt.surface,
-                      border: Border.all(
-                          color: context.nxt.border,
-                          width: NexusSizes.borderWidth),
-                      borderRadius:
-                          BorderRadius.circular(NexusSizes.radiusMD),
-                    ),
-                    child: Column(
-                      children: items.asMap().entries.map((e) {
-                        final isLast = e.key == items.length - 1;
-                        final inc = e.value;
-                        final practica =
-                            provider.practicaDe(inc.practicaId);
-                        return _IncidenciaRow(
-                          incidencia: inc,
-                          alumnoId: practica?.alumnoId ?? 0,
-                          alumnoNombre:
-                              practica?.alumnoNombre ?? 'Alumno',
-                          accentColor: color,
-                          isLast: isLast,
-                          onGestionar: inc.estado == 'CERRADA'
-                              ? null
-                              : () => onCambiarEstado(inc),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                          letterSpacing: -0.3)),
+                  Text(label,
+                      style: NexusText.caption.copyWith(
+                          color: context.nxt.inkSecondary, letterSpacing: 0.3),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                 ],
-              );
-            }),
+              ),
+            ),
           ],
         ),
       ),
@@ -1407,102 +1776,210 @@ class _AllIncidenciasPanel extends StatelessWidget {
   }
 }
 
-// ── Incidencia row (en vista de incidencias agrupadas) ────────────────────────
+// ── Tab de incidencias ────────────────────────────────────────────────────────
 
-class _IncidenciaRow extends StatelessWidget {
+class _IncTab extends StatelessWidget {
+  final String label;
+  final int count;
+  final int index;
+  final int current;
+  final void Function(int) onTap;
+  final Color? accent;
+
+  const _IncTab(this.label, this.count, this.index, this.current, this.onTap,
+      {this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = index == current;
+    final color = isSelected
+        ? (accent ?? NexusColors.primary)
+        : context.nxt.inkTertiary;
+
+    return GestureDetector(
+      onTap: () => onTap(index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+        margin: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          border: Border(
+              bottom: BorderSide(
+                  color: isSelected ? (accent ?? NexusColors.primary) : Colors.transparent,
+                  width: 2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label,
+                style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: color)),
+            if (count > 0) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? (accent ?? NexusColors.primary).withAlpha(20)
+                      : context.nxt.surfaceAlt,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('$count',
+                    style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: color)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Fila de tabla de incidencia ───────────────────────────────────────────────
+
+class _IncidenciaTableRow extends StatelessWidget {
   final Incidencia incidencia;
   final int alumnoId;
   final String alumnoNombre;
-  final Color accentColor;
-  final bool isLast;
   final VoidCallback? onGestionar;
 
-  const _IncidenciaRow({
+  const _IncidenciaTableRow({
     required this.incidencia,
     required this.alumnoId,
     required this.alumnoNombre,
-    required this.accentColor,
-    required this.isLast,
     this.onGestionar,
   });
 
   @override
   Widget build(BuildContext context) {
-    final fecha =
-        DateFormat('d MMM', 'es_ES').format(incidencia.fechaCreacion);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fecha = DateFormat('d MMM', 'es_ES').format(incidencia.fechaCreacion);
+
+    Color estadoBg, estadoFg;
+    String estadoLabel;
+    switch (incidencia.estado) {
+      case 'ABIERTA':
+        estadoBg = isDark ? const Color(0xFF4A1515) : NexusColors.dangerLight;
+        estadoFg = isDark ? const Color(0xFFFF8A80) : NexusColors.dangerText;
+        estadoLabel = 'Abierta';
+      case 'EN_PROCESO':
+        estadoBg = isDark ? const Color(0xFF0D2B4F) : NexusColors.primaryLight;
+        estadoFg = isDark ? const Color(0xFF7AB5F5) : NexusColors.primaryText;
+        estadoLabel = 'En proceso';
+      case 'RESUELTA':
+        estadoBg = isDark ? const Color(0xFF1E3D10) : NexusColors.successLight;
+        estadoFg = isDark ? const Color(0xFF86C962) : NexusColors.successText;
+        estadoLabel = 'Resuelta';
+      default:
+        estadoBg = isDark ? const Color(0xFF252B3D) : NexusColors.neutralLight;
+        estadoFg = isDark ? const Color(0xFFA4AABC) : NexusColors.neutralText;
+        estadoLabel = 'Cerrada';
+    }
+
+    final tipoBg = isDark ? const Color(0xFF1A2440) : const Color(0xFFEEF2FF);
+    final tipoFg = isDark ? const Color(0xFF93A8F4) : const Color(0xFF3F52C7);
+    final tipoLabel = incidencia.tipo ?? 'General';
 
     return Container(
       decoration: BoxDecoration(
-        border: isLast
-            ? null
-            : Border(
-                bottom: BorderSide(
-                    color: context.nxt.border,
-                    width: NexusSizes.borderWidth)),
+        border: Border(
+            bottom: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      padding: const EdgeInsets.symmetric(
+          horizontal: NexusSizes.space2XL, vertical: 12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Dot de color
-          Container(
-            width: 3,
-            height: 36,
-            margin: const EdgeInsets.only(right: 10),
-            decoration: BoxDecoration(
-              color: accentColor,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          NexusAvatar(userId: alumnoId, nombre: alumnoNombre, radius: 14),
-          const SizedBox(width: 10),
-          // Texto
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            flex: 4,
+            child: Row(
               children: [
-                Text(alumnoNombre,
-                    style: NexusText.small
-                        .copyWith(fontWeight: FontWeight.w600),
-                    overflow: TextOverflow.ellipsis),
-                Text(
-                  incidencia.descripcion,
-                  style: NexusText.caption
-                      .copyWith(color: context.nxt.inkSecondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          // Fecha + acción
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(fecha,
-                  style: NexusText.caption
-                      .copyWith(color: context.nxt.inkTertiary, fontSize: 10)),
-              if (onGestionar != null) ...[
-                const SizedBox(height: 4),
-                InkWell(
-                  onTap: onGestionar,
-                  borderRadius: BorderRadius.circular(6),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: context.nxt.border,
-                          width: NexusSizes.borderWidth),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text('Gestionar',
-                        style: NexusText.caption.copyWith(fontSize: 10)),
+                NexusAvatar(userId: alumnoId, nombre: alumnoNombre, radius: 14),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(alumnoNombre,
+                          style: NexusText.small
+                              .copyWith(fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis),
+                      Text(incidencia.descripcion,
+                          style: NexusText.caption
+                              .copyWith(color: context.nxt.inkSecondary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                    ],
                   ),
                 ),
               ],
-            ],
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: tipoBg,
+                borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+              ),
+              child: Text(tipoLabel,
+                  style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: tipoFg),
+                  overflow: TextOverflow.ellipsis),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: estadoBg,
+                borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+              ),
+              child: Text(estadoLabel,
+                  style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: estadoFg),
+                  overflow: TextOverflow.ellipsis),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(fecha,
+                style: NexusText.small
+                    .copyWith(color: context.nxt.inkSecondary)),
+          ),
+          Expanded(
+            flex: 2,
+            child: onGestionar != null
+                ? OutlinedButton(
+                    onPressed: onGestionar,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: NexusColors.primary,
+                      side: const BorderSide(color: NexusColors.primary),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      textStyle: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text('Gestionar'),
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
       ),
@@ -1510,95 +1987,108 @@ class _IncidenciaRow extends StatelessWidget {
   }
 }
 
-// ── Full parte card (en modo Partes) ──────────────────────────────────────────
+// ── Fila de tabla de partes (para validación) ─────────────────────────────────
 
-class _FullParteCard extends StatelessWidget {
+class _ParteTableRow extends StatelessWidget {
   final Seguimiento seguimiento;
   final String alumnoNombre;
+  final int alumnoId;
   final String empresaNombre;
   final VoidCallback onValidar;
 
-  const _FullParteCard({
+  const _ParteTableRow({
     required this.seguimiento,
     required this.alumnoNombre,
+    required this.alumnoId,
     required this.empresaNombre,
     required this.onValidar,
   });
 
   @override
   Widget build(BuildContext context) {
-    final fecha = DateFormat('d MMM yyyy', 'es_ES')
-        .format(seguimiento.fechaRegistro);
+    final fecha = DateFormat('d MMM', 'es_ES').format(seguimiento.fechaRegistro);
 
     return Container(
       decoration: BoxDecoration(
-        color: context.nxt.surface,
-        border: Border(left: BorderSide(color: NexusColors.primary, width: 3)),
-        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 6,
-              offset: const Offset(0, 2)),
-        ],
+        border: Border(
+            bottom: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
       ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(
+          horizontal: NexusSizes.space2XL, vertical: 12),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Expanded(
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                NexusAvatar(userId: alumnoId, nombre: alumnoNombre, radius: 14),
+                const SizedBox(width: 10),
+                Expanded(
                   child: Text(alumnoNombre,
-                      style: NexusText.small
-                          .copyWith(fontWeight: FontWeight.w600),
-                      overflow: TextOverflow.ellipsis)),
-              nexusEstadoBadge('Pendiente centro',
-                  bg: NexusColors.primaryLight,
-                  textColor: NexusColors.primaryText),
-            ],
+                      style: NexusText.small.copyWith(fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis),
+                ),
+              ],
+            ),
           ),
-          if (empresaNombre.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(empresaNombre,
-                style: NexusText.caption
-                    .copyWith(color: context.nxt.inkSecondary)),
-          ],
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Icon(Icons.calendar_today_outlined,
-                  size: 13, color: context.nxt.inkTertiary),
-              const SizedBox(width: 4),
-              Text(fecha, style: NexusText.caption),
-              const SizedBox(width: 14),
-              Icon(Icons.access_time_outlined,
-                  size: 13, color: context.nxt.inkTertiary),
-              const SizedBox(width: 4),
-              Text(fmtH(seguimiento.horasRealizadas),
-                  style: NexusText.caption),
-            ],
-          ),
-          if (seguimiento.descripcion != null &&
-              seguimiento.descripcion!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(seguimiento.descripcion!,
-                style: NexusText.body
-                    .copyWith(color: context.nxt.inkSecondary),
-                maxLines: 2,
+          Expanded(
+            flex: 3,
+            child: Text(empresaNombre,
+                style: NexusText.small.copyWith(color: context.nxt.inkSecondary),
                 overflow: TextOverflow.ellipsis),
-          ],
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(fecha, style: NexusText.small),
+          ),
+          Expanded(
+            flex: 1,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: NexusColors.primaryLight,
+                borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+              ),
+              child: Text(
+                fmtH(seguimiento.horasRealizadas),
+                style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: NexusColors.primaryText),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Text(
+                seguimiento.descripcion?.isNotEmpty == true
+                    ? seguimiento.descripcion!
+                    : '—',
+                style: NexusText.small.copyWith(color: context.nxt.inkSecondary),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 2,
             child: FilledButton.icon(
               onPressed: onValidar,
-              icon: const Icon(Icons.check, size: 15),
-              label: const Text('Dar visto bueno',
-                  style: TextStyle(fontWeight: FontWeight.w500)),
+              icon: const Icon(Icons.check, size: 14),
+              label: const Text('Validar'),
               style: FilledButton.styleFrom(
-                  backgroundColor: NexusColors.success,
-                  padding: const EdgeInsets.symmetric(vertical: 10)),
+                backgroundColor: NexusColors.success,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                textStyle: const TextStyle(
+                    fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w500),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
             ),
           ),
         ],
@@ -1607,108 +2097,26 @@ class _FullParteCard extends StatelessWidget {
   }
 }
 
-// ── Full incidencia card ───────────────────────────────────────────────────────
+// ── Column header helper ──────────────────────────────────────────────────────
 
-class _FullIncidenciaCard extends StatelessWidget {
-  final Incidencia incidencia;
-  final String alumnoNombre;
-  final VoidCallback? onCambiarEstado;
-
-  const _FullIncidenciaCard({
-    required this.incidencia,
-    required this.alumnoNombre,
-    this.onCambiarEstado,
-  });
+class _ColH extends StatelessWidget {
+  final String label;
+  final int flex;
+  const _ColH(this.label, {required this.flex});
 
   @override
   Widget build(BuildContext context) {
-    final fecha = DateFormat('d MMM yyyy', 'es_ES')
-        .format(incidencia.fechaCreacion);
-
-    Color accentColor;
-    Color bgColor;
-    Color textColor;
-    String label;
-
-    switch (incidencia.estado) {
-      case 'ABIERTA':
-        accentColor = NexusColors.danger;
-        bgColor = NexusColors.dangerLight;
-        textColor = NexusColors.dangerText;
-        label = 'Abierta';
-        break;
-      case 'EN_PROCESO':
-        accentColor = NexusColors.primary;
-        bgColor = NexusColors.primaryLight;
-        textColor = NexusColors.primaryText;
-        label = 'En proceso';
-        break;
-      case 'RESUELTA':
-        accentColor = NexusColors.success;
-        bgColor = NexusColors.successLight;
-        textColor = NexusColors.successText;
-        label = 'Resuelta';
-        break;
-      default:
-        accentColor = NexusColors.inkSecondary;
-        bgColor = context.nxt.surfaceAlt;
-        textColor = NexusColors.neutralText;
-        label = incidencia.estado;
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: context.nxt.surface,
-        border: Border(left: BorderSide(color: accentColor, width: 3)),
-        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 6,
-              offset: const Offset(0, 2)),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                  child: Text(alumnoNombre,
-                      style: NexusText.small
-                          .copyWith(fontWeight: FontWeight.w600),
-                      overflow: TextOverflow.ellipsis)),
-              nexusEstadoBadge(label, bg: bgColor, textColor: textColor),
-            ],
-          ),
-          if (incidencia.tipo != null) ...[
-            const SizedBox(height: 2),
-            Text(incidencia.tipo!,
-                style: NexusText.caption
-                    .copyWith(color: context.nxt.inkSecondary)),
-          ],
-          const SizedBox(height: 8),
-          Text(incidencia.descripcion,
-              style: NexusText.body
-                  .copyWith(color: context.nxt.inkSecondary),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 4),
-          Text(fecha,
-              style: NexusText.caption
-                  .copyWith(color: context.nxt.inkTertiary)),
-          if (onCambiarEstado != null) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: onCambiarEstado,
-                child: const Text('Cambiar estado'),
-              ),
-            ),
-          ],
-        ],
+    return Expanded(
+      flex: flex,
+      child: Text(
+        label,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: context.nxt.inkTertiary,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }
@@ -1895,16 +2303,16 @@ class _MobileBottomNav extends StatelessWidget {
           _BottomItem(
             icon: Icons.assignment_outlined,
             activeIcon: Icons.assignment,
-            label: pendientePartes > 0 ? 'Partes ($pendientePartes)' : 'Partes',
+            label: 'Partes',
+            badge: pendientePartes,
             isActive: mode == _Mode.partes,
             onTap: () => onChangeMode(_Mode.partes),
           ),
           _BottomItem(
             icon: Icons.warning_amber_outlined,
             activeIcon: Icons.warning_amber,
-            label: pendienteIncidencias > 0
-                ? 'Alertas ($pendienteIncidencias)'
-                : 'Alertas',
+            label: 'Alertas',
+            badge: pendienteIncidencias,
             isActive: mode == _Mode.incidencias,
             onTap: () => onChangeMode(_Mode.incidencias),
           ),
@@ -1927,6 +2335,7 @@ class _BottomItem extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final int badge;
 
   const _BottomItem({
     required this.icon,
@@ -1934,6 +2343,7 @@ class _BottomItem extends StatelessWidget {
     required this.label,
     required this.isActive,
     required this.onTap,
+    this.badge = 0,
   });
 
   @override
@@ -1946,23 +2356,36 @@ class _BottomItem extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                isActive ? activeIcon : icon,
-                size: 22,
-                color: isActive
-                    ? NexusColors.primary
-                    : context.nxt.inkTertiary,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    isActive ? activeIcon : icon,
+                    size: 22,
+                    color: isActive ? NexusColors.primary : context.nxt.inkTertiary,
+                  ),
+                  if (badge > 0)
+                    Positioned(
+                      top: -3,
+                      right: -5,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: NexusColors.danger,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: context.nxt.surface, width: 1.5),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 2),
               Text(label,
                   style: TextStyle(
                       fontSize: 10,
-                      color: isActive
-                          ? NexusColors.primary
-                          : context.nxt.inkTertiary,
-                      fontWeight: isActive
-                          ? FontWeight.w600
-                          : FontWeight.normal),
+                      color: isActive ? NexusColors.primary : context.nxt.inkTertiary,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.normal),
                   overflow: TextOverflow.ellipsis),
             ],
           ),
@@ -2215,29 +2638,130 @@ class _SelectPrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    final provider = context.watch<TutorCentroProvider>();
+    final activos = provider.practicas.where((p) => p.estado == 'ACTIVA').length;
+    final pendPartes = provider.todosPendientesCentro.length;
+    final incAbiertas = provider.todasIncidencias.where((i) => i.estaAbierta).length;
+    final auth = context.watch<AuthProvider>();
+    final firstName = auth.user?.nombreCompleto.split(' ').first ?? 'Tutor';
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(28),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: NexusColors.primaryLight,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.people_outlined,
-                size: 30, color: NexusColors.primary),
+          // Saludo
+          Text('Hola, $firstName 👋',
+              style: NexusText.heading2.copyWith(letterSpacing: -0.3)),
+          const SizedBox(height: 4),
+          Text('Resumen de hoy · ${_fmtHoy()}',
+              style: NexusText.body.copyWith(color: context.nxt.inkSecondary)),
+          const SizedBox(height: 24),
+
+          // Mini stat cards
+          Row(
+            children: [
+              _MiniStat(
+                  valor: '$activos',
+                  label: 'Alumnos activos',
+                  color: NexusColors.success,
+                  icon: Icons.people_outline),
+              const SizedBox(width: 12),
+              _MiniStat(
+                  valor: '$pendPartes',
+                  label: 'Partes por validar',
+                  color: NexusColors.warning,
+                  icon: Icons.pending_actions_outlined),
+              const SizedBox(width: 12),
+              _MiniStat(
+                  valor: '$incAbiertas',
+                  label: 'Incidencias abiertas',
+                  color: NexusColors.danger,
+                  icon: Icons.warning_amber_outlined),
+            ],
           ),
-          const SizedBox(height: 16),
-          Text('Selecciona un alumno', style: NexusText.heading3),
-          const SizedBox(height: 6),
-          Text(
-            'Elige un alumno de la lista para ver\nsu seguimiento y validar sus partes.',
-            style: NexusText.body.copyWith(color: context.nxt.inkSecondary),
-            textAlign: TextAlign.center,
+          const SizedBox(height: 32),
+
+          // Prompt
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: NexusColors.primary.withAlpha(8),
+              border: Border.all(color: NexusColors.primary.withAlpha(40)),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: NexusColors.primaryLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.touch_app_outlined,
+                      size: 22, color: NexusColors.primary),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Selecciona un alumno',
+                          style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600)),
+                      SizedBox(height: 3),
+                      Text('Elige un alumno de la lista para ver su seguimiento, validar partes y gestionar incidencias.',
+                          style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: NexusColors.primary)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MiniStat extends StatelessWidget {
+  final String valor;
+  final String label;
+  final Color color;
+  final IconData icon;
+  const _MiniStat({required this.valor, required this.label, required this.color, required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: context.nxt.surface,
+          border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(height: 8),
+            Text(valor,
+                style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: color)),
+            const SizedBox(height: 2),
+            Text(label,
+                style: NexusText.caption.copyWith(color: context.nxt.inkSecondary),
+                maxLines: 2),
+          ],
+        ),
       ),
     );
   }
@@ -2259,64 +2783,6 @@ class _ErrorState extends StatelessWidget {
           Text(message, style: NexusText.body),
           const SizedBox(height: NexusSizes.spaceLG),
           OutlinedButton(onPressed: onRetry, child: const Text('Reintentar')),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Chat placeholder ───────────────────────────────────────────────────────────
-
-class _ChatPlaceholder extends StatelessWidget {
-  const _ChatPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: NexusColors.primaryLight,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.chat_bubble_outline,
-                size: 28, color: NexusColors.primary),
-          ),
-          const SizedBox(height: 16),
-          Text('Chat', style: NexusText.heading3),
-          const SizedBox(height: 6),
-          Text(
-            'El chat en tiempo real estará disponible\nen el Hito 4 con WebSocket/STOMP.',
-            style: NexusText.body.copyWith(color: context.nxt.inkSecondary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: NexusColors.primaryLight,
-              border:
-                  Border.all(color: const Color(0xFFB5D4F4), width: 0.5),
-              borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.info_outline,
-                    size: 14, color: NexusColors.primaryText),
-                const SizedBox(width: 8),
-                Text(
-                  'Pendiente: Hito 4',
-                  style:
-                      NexusText.small.copyWith(color: NexusColors.primaryText),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -2487,423 +2953,9 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// ── Dashboard ──────────────────────────────────────────────────────────────────
-
-class _VistaDashboard extends StatelessWidget {
-  final TutorCentroProvider provider;
-  const _VistaDashboard({required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final activas =
-        provider.practicas.where((p) => p.estado == 'ACTIVA').length;
-    final convenios =
-        provider.practicas.map((p) => p.empresaNombre).toSet().length;
-    final incAbiertas =
-        provider.todasIncidencias.where((i) => i.estaAbierta).length;
-    final partesValidar = provider.todosPendientesCentro.length;
-    final incRecientes = provider.todasIncidencias.take(4).toList();
-
-    if (provider.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    return RefreshIndicator(
-      onRefresh: () => context.read<TutorCentroProvider>().cargar(),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Panel del Centro Educativo',
-                          style: NexusText.heading2
-                              .copyWith(letterSpacing: -0.3)),
-                      const SizedBox(height: 2),
-                      Text(
-                        'CampusFP · ${auth.user?.nombreCompleto ?? ''} · Tutor FCT',
-                        style: NexusText.body
-                            .copyWith(color: context.nxt.inkSecondary),
-                      ),
-                    ],
-                  ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          'Las prácticas se crean desde el panel de administración'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  ),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Nueva práctica'),
-                  style: OutlinedButton.styleFrom(
-                    textStyle: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w500),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Stat cards
-            Row(
-              children: [
-                _DashStatCard(
-                    valor: activas,
-                    label: 'Alumnos activos',
-                    color: NexusColors.success),
-                const SizedBox(width: 12),
-                _DashStatCard(
-                    valor: convenios,
-                    label: 'Convenios activos',
-                    color: NexusColors.primary),
-                const SizedBox(width: 12),
-                _DashStatCard(
-                    valor: incAbiertas,
-                    label: 'Incidencias abiertas',
-                    color: NexusColors.danger),
-                const SizedBox(width: 12),
-                _DashStatCard(
-                    valor: partesValidar,
-                    label: 'Partes por validar',
-                    color: NexusColors.warning),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Two-column layout
-            LayoutBuilder(
-              builder: (ctx, constraints) {
-                if (constraints.maxWidth > 680) {
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                          flex: 3,
-                          child: _AlumnosYCarga(provider: provider)),
-                      const SizedBox(width: 16),
-                      Expanded(
-                          flex: 2,
-                          child: _IncidenciasRecientes(
-                              incidencias: incRecientes,
-                              provider: provider)),
-                    ],
-                  );
-                }
-                return Column(
-                  children: [
-                    _AlumnosYCarga(provider: provider),
-                    const SizedBox(height: 16),
-                    _IncidenciasRecientes(
-                        incidencias: incRecientes, provider: provider),
-                  ],
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+String _fmtHoy() {
+  final now = DateTime.now();
+  const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+  return '${now.day} ${meses[now.month - 1]}. ${now.year}';
 }
 
-class _DashStatCard extends StatelessWidget {
-  final int valor;
-  final String label;
-  final Color color;
-  const _DashStatCard(
-      {required this.valor, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: context.nxt.surface,
-          border: Border.all(
-              color: context.nxt.border, width: NexusSizes.borderWidth),
-          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withAlpha(5),
-                blurRadius: 4,
-                offset: const Offset(0, 1))
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '$valor',
-              style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: color,
-                  letterSpacing: -0.5),
-            ),
-            const SizedBox(height: 4),
-            Text(label,
-                style:
-                    NexusText.caption.copyWith(color: context.nxt.inkSecondary),
-                maxLines: 2),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AlumnosYCarga extends StatelessWidget {
-  final TutorCentroProvider provider;
-  const _AlumnosYCarga({required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    final practicas = provider.practicas;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: context.nxt.surface,
-        border: Border.all(
-            color: context.nxt.border, width: NexusSizes.borderWidth),
-        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withAlpha(5),
-              blurRadius: 4,
-              offset: const Offset(0, 1))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-            child: Text('ALUMNOS Y CARGA',
-                style: NexusText.label
-                    .copyWith(color: context.nxt.inkTertiary, letterSpacing: 1.0)),
-          ),
-          Divider(
-              height: 1,
-              thickness: NexusSizes.borderWidth,
-              color: context.nxt.border),
-          if (practicas.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text('Sin alumnos asignados',
-                  style:
-                      NexusText.body.copyWith(color: context.nxt.inkSecondary)),
-            )
-          else
-            ...practicas.asMap().entries.map((e) {
-              final p = e.value;
-              final isLast = e.key == practicas.length - 1;
-              final horas = provider.horasCompletadasDe(p.id);
-              final total = p.horasTotales ?? 240;
-              final progreso =
-                  total > 0 ? (horas / total).clamp(0.0, 1.0) : 0.0;
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  border: isLast
-                      ? null
-                      : Border(
-                          bottom: BorderSide(
-                              color: context.nxt.border,
-                              width: NexusSizes.borderWidth)),
-                ),
-                child: Row(
-                  children: [
-                    NexusAvatar(userId: p.alumnoId, nombre: p.alumnoNombre, radius: 16),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(p.alumnoNombre,
-                              style: NexusText.small
-                                  .copyWith(fontWeight: FontWeight.w600),
-                              overflow: TextOverflow.ellipsis),
-                          Text(
-                            '${p.empresaNombre} · ${horas}/${total}h',
-                            style: NexusText.caption.copyWith(
-                                color: context.nxt.inkSecondary),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          LinearProgressIndicator(
-                            value: progreso,
-                            backgroundColor: context.nxt.border,
-                            color: progreso > 0.8
-                                ? NexusColors.success
-                                : NexusColors.primary,
-                            minHeight: 4,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }),
-        ],
-      ),
-    );
-  }
-
-  String _initials(String nombre) {
-    final parts =
-        nombre.trim().split(' ').where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts[0][0].toUpperCase();
-    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-  }
-}
-
-class _IncidenciasRecientes extends StatelessWidget {
-  final List<Incidencia> incidencias;
-  final TutorCentroProvider provider;
-  const _IncidenciasRecientes(
-      {required this.incidencias, required this.provider});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: context.nxt.surface,
-        border: Border.all(
-            color: context.nxt.border, width: NexusSizes.borderWidth),
-        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withAlpha(5),
-              blurRadius: 4,
-              offset: const Offset(0, 1))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-            child: Text('INCIDENCIAS RECIENTES',
-                style: NexusText.label
-                    .copyWith(color: context.nxt.inkTertiary, letterSpacing: 1.0)),
-          ),
-          Divider(
-              height: 1,
-              thickness: NexusSizes.borderWidth,
-              color: context.nxt.border),
-          if (incidencias.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Text('Sin incidencias recientes',
-                  style:
-                      NexusText.body.copyWith(color: context.nxt.inkSecondary)),
-            )
-          else
-            ...incidencias.asMap().entries.map((e) {
-              final isLast = e.key == incidencias.length - 1;
-              final inc = e.value;
-              final practica = provider.practicaDe(inc.practicaId);
-              final alumnoNombre = practica?.alumnoNombre ?? 'Alumno';
-              final fecha =
-                  DateFormat('d/MM', 'es_ES').format(inc.fechaCreacion);
-
-              Color badgeBg;
-              Color badgeText;
-              String badgeLabel;
-              switch (inc.estado) {
-                case 'ABIERTA':
-                  badgeBg = NexusColors.dangerLight;
-                  badgeText = NexusColors.dangerText;
-                  badgeLabel = 'Abierta';
-                  break;
-                case 'EN_PROCESO':
-                  badgeBg = NexusColors.primaryLight;
-                  badgeText = NexusColors.primaryText;
-                  badgeLabel = 'Proceso';
-                  break;
-                case 'RESUELTA':
-                  badgeBg = NexusColors.successLight;
-                  badgeText = NexusColors.successText;
-                  badgeLabel = 'Resuelta';
-                  break;
-                default:
-                  badgeBg = const Color(0xFFF1EFE8);
-                  badgeText = NexusColors.neutralText;
-                  badgeLabel = 'Cerrada';
-              }
-
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 11),
-                decoration: BoxDecoration(
-                  border: isLast
-                      ? null
-                      : Border(
-                          bottom: BorderSide(
-                              color: context.nxt.border,
-                              width: NexusSizes.borderWidth)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      margin: const EdgeInsets.only(top: 4, right: 10),
-                      decoration: BoxDecoration(
-                        color: inc.estaAbierta
-                            ? NexusColors.danger
-                            : NexusColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '$alumnoNombre — ${inc.descripcion}',
-                            style: NexusText.small
-                                .copyWith(fontWeight: FontWeight.w500),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            '$fecha · ${practica?.tutorCentroNombre ?? ''}',
-                            style: NexusText.caption.copyWith(
-                                color: context.nxt.inkSecondary, fontSize: 10),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    nexusEstadoBadge(badgeLabel,
-                        bg: badgeBg, textColor: badgeText),
-                  ],
-                ),
-              );
-            }),
-        ],
-      ),
-    );
-  }
-}

@@ -39,7 +39,7 @@ public class Seguimiento {
      * Cantidad de horas realizadas en esa fecha específica.
      */
     @Column(name = "horas_realizadas", nullable = false)
-    private Integer horasRealizadas;
+    private Double horasRealizadas;
 
     /**
      * Descripción detallada de las tareas llevadas a cabo.

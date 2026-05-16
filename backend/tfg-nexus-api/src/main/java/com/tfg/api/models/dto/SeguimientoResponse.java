@@ -11,7 +11,7 @@ public record SeguimientoResponse(
     Long id,
     Long practicaId,
     LocalDate fechaRegistro,
-    Integer horasRealizadas,
+    Double horasRealizadas,
     String descripcion,
     String estado,
     Long validadoPorId,

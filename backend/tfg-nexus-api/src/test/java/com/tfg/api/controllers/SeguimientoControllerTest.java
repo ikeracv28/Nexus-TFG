@@ -36,7 +36,7 @@ class SeguimientoControllerTest {
     @MockBean private com.tfg.api.security.TokenBlacklistService tokenBlacklistService;
 
     private SeguimientoResponse seguimientoResponse(String estado) {
-        return new SeguimientoResponse(1L, 10L, LocalDate.now(), 4,
+        return new SeguimientoResponse(1L, 10L, LocalDate.now(), 4.0,
                 "Descripción de tareas realizadas hoy", estado,
                 null, null, null, LocalDateTime.now());
     }
@@ -48,7 +48,7 @@ class SeguimientoControllerTest {
     @WithMockUser(roles = "ALUMNO")
     void alumno_registra_seguimiento() throws Exception {
         SeguimientoRequest req = new SeguimientoRequest(
-                10L, LocalDate.now(), 4, "Descripción de tareas realizadas hoy");
+                10L, LocalDate.now(), 4.0, "Descripción de tareas realizadas hoy");
         when(seguimientoService.registrar(any(SeguimientoRequest.class)))
                 .thenReturn(seguimientoResponse("PENDIENTE_EMPRESA"));
 
@@ -66,7 +66,7 @@ class SeguimientoControllerTest {
     @WithMockUser(roles = "TUTOR_EMPRESA")
     void tutor_empresa_no_puede_registrar() throws Exception {
         SeguimientoRequest req = new SeguimientoRequest(
-                10L, LocalDate.now(), 4, "Descripción de tareas realizadas hoy");
+                10L, LocalDate.now(), 4.0, "Descripción de tareas realizadas hoy");
 
         mockMvc.perform(post("/api/v1/seguimientos")
                         .with(csrf())
@@ -79,7 +79,7 @@ class SeguimientoControllerTest {
     @DisplayName("Sin autenticar no puede registrar — 401")
     void sin_autenticar_no_registra() throws Exception {
         SeguimientoRequest req = new SeguimientoRequest(
-                10L, LocalDate.now(), 4, "Descripción de tareas realizadas hoy");
+                10L, LocalDate.now(), 4.0, "Descripción de tareas realizadas hoy");
 
         mockMvc.perform(post("/api/v1/seguimientos")
                         .with(csrf())
@@ -93,7 +93,7 @@ class SeguimientoControllerTest {
     @WithMockUser(roles = "ALUMNO")
     void horas_invalidas_devuelve_400() throws Exception {
         SeguimientoRequest req = new SeguimientoRequest(
-                10L, LocalDate.now(), 0, "Descripción de tareas realizadas hoy");
+                10L, LocalDate.now(), 0.0, "Descripción de tareas realizadas hoy");
 
         mockMvc.perform(post("/api/v1/seguimientos")
                         .with(csrf())

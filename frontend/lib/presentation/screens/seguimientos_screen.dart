@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/seguimiento_model.dart';
+import '../../data/services/seguimiento_service.dart';
 import '../providers/practica_provider.dart';
-import 'seguimiento_screen.dart';
 
 class SeguimientosScreen extends StatefulWidget {
   const SeguimientosScreen({super.key});
@@ -36,7 +36,7 @@ class _SeguimientosScreenState extends State<SeguimientosScreen> {
         final now = DateTime.now();
         final horasMes = seguimientos
             .where((s) => s.fechaRegistro.year == now.year && s.fechaRegistro.month == now.month)
-            .fold(0, (sum, s) => sum + s.horasRealizadas);
+            .fold(0.0, (sum, s) => sum + s.horasRealizadas);
 
         final pendientes = seguimientos
             .where((s) => s.estado == 'PENDIENTE_EMPRESA' || s.estado == 'PENDIENTE_CENTRO')
@@ -53,10 +53,11 @@ class _SeguimientosScreenState extends State<SeguimientosScreen> {
         return Scaffold(
           backgroundColor: context.nxt.surfaceAlt,
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SeguimientoScreen()),
-            ).then((_) => provider.cargarDashboard()),
+            onPressed: () => showDialog(
+              context: context,
+              barrierColor: Colors.black.withOpacity(0.45),
+              builder: (_) => _NuevoParteDialog(onGuardado: provider.cargarDashboard),
+            ),
             icon: const Icon(Icons.add),
             label: const Text('Nuevo parte'),
             backgroundColor: NexusColors.primary,
@@ -133,10 +134,10 @@ class _PageHeader extends StatelessWidget {
 // ─── KPI Cards ────────────────────────────────────────────────────────────────
 
 class _KpiRow extends StatelessWidget {
-  final int horasCompletadas;
+  final double horasCompletadas;
   final int horasTotales;
   final int pct;
-  final int horasMes;
+  final double horasMes;
   final int pendientes;
 
   const _KpiRow({
@@ -146,6 +147,12 @@ class _KpiRow extends StatelessWidget {
     required this.horasMes,
     required this.pendientes,
   });
+
+  static String _fmtHDisplay(num h) {
+    final d = h.toDouble();
+    if (d == d.truncateToDouble()) return '${d.toInt()}h';
+    return '${d.truncate()}h 30min';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +173,7 @@ class _KpiRow extends StatelessWidget {
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
-                      '${horasCompletadas}h',
+                      _fmtHDisplay(horasCompletadas),
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 32,
@@ -196,7 +203,7 @@ class _KpiRow extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('$pct% Completado', style: NexusText.caption.copyWith(color: NexusColors.primary)),
-                    Text('${horasTotales - horasCompletadas}h restantes', style: NexusText.caption),
+                    Text('${_fmtHDisplay(horasTotales - horasCompletadas)} restantes', style: NexusText.caption),
                   ],
                 ),
               ],
@@ -215,7 +222,7 @@ class _KpiRow extends StatelessWidget {
                   textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
-                      '${horasMes}h',
+                      _fmtHDisplay(horasMes),
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 32,
@@ -512,13 +519,13 @@ class _SeguimientoRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(flex: 2, child: Text(_fmtDate(s.fechaRegistro), style: NexusText.small)),
-          Expanded(flex: 1, child: Text('${s.horasRealizadas}h', style: NexusText.small)),
+          Expanded(flex: 1, child: Text(_fmtH(s.horasRealizadas), style: NexusText.small)),
           Expanded(
             flex: 5,
             child: Text(
               s.descripcion?.isNotEmpty == true
                   ? s.descripcion!
-                  : '${s.horasRealizadas} horas de trabajo',
+                  : '${_fmtH(s.horasRealizadas)} de trabajo',
               style: NexusText.small,
               overflow: TextOverflow.ellipsis,
             ),
@@ -532,6 +539,12 @@ class _SeguimientoRow extends StatelessWidget {
   static String _fmtDate(DateTime d) {
     const m = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     return '${d.day} ${m[d.month - 1]}, ${d.year}';
+  }
+
+  static String _fmtH(double h) {
+    if (h == h.truncateToDouble()) return '${h.toInt()}h';
+    final e = h.truncate();
+    return e == 0 ? '30min' : '${e}h 30min';
   }
 }
 
@@ -584,6 +597,388 @@ class _EstadoBadge extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Dialog nuevo parte ───────────────────────────────────────────────────────
+
+class _NuevoParteDialog extends StatefulWidget {
+  final VoidCallback onGuardado;
+  const _NuevoParteDialog({required this.onGuardado});
+
+  @override
+  State<_NuevoParteDialog> createState() => _NuevoParteDialogState();
+}
+
+class _NuevoParteDialogState extends State<_NuevoParteDialog> {
+  DateTime _fecha = DateTime.now();
+  double _horas = 8.0;
+  final _descripcionCtrl = TextEditingController();
+  bool _enviando = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _descripcionCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _seleccionarFecha() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _fecha,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      locale: const Locale('es', 'ES'),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: Theme.of(ctx).colorScheme.copyWith(
+            primary: NexusColors.primary,
+            onPrimary: Colors.white,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _fecha = picked);
+  }
+
+  Future<void> _enviar() async {
+    final desc = _descripcionCtrl.text.trim();
+    if (desc.length < 10) {
+      setState(() => _error = 'La descripción debe tener al menos 10 caracteres.');
+      return;
+    }
+    setState(() { _enviando = true; _error = null; });
+    try {
+      final provider = context.read<PracticaProvider>();
+      final practica = provider.practicaActiva;
+      if (practica == null) throw Exception('No tienes una práctica activa.');
+      final nuevo = await SeguimientoService().registrar(
+        practicaId: practica.id,
+        fechaRegistro: _fecha,
+        horasRealizadas: _horas,
+        descripcion: desc,
+      );
+      provider.agregarSeguimiento(nuevo);
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onGuardado();
+      }
+    } catch (e) {
+      setState(() { _enviando = false; _error = e.toString().replaceFirst('Exception: ', ''); });
+    }
+  }
+
+  static String _fmtHoras(double h) {
+    if (h == h.truncateToDouble()) return '${h.toInt()}h';
+    final enteras = h.truncate();
+    return enteras == 0 ? '30min' : '${enteras}h 30min';
+  }
+
+  static String _fmtFecha(DateTime d) {
+    const dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+    const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+      'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    return '${dias[d.weekday - 1]}, ${d.day} de ${meses[d.month - 1]} de ${d.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.nxt.surface,
+              borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+              border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.5 : 0.12),
+                  blurRadius: 32,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Header ──
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 16, 20),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38, height: 38,
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF0D2B4F) : NexusColors.primaryLight,
+                          borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
+                        ),
+                        child: Icon(Icons.edit_note_rounded, size: 20,
+                          color: isDark ? const Color(0xFF7AB5F5) : NexusColors.primary),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Nuevo parte de trabajo',
+                              style: TextStyle(fontFamily: 'Inter', fontSize: 15,
+                                fontWeight: FontWeight.w600, color: context.nxt.ink)),
+                            const SizedBox(height: 2),
+                            Text('Registra las horas y tareas realizadas.', style: NexusText.caption),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, size: 18, color: context.nxt.inkTertiary),
+                        onPressed: () => Navigator.pop(context),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Divider(height: 1, thickness: NexusSizes.borderWidth, color: context.nxt.border),
+
+                // ── Body ──
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          // Fecha
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Fecha', style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                                  fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
+                                const SizedBox(height: 8),
+                                GestureDetector(
+                                  onTap: _seleccionarFecha,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                    decoration: BoxDecoration(
+                                      color: context.nxt.surfaceAlt,
+                                      border: Border.all(color: context.nxt.border),
+                                      borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.calendar_today_outlined, size: 15,
+                                          color: context.nxt.inkSecondary),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(_fmtFecha(_fecha),
+                                            style: NexusText.small, overflow: TextOverflow.ellipsis),
+                                        ),
+                                        Icon(Icons.unfold_more, size: 15, color: context.nxt.inkTertiary),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Horas stepper
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Horas', style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                                fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
+                              const SizedBox(height: 8),
+                              Container(
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: context.nxt.surfaceAlt,
+                                  border: Border.all(color: context.nxt.border),
+                                  borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                                    _StepBtn(
+                                      icon: Icons.remove,
+                                      enabled: _horas > 0.5,
+                                      onTap: _horas > 0.5 ? () => setState(() => _horas = (_horas - 0.5).clamp(0.5, 24.0)) : null,
+                                    ),
+                                    SizedBox(
+                                      width: 54,
+                                      child: Text(_fmtHoras(_horas),
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(fontFamily: 'Inter', fontSize: 14,
+                                          fontWeight: FontWeight.w600, color: context.nxt.ink)),
+                                    ),
+                                    _StepBtn(
+                                      icon: Icons.add,
+                                      enabled: _horas < 24,
+                                      onTap: _horas < 24 ? () => setState(() => _horas = (_horas + 0.5).clamp(0.5, 24.0)) : null,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      Text('Descripción de las tareas', style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                        fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _descripcionCtrl,
+                        maxLines: 4,
+                        maxLength: 1000,
+                        decoration: InputDecoration(
+                          hintText: 'Describe brevemente las tareas realizadas...',
+                          hintStyle: TextStyle(color: context.nxt.inkTertiary, fontSize: 13),
+                          filled: true,
+                          fillColor: context.nxt.surfaceAlt,
+                          counterStyle: TextStyle(color: context.nxt.inkTertiary, fontSize: 11),
+                          contentPadding: const EdgeInsets.all(NexusSizes.spaceMD),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                            borderSide: BorderSide(color: context.nxt.border),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                            borderSide: BorderSide(color: context.nxt.border),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                            borderSide: const BorderSide(color: NexusColors.primary, width: 1.5),
+                          ),
+                        ),
+                        style: NexusText.small,
+                      ),
+
+                      if (_error != null) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.error_outline, size: 14, color: NexusColors.danger),
+                            const SizedBox(width: 6),
+                            Flexible(child: Text(_error!,
+                              style: NexusText.caption.copyWith(color: NexusColors.danger))),
+                          ],
+                        ),
+                      ],
+
+                      const SizedBox(height: 16),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF0D2B4F) : NexusColors.primaryLight,
+                          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.info_outline, size: 14,
+                              color: isDark ? const Color(0xFF7AB5F5) : NexusColors.primary),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Quedará pendiente de validación por tu tutor de empresa y, después, por tu tutor del centro.',
+                                style: NexusText.caption.copyWith(
+                                  color: isDark ? const Color(0xFF7AB5F5) : NexusColors.primaryText),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Divider(height: 1, thickness: NexusSizes.borderWidth, color: context.nxt.border),
+
+                // ── Footer ──
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        onPressed: _enviando ? null : () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: context.nxt.inkSecondary,
+                          side: BorderSide(color: context.nxt.border),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13,
+                            fontWeight: FontWeight.w500),
+                        ),
+                        child: const Text('Cancelar'),
+                      ),
+                      const SizedBox(width: 10),
+                      FilledButton(
+                        onPressed: _enviando ? null : _enviar,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: NexusColors.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13,
+                            fontWeight: FontWeight.w500),
+                        ),
+                        child: _enviando
+                            ? const SizedBox(width: 16, height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Text('Registrar parte'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Stepper button ──────────────────────────────────────────────────────────
+
+class _StepBtn extends StatelessWidget {
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback? onTap;
+  const _StepBtn({required this.icon, required this.enabled, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 42,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: enabled
+              ? NexusColors.primary.withOpacity(0.08)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD - 2),
+        ),
+        child: Icon(icon, size: 18,
+          color: enabled ? NexusColors.primary : context.nxt.border),
+      ),
     );
   }
 }

@@ -6,7 +6,7 @@ import '../../data/models/seguimiento_model.dart';
 // ── Donut de progreso FCT ──────────────────────────────────────────────────────
 
 class ProgresoDonutChart extends StatelessWidget {
-  final int horasCompletadas;
+  final double horasCompletadas;
   final int horasTotales;
 
   const ProgresoDonutChart({

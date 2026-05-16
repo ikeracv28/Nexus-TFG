@@ -28,7 +28,7 @@ class SeguimientoService {
   Future<Seguimiento> registrar({
     required int practicaId,
     required DateTime fechaRegistro,
-    required int horasRealizadas,
+    required double horasRealizadas,
     String? descripcion,
   }) async {
     try {

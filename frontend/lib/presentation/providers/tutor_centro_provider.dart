@@ -67,9 +67,9 @@ class TutorCentroProvider extends ChangeNotifier {
           .where((a) => a.tipo == 'INJUSTIFICADA')
           .toList();
 
-  int horasCompletadasDe(int practicaId) => seguimientosDe(practicaId)
+  double horasCompletadasDe(int practicaId) => seguimientosDe(practicaId)
       .where((s) => s.estado == 'COMPLETADO')
-      .fold(0, (sum, s) => sum + s.horasRealizadas);
+      .fold(0.0, (sum, s) => sum + s.horasRealizadas);
 
   EvaluacionFinalModel? evaluacionDe(int practicaId) =>
       _evaluacionPorPractica[practicaId];

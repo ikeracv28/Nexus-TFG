@@ -39,9 +39,9 @@ class TutorEmpresaProvider extends ChangeNotifier {
       .expand((l) => l)
       .length;
 
-  int get totalHoras => _todosSeguimientosPorPractica.values
+  double get totalHoras => _todosSeguimientosPorPractica.values
       .expand((l) => l)
-      .fold(0, (sum, s) => sum + s.horasRealizadas);
+      .fold(0.0, (sum, s) => sum + s.horasRealizadas);
 
   int get totalValidados => _todosSeguimientosPorPractica.values
       .expand((l) => l)
@@ -53,12 +53,12 @@ class TutorEmpresaProvider extends ChangeNotifier {
       _practicas.where((p) => p.estado == 'ACTIVA').toList();
 
   // Horas aprobadas por la empresa en prácticas ACTIVAS
-  int get totalHorasValidadasEmpresa => _practicasActivas.fold(0, (sum, p) {
+  double get totalHorasValidadasEmpresa => _practicasActivas.fold(0, (sum, p) {
         final segs = _todosSeguimientosPorPractica[p.id] ?? [];
         return sum +
             segs
                 .where((s) => s.estado == 'PENDIENTE_CENTRO' || s.estado == 'COMPLETADO')
-                .fold(0, (s2, seg) => s2 + seg.horasRealizadas);
+                .fold(0.0, (s2, seg) => s2 + seg.horasRealizadas);
       });
 
   // Horas totales comprometidas solo en convenios ACTIVOS
@@ -66,8 +66,8 @@ class TutorEmpresaProvider extends ChangeNotifier {
       _practicasActivas.fold(0, (sum, p) => sum + (p.horasTotales ?? 0));
 
   // Horas que le quedan al alumno hasta completar el convenio activo
-  int get totalHorasRestantes =>
-      (totalHorasConvenio - totalHorasValidadasEmpresa).clamp(0, totalHorasConvenio);
+  double get totalHorasRestantes =>
+      (totalHorasConvenio - totalHorasValidadasEmpresa).clamp(0.0, totalHorasConvenio.toDouble());
 
   // Seguimientos de una práctica concreta
   List<Seguimiento> seguimientosDe(int practicaId) =>

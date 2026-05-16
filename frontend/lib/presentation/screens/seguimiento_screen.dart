@@ -88,7 +88,7 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
       final nuevo = await _seguimientoService.registrar(
         practicaId: practica.id,
         fechaRegistro: _fechaSeleccionada,
-        horasRealizadas: int.parse(_horasCtrl.text.trim()),
+        horasRealizadas: double.parse(_horasCtrl.text.trim()),
         descripcion: _descripcionCtrl.text.trim(),
       );
 

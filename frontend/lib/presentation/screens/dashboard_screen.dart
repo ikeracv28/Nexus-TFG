@@ -456,7 +456,7 @@ class _DashboardContent extends StatelessWidget {
 class _PracticaMainCard extends StatelessWidget {
   final Practica practica;
   final List<Seguimiento> seguimientos;
-  final int horasCompletadas;
+  final double horasCompletadas;
   final VoidCallback onVerTodos;
   final VoidCallback onRegistrar;
 
@@ -647,8 +647,8 @@ class _EstadoBadge extends StatelessWidget {
 
 class _StatsRow extends StatelessWidget {
   final int horas;
-  final int horasCompletadas;
-  final int pct;
+  final double horasCompletadas;
+  final int pct; // double horasCompletadas handled downstream
   final Seguimiento? ultimoReporte;
 
   const _StatsRow({
@@ -677,7 +677,7 @@ class _StatsRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text('$horasCompletadas',
+                  Text(_fmtH(horasCompletadas),
                       style: const TextStyle(
                           fontFamily: 'Inter', fontSize: 28, fontWeight: FontWeight.w700,
                           color: NexusColors.primary)),
@@ -744,6 +744,11 @@ class _StatsRow extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  static String _fmtH(double h) {
+    if (h == h.truncateToDouble()) return '${h.toInt()}h';
+    return '${h.truncate()}h 30min';
   }
 
   static String _estadoLabel(String e) => switch (e) {

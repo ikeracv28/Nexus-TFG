@@ -6,7 +6,7 @@ class Seguimiento {
   final int id;
   final int practicaId;
   final DateTime fechaRegistro;
-  final int horasRealizadas;
+  final double horasRealizadas;
   final String? descripcion;
   final String estado;
   final int? validadoPorId;
@@ -18,7 +18,7 @@ class Seguimiento {
     required this.id,
     required this.practicaId,
     required this.fechaRegistro,
-    required this.horasRealizadas,
+    required this.horasRealizadas, // double: permite medias horas (0.5)
     this.descripcion,
     required this.estado,
     this.validadoPorId,
@@ -32,7 +32,7 @@ class Seguimiento {
       id: json['id'],
       practicaId: json['practicaId'],
       fechaRegistro: DateTime.parse(json['fechaRegistro']),
-      horasRealizadas: json['horasRealizadas'],
+      horasRealizadas: (json['horasRealizadas'] as num).toDouble(),
       descripcion: json['descripcion'],
       estado: json['estado'] ?? 'PENDIENTE_EMPRESA',
       validadoPorId: json['validadoPorId'],

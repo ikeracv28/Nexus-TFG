@@ -565,8 +565,8 @@ class _ProgresoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final horasValidadas = seguimientos
         .where((s) => s.estado == 'PENDIENTE_CENTRO' || s.estado == 'COMPLETADO')
-        .fold(0, (sum, s) => sum + s.horasRealizadas);
-    final horasRegistradas = seguimientos.fold(0, (sum, s) => sum + s.horasRealizadas);
+        .fold(0.0, (sum, s) => sum + s.horasRealizadas);
+    final horasRegistradas = seguimientos.fold(0.0, (sum, s) => sum + s.horasRealizadas);
     final horasTotales = practica.horasTotales ?? 0;
     final horasRestantes = (horasTotales - horasValidadas).clamp(0, horasTotales);
     final progreso = horasTotales > 0 ? (horasValidadas / horasTotales).clamp(0.0, 1.0) : 0.0;
@@ -1440,7 +1440,7 @@ class _EmptyCard extends StatelessWidget {
 // ── Pills ──────────────────────────────────────────────────────────────────────
 
 class _HoursPill extends StatelessWidget {
-  final int hours;
+  final double hours;
   const _HoursPill({required this.hours});
 
   @override
@@ -1451,7 +1451,7 @@ class _HoursPill extends StatelessWidget {
         color: context.nxt.surfaceAlt,
         borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
       ),
-      child: Text('${hours}h',
+      child: Text(hours == hours.truncateToDouble() ? '${hours.toInt()}h' : '${hours.truncate()}h 30min',
           style: TextStyle(
               fontSize: 11, fontWeight: FontWeight.w600,
               color: context.nxt.inkSecondary)),

@@ -13,7 +13,7 @@ class IncidenciasScreen extends StatefulWidget {
 }
 
 class _IncidenciasScreenState extends State<IncidenciasScreen> {
-  int _tabIndex = 0; // 0=Todas, 1=Abiertas, 2=Resueltas
+  int _tabIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +43,7 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _PageHeader(onReportar: () => _mostrarBottomSheet(context, provider)),
+                      _PageHeader(onReportar: () => _mostrarDialog(context, provider)),
                       const SizedBox(height: NexusSizes.space2XL),
                       _FilterTabs(
                         selectedIndex: _tabIndex,
@@ -51,10 +51,7 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
                         onChanged: (i) => setState(() => _tabIndex = i),
                       ),
                       const SizedBox(height: NexusSizes.spaceLG),
-                      _IncidenciasList(
-                        incidencias: filtered,
-                        onRefresh: provider.cargarDashboard,
-                      ),
+                      _IncidenciasList(incidencias: filtered),
                     ],
                   ),
                 ),
@@ -66,15 +63,11 @@ class _IncidenciasScreenState extends State<IncidenciasScreen> {
     );
   }
 
-  void _mostrarBottomSheet(BuildContext context, PracticaProvider provider) {
-    showModalBottomSheet(
+  void _mostrarDialog(BuildContext context, PracticaProvider provider) {
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: context.nxt.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(NexusSizes.radiusLG)),
-      ),
-      builder: (_) => _ReportarIncidenciaSheet(onReportado: provider.cargarDashboard),
+      barrierColor: Colors.black.withOpacity(0.45),
+      builder: (_) => _ReportarIncidenciaDialog(onReportado: provider.cargarDashboard),
     );
   }
 }
@@ -105,10 +98,7 @@ class _PageHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(
-                'Gestiona y revisa el estado de tus reportes técnicos.',
-                style: NexusText.caption,
-              ),
+              Text('Gestiona y revisa el estado de tus reportes técnicos.', style: NexusText.caption),
             ],
           ),
         ),
@@ -136,11 +126,7 @@ class _FilterTabs extends StatelessWidget {
   final List<int> counts;
   final ValueChanged<int> onChanged;
 
-  const _FilterTabs({
-    required this.selectedIndex,
-    required this.counts,
-    required this.onChanged,
-  });
+  const _FilterTabs({required this.selectedIndex, required this.counts, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -186,9 +172,7 @@ class _FilterTabs extends StatelessWidget {
 
 class _IncidenciasList extends StatelessWidget {
   final List<Incidencia> incidencias;
-  final VoidCallback onRefresh;
-
-  const _IncidenciasList({required this.incidencias, required this.onRefresh});
+  const _IncidenciasList({required this.incidencias});
 
   @override
   Widget build(BuildContext context) {
@@ -252,18 +236,14 @@ class _IncidenciaRow extends StatelessWidget {
     final label = incidencia.estaAbierta ? 'Abierta' : 'Resuelta';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: NexusSizes.space2XL, vertical: NexusSizes.spaceLG),
+      padding: const EdgeInsets.symmetric(horizontal: NexusSizes.space2XL, vertical: NexusSizes.spaceLG),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 34,
             height: 34,
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
-            ),
+            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(NexusSizes.radiusSM)),
             child: Icon(
               incidencia.estaAbierta ? Icons.warning_amber_outlined : Icons.check_circle_outline,
               size: 16,
@@ -281,43 +261,25 @@ class _IncidenciaRow extends StatelessWidget {
                       Text(
                         '${incidencia.tipo} · ',
                         style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w500,
                           color: context.nxt.inkTertiary,
                         ),
                       ),
-                    Text(
-                      _fmtDate(incidencia.fechaCreacion),
-                      style: NexusText.caption,
-                    ),
+                    Text(_fmtDate(incidencia.fechaCreacion), style: NexusText.caption),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  incidencia.descripcion,
-                  style: NexusText.small,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(incidencia.descripcion, style: NexusText.small, maxLines: 2, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
           const SizedBox(width: NexusSizes.spaceMD),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
-            ),
+            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(NexusSizes.radiusFull)),
             child: Text(
               label,
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: color,
-              ),
+              style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w500, color: color),
             ),
           ),
         ],
@@ -331,18 +293,26 @@ class _IncidenciaRow extends StatelessWidget {
   }
 }
 
-// ─── Modal reportar ──────────────────────────────────────────────────────────
+// ─── Dialog reportar incidencia ───────────────────────────────────────────────
 
-class _ReportarIncidenciaSheet extends StatefulWidget {
+class _ReportarIncidenciaDialog extends StatefulWidget {
   final VoidCallback onReportado;
-  const _ReportarIncidenciaSheet({required this.onReportado});
+  const _ReportarIncidenciaDialog({required this.onReportado});
 
   @override
-  State<_ReportarIncidenciaSheet> createState() => _ReportarIncidenciaSheetState();
+  State<_ReportarIncidenciaDialog> createState() => _ReportarIncidenciaDialogState();
 }
 
-class _ReportarIncidenciaSheetState extends State<_ReportarIncidenciaSheet> {
+class _ReportarIncidenciaDialogState extends State<_ReportarIncidenciaDialog> {
   static const _tipos = ['ACCESO', 'AUSENCIA', 'COMPORTAMIENTO', 'ACCIDENTE', 'OTROS'];
+  static const _tiposLabel = {
+    'ACCESO': 'Acceso',
+    'AUSENCIA': 'Ausencia',
+    'COMPORTAMIENTO': 'Comportamiento',
+    'ACCIDENTE': 'Accidente',
+    'OTROS': 'Otros',
+  };
+
   String _tipoSeleccionado = 'ACCESO';
   final _descripcionController = TextEditingController();
   bool _enviando = false;
@@ -356,90 +326,213 @@ class _ReportarIncidenciaSheetState extends State<_ReportarIncidenciaSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        NexusSizes.space2XL, NexusSizes.space2XL,
-        NexusSizes.space2XL, NexusSizes.space2XL + bottomInset,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('Reportar incidencia', style: NexusText.heading3),
-              const Spacer(),
-              IconButton(
-                icon: Icon(Icons.close, size: 20, color: context.nxt.inkSecondary),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-          const SizedBox(height: NexusSizes.spaceLG),
-          Text('Tipo', style: NexusText.caption),
-          const SizedBox(height: NexusSizes.spaceSM),
-          DropdownButtonFormField<String>(
-            value: _tipoSeleccionado,
-            decoration: _inputDeco(),
-            items: _tipos.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-            onChanged: (v) => setState(() => _tipoSeleccionado = v!),
-          ),
-          const SizedBox(height: NexusSizes.spaceLG),
-          Text('Descripción', style: NexusText.caption),
-          const SizedBox(height: NexusSizes.spaceSM),
-          TextFormField(
-            controller: _descripcionController,
-            maxLines: 4,
-            decoration: _inputDeco(hint: 'Describe lo que ha ocurrido...'),
-            style: NexusText.small,
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: NexusSizes.spaceMD),
-            Text(_error!, style: NexusText.caption.copyWith(color: NexusColors.danger)),
-          ],
-          const SizedBox(height: NexusSizes.space2XL),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _enviando ? null : _enviar,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: NexusColors.danger,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: NexusSizes.spaceMD),
-              ),
-              child: _enviando
-                  ? const SizedBox(
-                      height: 18, width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Text('Enviar reporte'),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dangerBg = isDark ? const Color(0xFF4A1515) : NexusColors.dangerLight;
+    final dangerFg = isDark ? const Color(0xFFFF8A80) : NexusColors.danger;
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 480),
+          child: Container(
+            decoration: BoxDecoration(
+              color: context.nxt.surface,
+              borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
+              border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.5 : 0.12),
+                  blurRadius: 32,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Header ──
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 16, 20),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: dangerBg,
+                          borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
+                        ),
+                        child: Icon(Icons.warning_amber_rounded, size: 20, color: dangerFg),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Reportar incidencia',
+                              style: TextStyle(
+                                fontFamily: 'Inter', fontSize: 15, fontWeight: FontWeight.w600,
+                                color: context.nxt.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text('Informa de un problema durante tu práctica.', style: NexusText.caption),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.close, size: 18, color: context.nxt.inkTertiary),
+                        onPressed: () => Navigator.pop(context),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Divider(height: 1, thickness: NexusSizes.borderWidth, color: context.nxt.border),
+
+                // ── Body ──
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Categoría',
+                        style: TextStyle(
+                          fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w500,
+                          color: context.nxt.inkSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _tipos.map((t) {
+                          final selected = t == _tipoSeleccionado;
+                          return GestureDetector(
+                            onTap: () => setState(() => _tipoSeleccionado = t),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 120),
+                              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: selected ? NexusColors.danger : context.nxt.surfaceAlt,
+                                borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                                border: Border.all(
+                                  color: selected ? NexusColors.danger : context.nxt.border,
+                                ),
+                              ),
+                              child: Text(
+                                _tiposLabel[t] ?? t,
+                                style: TextStyle(
+                                  fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w500,
+                                  color: selected ? Colors.white : context.nxt.inkSecondary,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        'Descripción',
+                        style: TextStyle(
+                          fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w500,
+                          color: context.nxt.inkSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _descripcionController,
+                        maxLines: 4,
+                        maxLength: 500,
+                        decoration: InputDecoration(
+                          hintText: 'Describe con detalle lo que ha ocurrido...',
+                          hintStyle: TextStyle(color: context.nxt.inkTertiary, fontSize: 13),
+                          filled: true,
+                          fillColor: context.nxt.surfaceAlt,
+                          counterStyle: TextStyle(color: context.nxt.inkTertiary, fontSize: 11),
+                          contentPadding: const EdgeInsets.all(NexusSizes.spaceMD),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                            borderSide: BorderSide(color: context.nxt.border),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                            borderSide: BorderSide(color: context.nxt.border),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                            borderSide: const BorderSide(color: NexusColors.danger, width: 1.5),
+                          ),
+                        ),
+                        style: NexusText.small,
+                      ),
+                      if (_error != null) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.error_outline, size: 14, color: NexusColors.danger),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(_error!, style: NexusText.caption.copyWith(color: NexusColors.danger)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                Divider(height: 1, thickness: NexusSizes.borderWidth, color: context.nxt.border),
+
+                // ── Footer ──
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        onPressed: _enviando ? null : () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: context.nxt.inkSecondary,
+                          side: BorderSide(color: context.nxt.border),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                        child: const Text('Cancelar'),
+                      ),
+                      const SizedBox(width: 10),
+                      FilledButton(
+                        onPressed: _enviando ? null : _enviar,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: NexusColors.danger,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          textStyle: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w500),
+                        ),
+                        child: _enviando
+                            ? const SizedBox(
+                                width: 16, height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Text('Enviar reporte'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
-
-  InputDecoration _inputDeco({String? hint}) => InputDecoration(
-    hintText: hint,
-    hintStyle: NexusText.caption,
-    filled: true,
-    fillColor: context.nxt.surfaceAlt,
-    contentPadding: const EdgeInsets.all(NexusSizes.spaceMD),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-      borderSide: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-      borderSide: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-      borderSide: const BorderSide(color: NexusColors.primary, width: 1),
-    ),
-  );
 
   Future<void> _enviar() async {
     final descripcion = _descripcionController.text.trim();

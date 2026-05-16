@@ -67,13 +67,13 @@ class SeguimientoServiceTest {
     void should_register_seguimiento() {
         setSecurityContext("alumno@test.com");
         SeguimientoRequest request = new SeguimientoRequest(
-                practicaTest.getId(), LocalDate.now(), 4, "Tareas de desarrollo"
+                practicaTest.getId(), LocalDate.now(), 4.0, "Tareas de desarrollo"
         );
 
         SeguimientoResponse response = seguimientoService.registrar(request);
 
         assertThat(response.id()).isNotNull();
-        assertThat(response.horasRealizadas()).isEqualTo(4);
+        assertThat(response.horasRealizadas()).isEqualTo(4.0);
         assertThat(response.estado()).isEqualTo("PENDIENTE_EMPRESA");
     }
 
@@ -82,7 +82,7 @@ class SeguimientoServiceTest {
     void should_validate_empresa() {
         setSecurityContext("alumno@test.com");
         SeguimientoResponse reg = seguimientoService.registrar(new SeguimientoRequest(
-                practicaTest.getId(), LocalDate.now(), 6, "Pruebas unitarias"
+                practicaTest.getId(), LocalDate.now(), 6.0, "Pruebas unitarias"
         ));
 
         setSecurityContext("empresa@test.com");

@@ -174,7 +174,7 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
                         _FichaRow(
                           icon: Icons.access_time_outlined,
                           label: 'Duración',
-                          value: '${horasTotales}h totales · ${horasCompletadas}h validadas',
+                          value: '${horasTotales}h totales · ${fmtH(horasCompletadas)} validadas',
                         ),
                       ],
                     ],
@@ -355,7 +355,7 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
               _pdfRow('Tutor empresa', practica.tutorEmpresaNombre),
               if (practica.horasTotales != null && practica.horasTotales! > 0)
                 _pdfRow('Progreso',
-                    '$horasCompletadas h / ${practica.horasTotales} h  (${(horasCompletadas / practica.horasTotales! * 100).round()}%)'),
+                    '${fmtH(horasCompletadas)} / ${practica.horasTotales}h  (${(horasCompletadas / practica.horasTotales! * 100).round()}%)'),
             ],
           ),
         ),
@@ -381,7 +381,7 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
             data: seguimientos
                 .map((s) => [
                       DateFormat('d MMM yy', 'es_ES').format(s.fechaRegistro),
-                      '${s.horasRealizadas}h',
+                      fmtH(s.horasRealizadas),
                       _estadoLabel(s.estado),
                       (s.descripcion ?? '').length > 55
                           ? '${(s.descripcion ?? '').substring(0, 55)}…'
@@ -957,7 +957,7 @@ class _SeguimientoFila extends StatelessWidget {
               child: Text(fecha, style: NexusText.small)),
           Expanded(
               flex: 1,
-              child: Text('${seguimiento.horasRealizadas}h',
+              child: Text(fmtH(seguimiento.horasRealizadas),
                   style: NexusText.small
                       .copyWith(fontWeight: FontWeight.w500))),
           Expanded(

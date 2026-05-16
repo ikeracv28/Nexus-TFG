@@ -812,12 +812,12 @@ class _SeguimientoRow extends StatelessWidget {
           Expanded(
             flex: 4,
             child: Text(
-              s.descripcion?.isNotEmpty == true ? s.descripcion! : '${s.horasRealizadas} horas de trabajo',
+              s.descripcion?.isNotEmpty == true ? s.descripcion! : '${fmtH(s.horasRealizadas)} de trabajo',
               style: NexusText.small,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          Expanded(flex: 1, child: Text('${s.horasRealizadas}h', style: NexusText.small)),
+          Expanded(flex: 1, child: Text(fmtH(s.horasRealizadas), style: NexusText.small)),
           Expanded(
             flex: 2,
             child: Align(alignment: Alignment.centerLeft, child: _MiniEstadoBadge(s.estado)),

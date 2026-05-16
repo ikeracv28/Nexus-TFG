@@ -1038,7 +1038,7 @@ class _DetailPanel extends StatelessWidget {
                       Text('Progreso FCT',
                           style: NexusText.small
                               .copyWith(fontWeight: FontWeight.w600)),
-                      Text('$horasCompletadas / ${horasTotales}h',
+                      Text('${fmtH(horasCompletadas)} / ${horasTotales}h',
                           style: NexusText.small.copyWith(
                               color: context.nxt.inkSecondary)),
                     ],
@@ -1575,7 +1575,7 @@ class _FullParteCard extends StatelessWidget {
               Icon(Icons.access_time_outlined,
                   size: 13, color: context.nxt.inkTertiary),
               const SizedBox(width: 4),
-              Text('${seguimiento.horasRealizadas} h',
+              Text(fmtH(seguimiento.horasRealizadas),
                   style: NexusText.caption),
             ],
           ),
@@ -1764,7 +1764,7 @@ class _ParteRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  '$fecha · ${seguimiento.horasRealizadas}h · Validado por empresa',
+                  '$fecha · ${fmtH(seguimiento.horasRealizadas)} · Validado por empresa',
                   style: NexusText.caption.copyWith(
                       color: context.nxt.inkSecondary, fontSize: 10),
                 ),

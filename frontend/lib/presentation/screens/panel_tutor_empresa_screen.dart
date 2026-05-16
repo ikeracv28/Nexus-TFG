@@ -147,7 +147,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
               ),
               const SizedBox(width: 10),
               _StatTile(
-                value: '${provider.totalHorasValidadasEmpresa}h',
+                value: fmtH(provider.totalHorasValidadasEmpresa),
                 label: 'Horas validadas',
                 accent: NexusColors.success,
                 bg: NexusColors.successLight,
@@ -156,7 +156,7 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
               const SizedBox(width: 10),
               _StatTile(
                 value: provider.totalHorasConvenio > 0
-                    ? '${provider.totalHorasRestantes}h'
+                    ? fmtH(provider.totalHorasRestantes)
                     : '—',
                 label: 'Horas restantes',
                 accent: context.nxt.inkSecondary,
@@ -568,7 +568,7 @@ class _ProgresoCard extends StatelessWidget {
         .fold(0.0, (sum, s) => sum + s.horasRealizadas);
     final horasRegistradas = seguimientos.fold(0.0, (sum, s) => sum + s.horasRealizadas);
     final horasTotales = practica.horasTotales ?? 0;
-    final horasRestantes = (horasTotales - horasValidadas).clamp(0, horasTotales);
+    final horasRestantes = (horasTotales - horasValidadas).clamp(0.0, horasTotales.toDouble());
     final progreso = horasTotales > 0 ? (horasValidadas / horasTotales).clamp(0.0, 1.0) : 0.0;
     final pct = (progreso * 100).round();
 
@@ -665,19 +665,19 @@ class _ProgresoCard extends StatelessWidget {
                   children: [
                     _HorasStat(
                       label: 'Registradas\npor el alumno',
-                      value: '${horasRegistradas}h',
+                      value: fmtH(horasRegistradas),
                       color: context.nxt.inkSecondary,
                     ),
                     _Divider(),
                     _HorasStat(
                       label: 'Validadas\npor ti',
-                      value: '${horasValidadas}h',
+                      value: fmtH(horasValidadas),
                       color: NexusColors.success,
                     ),
                     _Divider(),
                     _HorasStat(
                       label: 'Restantes\ndel convenio',
-                      value: horasTotales > 0 ? '${horasRestantes}h' : '—',
+                      value: horasTotales > 0 ? fmtH(horasRestantes) : '—',
                       color: horasRestantes == 0 && horasTotales > 0
                           ? NexusColors.success
                           : NexusColors.warning,

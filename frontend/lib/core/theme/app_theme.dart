@@ -421,3 +421,11 @@ Widget nexusCard({required Widget child, EdgeInsets? padding, BuildContext? cont
     child: child,
   );
 }
+
+// ── Formateo de horas con soporte de medias horas ─────────────────────────────
+// Ej: 7.0 → "7h" | 7.5 → "7h 30min" | 0.5 → "30min"
+String fmtH(num h) {
+  if (h == h.truncate()) return '${h.toInt()}h';
+  final enteras = h.truncate();
+  return enteras == 0 ? '30min' : '${enteras}h 30min';
+}

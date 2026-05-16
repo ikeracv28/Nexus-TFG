@@ -20,7 +20,7 @@ class ProgresoDonutChart extends StatelessWidget {
     final pct = horasTotales > 0
         ? (horasCompletadas / horasTotales).clamp(0.0, 1.0)
         : 0.0;
-    final restantes = (horasTotales - horasCompletadas).clamp(0, horasTotales);
+    final restantes = (horasTotales - horasCompletadas).clamp(0.0, horasTotales.toDouble());
 
     return Row(
       children: [
@@ -70,7 +70,7 @@ class ProgresoDonutChart extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                '$horasCompletadas h',
+                fmtH(horasCompletadas),
                 style: NexusText.heading2.copyWith(
                   color: NexusColors.primary,
                   letterSpacing: -0.5,
@@ -84,13 +84,13 @@ class ProgresoDonutChart extends StatelessWidget {
               _LegendRow(
                 color: NexusColors.primary,
                 label: 'Validadas',
-                value: '${horasCompletadas}h',
+                value: fmtH(horasCompletadas),
               ),
               const SizedBox(height: 4),
               _LegendRow(
                 color: context.nxt.border,
                 label: 'Restantes',
-                value: '${restantes}h',
+                value: fmtH(restantes),
               ),
             ],
           ),

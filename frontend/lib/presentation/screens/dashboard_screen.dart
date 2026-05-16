@@ -500,9 +500,9 @@ class _PracticaMainCard extends StatelessWidget {
                 const SizedBox(height: NexusSizes.spaceSM),
                 Text(
                   practica.empresaNombre,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontFamily: 'Inter', fontSize: 20, fontWeight: FontWeight.w700,
-                      color: NexusColors.ink, letterSpacing: -0.3),
+                      color: context.nxt.ink, letterSpacing: -0.3),
                 ),
                 const SizedBox(height: 2),
                 Text(practica.codigo, style: NexusText.caption),
@@ -604,24 +604,38 @@ class _EstadoBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color bg;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     Color fg;
+    Color bg;
+    Color dot;
     String label;
     switch (estado) {
       case 'ACTIVA':
-        bg = NexusColors.successLight; fg = NexusColors.successText; label = 'En curso';
+        fg = isDark ? const Color(0xFF86C962) : NexusColors.successText;
+        bg = isDark ? const Color(0xFF1E3D10) : NexusColors.successLight;
+        dot = isDark ? const Color(0xFF86C962) : NexusColors.success;
+        label = 'En curso';
       case 'FINALIZADA':
-        bg = NexusColors.primaryLight; fg = NexusColors.primaryText; label = 'Finalizada';
+        fg = isDark ? const Color(0xFF7AB5F5) : NexusColors.primaryText;
+        bg = isDark ? const Color(0xFF0D2B4F) : NexusColors.primaryLight;
+        dot = isDark ? const Color(0xFF7AB5F5) : NexusColors.primary;
+        label = 'Finalizada';
       default:
-        bg = NexusColors.neutralLight; fg = NexusColors.neutralText; label = 'Borrador';
+        fg = isDark ? const Color(0xFFA4AABC) : NexusColors.neutralText;
+        bg = isDark ? const Color(0xFF252B3D) : NexusColors.neutralLight;
+        dot = isDark ? const Color(0xFFA4AABC) : NexusColors.neutral;
+        label = 'Borrador';
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(NexusSizes.radiusFull)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 6, height: 6, decoration: BoxDecoration(color: fg, shape: BoxShape.circle)),
+          Container(width: 6, height: 6, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
           const SizedBox(width: 6),
           Text(label,
               style: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w500, color: fg)),
@@ -797,7 +811,10 @@ class _SeguimientoRow extends StatelessWidget {
             ),
           ),
           Expanded(flex: 1, child: Text('${s.horasRealizadas}h', style: NexusText.small)),
-          Expanded(flex: 2, child: _MiniEstadoBadge(s.estado)),
+          Expanded(
+            flex: 2,
+            child: Align(alignment: Alignment.centerLeft, child: _MiniEstadoBadge(s.estado)),
+          ),
         ],
       ),
     );
@@ -815,18 +832,27 @@ class _MiniEstadoBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color bg;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     Color fg;
+    Color bg;
     String label;
     switch (estado) {
       case 'COMPLETADO':
-        bg = NexusColors.successLight; fg = NexusColors.successText; label = 'Validado';
+        fg = isDark ? const Color(0xFF86C962) : NexusColors.successText;
+        bg = isDark ? const Color(0xFF1E3D10) : NexusColors.successLight;
+        label = 'Validado';
       case 'RECHAZADO':
-        bg = NexusColors.dangerLight; fg = NexusColors.danger; label = 'Rechazado';
+        fg = isDark ? const Color(0xFFFF8A80) : NexusColors.dangerText;
+        bg = isDark ? const Color(0xFF4A1515) : NexusColors.dangerLight;
+        label = 'Rechazado';
       case 'PENDIENTE_EMPRESA':
-        bg = NexusColors.warningLight; fg = NexusColors.warningText; label = 'Pend. Empresa';
+        fg = isDark ? const Color(0xFFFFB74D) : NexusColors.warningText;
+        bg = isDark ? const Color(0xFF3D2A06) : NexusColors.warningLight;
+        label = 'Pend. Empresa';
       default:
-        bg = NexusColors.primaryLight; fg = NexusColors.primaryText; label = 'Pend. Centro';
+        fg = isDark ? const Color(0xFF7AB5F5) : NexusColors.primaryText;
+        bg = isDark ? const Color(0xFF0D2B4F) : NexusColors.primaryLight;
+        label = 'Pend. Centro';
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -992,9 +1018,9 @@ class _GreetingHeader extends StatelessWidget {
       children: [
         Text(
           'Hola, $firstName',
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Inter', fontSize: 26, fontWeight: FontWeight.w700,
-            color: NexusColors.ink, letterSpacing: -0.3,
+            color: context.nxt.ink, letterSpacing: -0.3,
           ),
         ),
         const SizedBox(height: 4),

@@ -53,6 +53,7 @@ public class MensajeServiceImpl implements MensajeService {
                 .remitente(remitente)
                 .contenido(request.contenido())
                 .canal(canalEfectivo)
+                .tipo("TEXTO")
                 .build();
 
         Mensaje guardado = mensajeRepository.save(mensaje);

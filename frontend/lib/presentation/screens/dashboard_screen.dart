@@ -6,7 +6,6 @@ import '../../data/models/practica_model.dart';
 import '../../data/models/seguimiento_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/practica_provider.dart';
-import 'seguimiento_screen.dart';
 import 'seguimientos_screen.dart';
 import 'incidencias_screen.dart';
 import 'ausencias_screen.dart';
@@ -416,8 +415,11 @@ class _DashboardContent extends StatelessWidget {
       seguimientos: seguimientos,
       horasCompletadas: horasCompletadas,
       onVerTodos: onVerTodosSeguimientos,
-      onRegistrar: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SeguimientoScreen())),
+      onRegistrar: () => showDialog(
+        context: context,
+        barrierColor: Colors.black.withOpacity(0.45),
+        builder: (_) => NuevoParteDialog(onGuardado: practica.cargarDashboard),
+      ),
     );
 
     final rightCol = Column(

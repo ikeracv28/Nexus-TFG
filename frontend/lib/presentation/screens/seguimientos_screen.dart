@@ -56,7 +56,7 @@ class _SeguimientosScreenState extends State<SeguimientosScreen> {
             onPressed: () => showDialog(
               context: context,
               barrierColor: Colors.black.withOpacity(0.45),
-              builder: (_) => _NuevoParteDialog(onGuardado: provider.cargarDashboard),
+              builder: (_) => NuevoParteDialog(onGuardado: provider.cargarDashboard),
             ),
             icon: const Icon(Icons.add),
             label: const Text('Nuevo parte'),
@@ -603,15 +603,15 @@ class _EstadoBadge extends StatelessWidget {
 
 // ─── Dialog nuevo parte ───────────────────────────────────────────────────────
 
-class _NuevoParteDialog extends StatefulWidget {
+class NuevoParteDialog extends StatefulWidget {
   final VoidCallback onGuardado;
-  const _NuevoParteDialog({required this.onGuardado});
+  const NuevoParteDialog({super.key, required this.onGuardado});
 
   @override
-  State<_NuevoParteDialog> createState() => _NuevoParteDialogState();
+  State<NuevoParteDialog> createState() => _NuevoParteDialogState();
 }
 
-class _NuevoParteDialogState extends State<_NuevoParteDialog> {
+class _NuevoParteDialogState extends State<NuevoParteDialog> {
   DateTime _fecha = DateTime.now();
   double _horas = 8.0;
   final _descripcionCtrl = TextEditingController();

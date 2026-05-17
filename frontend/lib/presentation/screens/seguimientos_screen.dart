@@ -612,6 +612,7 @@ class NuevoParteDialog extends StatefulWidget {
 }
 
 class _NuevoParteDialogState extends State<NuevoParteDialog> {
+  String _tipo = 'DIARIO'; // 'DIARIO' o 'SEMANAL'
   DateTime _fecha = DateTime.now();
   double _horas = 8.0;
   final _descripcionCtrl = TextEditingController();
@@ -641,7 +642,13 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
         child: child!,
       ),
     );
-    if (picked != null) setState(() => _fecha = picked);
+    if (picked != null) {
+      setState(() {
+        _fecha = _tipo == 'SEMANAL'
+            ? picked.subtract(Duration(days: picked.weekday - 1))
+            : picked;
+      });
+    }
   }
 
   Future<void> _enviar() async {
@@ -660,6 +667,7 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
         fechaRegistro: _fecha,
         horasRealizadas: _horas,
         descripcion: desc,
+        tipo: _tipo,
       );
       provider.agregarSeguimiento(nuevo);
       if (mounted) {
@@ -669,6 +677,16 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
     } catch (e) {
       setState(() { _enviando = false; _error = e.toString().replaceFirst('Exception: ', ''); });
     }
+  }
+
+  static String _fmtSemana(DateTime lunes) {
+    final viernes = lunes.add(const Duration(days: 4));
+    const m = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+                'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    if (lunes.month == viernes.month) {
+      return '${lunes.day}–${viernes.day} ${m[lunes.month]} ${lunes.year}';
+    }
+    return '${lunes.day} ${m[lunes.month]}–${viernes.day} ${m[viernes.month]} ${viernes.year}';
   }
 
   static String _fmtHoras(double h) {
@@ -756,6 +774,34 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // ── Toggle Diario / Semanal ──────────────────────
+                      Row(
+                        children: [
+                          _TipoChip(
+                            label: 'Diario',
+                            icon: Icons.today_outlined,
+                            active: _tipo == 'DIARIO',
+                            onTap: () => setState(() {
+                              _tipo = 'DIARIO';
+                              _horas = _horas.clamp(0.5, 24.0);
+                            }),
+                          ),
+                          const SizedBox(width: 8),
+                          _TipoChip(
+                            label: 'Semanal',
+                            icon: Icons.date_range_outlined,
+                            active: _tipo == 'SEMANAL',
+                            onTap: () => setState(() {
+                              _tipo = 'SEMANAL';
+                              _fecha = _fecha.subtract(Duration(days: _fecha.weekday - 1));
+                              if (_horas < 1) _horas = 8.0;
+                            }),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // ── Fecha / Semana + Horas ───────────────────────
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
@@ -764,8 +810,9 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Fecha', style: TextStyle(fontFamily: 'Inter', fontSize: 12,
-                                  fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
+                                Text(_tipo == 'SEMANAL' ? 'Semana' : 'Fecha',
+                                  style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                                    fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
                                 const SizedBox(height: 8),
                                 GestureDetector(
                                   onTap: _seleccionarFecha,
@@ -778,11 +825,17 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(Icons.calendar_today_outlined, size: 15,
-                                          color: context.nxt.inkSecondary),
+                                        Icon(
+                                          _tipo == 'SEMANAL'
+                                              ? Icons.date_range_outlined
+                                              : Icons.calendar_today_outlined,
+                                          size: 15, color: context.nxt.inkSecondary),
                                         const SizedBox(width: 8),
                                         Expanded(
-                                          child: Text(_fmtFecha(_fecha),
+                                          child: Text(
+                                            _tipo == 'SEMANAL'
+                                                ? _fmtSemana(_fecha)
+                                                : _fmtFecha(_fecha),
                                             style: NexusText.small, overflow: TextOverflow.ellipsis),
                                         ),
                                         Icon(Icons.unfold_more, size: 15, color: context.nxt.inkTertiary),
@@ -811,10 +864,10 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                                    _StepBtn(
+                                    _StepBtn(
                                       icon: Icons.remove,
                                       enabled: _horas > 0.5,
-                                      onTap: _horas > 0.5 ? () => setState(() => _horas = (_horas - 0.5).clamp(0.5, 24.0)) : null,
+                                      onTap: _horas > 0.5 ? () => setState(() => _horas = (_horas - 0.5).clamp(0.5, _tipo == 'SEMANAL' ? 50.0 : 24.0)) : null,
                                     ),
                                     SizedBox(
                                       width: 54,
@@ -825,8 +878,10 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
                                     ),
                                     _StepBtn(
                                       icon: Icons.add,
-                                      enabled: _horas < 24,
-                                      onTap: _horas < 24 ? () => setState(() => _horas = (_horas + 0.5).clamp(0.5, 24.0)) : null,
+                                      enabled: _horas < (_tipo == 'SEMANAL' ? 50.0 : 24.0),
+                                      onTap: _horas < (_tipo == 'SEMANAL' ? 50.0 : 24.0)
+                                          ? () => setState(() => _horas = (_horas + 0.5).clamp(0.5, _tipo == 'SEMANAL' ? 50.0 : 24.0))
+                                          : null,
                                     ),
                                   ],
                                 ),
@@ -896,7 +951,9 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Quedará pendiente de validación por tu tutor de empresa y, después, por tu tutor del centro.',
+                                _tipo == 'SEMANAL'
+                                    ? 'El parte semanal agrupa todas las horas de la semana. Quedará pendiente de validación por tu tutor de empresa.'
+                                    : 'Quedará pendiente de validación por tu tutor de empresa y, después, por tu tutor del centro.',
                                 style: NexusText.caption.copyWith(
                                   color: isDark ? const Color(0xFF7AB5F5) : NexusColors.primaryText),
                               ),
@@ -978,6 +1035,45 @@ class _StepBtn extends StatelessWidget {
         ),
         child: Icon(icon, size: 18,
           color: enabled ? NexusColors.primary : context.nxt.border),
+      ),
+    );
+  }
+}
+
+class _TipoChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+  const _TipoChip({required this.label, required this.icon, required this.active, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? NexusColors.primary : context.nxt.surfaceAlt,
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+          border: Border.all(
+            color: active ? NexusColors.primary : context.nxt.border,
+            width: NexusSizes.borderWidth,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: active ? Colors.white : context.nxt.inkSecondary),
+            const SizedBox(width: 5),
+            Text(label, style: TextStyle(
+              fontFamily: 'Inter', fontSize: 12,
+              fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+              color: active ? Colors.white : context.nxt.inkSecondary,
+            )),
+          ],
+        ),
       ),
     );
   }

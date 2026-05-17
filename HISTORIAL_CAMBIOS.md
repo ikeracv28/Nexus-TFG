@@ -4,6 +4,34 @@ Este documento registra las implementaciones técnicas realizadas a lo largo del
 
 ---
 
+## [17/05/2026] — Rediseño visual completo + Gestión de empresas + Fix zona horaria
+
+### Frontend — Rediseño visual (Design System v2)
+
+- **`app_theme.dart`**: sistema de colores semántico ampliado (`NexusColors.successLight/Text`, `warningLight/Text`, `dangerLight/Text`, `neutralLight/Text`, `inkTertiary`). Función helper `fmtH(num h)` para formatear horas como "4h 30min".
+- **Logo Nexus**: wordmark SVG integrado como asset PNG en sidebar de todos los roles.
+- **`login_screen.dart`**: rediseño completo — layout 2 columnas (panel izquierdo con gradiente + branding, formulario derecho limpio).
+- **`panel_tutor_centro_screen.dart`**: fix crítico F12 (`MediaQuery.sizeOf` en lugar de `constraints.maxWidth` que devolvía 0 en primer frame Flutter web). `_DetailPanel` rediseñado con layout 2 columnas: contenido principal izquierda + sidebar 220px derecha (ficha completa + comunicación). Nuevas `_MiniStatBadge` (horas/partes/incidencias). `_IncidenciaDetailCard` rediseñada como fila compacta clickeable. Modal de gestión de incidencia sustituye `showModalBottomSheet` por `Dialog` centrado con opciones estilizadas por estado. Eliminado ~650 líneas de código muerto nunca conectado al árbol de widgets.
+- **`panel_admin_screen.dart`**: `_DashStatCard` con icono en caja de color + subtítulo contextual. `_PracticasEnCurso` con `NexusAvatar` + chip "En curso". Tabs de filtro en vista prácticas sustituyen `FilterChip` por pills animados con contador de cada estado. `_PracticaCard` rediseñada en 3 columnas (código/alumno | empresa/tutor | horas/acción). Botón ojo en práctica finalizada abre el diálogo de edición.
+
+### Backend + Frontend — Gestión de empresas (CRUD completo)
+
+- **`EmpresaRequest.java`**: nuevo DTO con validaciones JSR-380 (`@NotBlank`, `@Email`, `@Size`).
+- **`EmpresaMapper`**: métodos `toEntity(EmpresaRequest)` y `updateEntity(EmpresaRequest, @MappingTarget Empresa)` con MapStruct.
+- **`EmpresaService` / `EmpresaServiceImpl`**: métodos `create`, `update`, `delete`. Validación CIF único en create (excepción 400 si duplicado) y en update (permite mantener el mismo CIF pero rechaza el de otra empresa). Delete falla con FK constraint si la empresa tiene prácticas asociadas — comportamiento correcto e intencionado.
+- **`EmpresaController`**: `POST /api/v1/empresas`, `PUT /api/v1/empresas/{id}`, `DELETE /api/v1/empresas/{id}` con `@PreAuthorize("hasRole('ADMIN')")`.
+- **`EmpresaModel`** (Flutter): ampliado con `direccion`, `emailContacto`, `telefonoContacto`.
+- **`AdminService`** (Flutter): métodos `crearEmpresa`, `editarEmpresa`, `eliminarEmpresa`.
+- **`AdminProvider`** (Flutter): métodos CRUD empresa con gestión de error.
+- **`panel_admin_screen.dart`**: nuevo modo `_ModoAdmin.empresas` con tabla buscable, diálogo de creación/edición (`_EmpresaFormDialog`) y confirmación de borrado.
+
+### Infraestructura — Fix zona horaria
+
+- **`docker-compose.yml`**: `TZ=Europe/Madrid` en servicios `db` y `backend`. `JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Madrid` para la JVM de Spring Boot.
+- **`application.properties`**: `spring.jackson.time-zone=Europe/Madrid` + `spring.jackson.serialization.write-dates-as-timestamps=false` — los timestamps se serializan en ISO-8601 con zona horaria correcta (UTC+2 CEST).
+
+---
+
 ## [13/05/2026] — Chat dual-canal + Exportar PDF y Excel del expediente FCT
 
 ### Backend — Chat con dos canales separados

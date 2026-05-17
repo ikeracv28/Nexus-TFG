@@ -497,3 +497,53 @@ El frontend también usa un build multi-stage: la primera etapa descarga el SDK 
 La variable de entorno `API_URL` se inyecta en tiempo de compilación del frontend. Esto permite que el mismo Dockerfile sirva tanto para desarrollo local (apuntando a `localhost:8080`) como para producción (apuntando al dominio real) cambiando únicamente el valor de la variable, sin tocar el código de la aplicación.
 
 Las credenciales de la base de datos y el secreto JWT se externalizan mediante variables de entorno definidas en un fichero `.env` que no se versionea en el repositorio. Esta separación entre configuración y código es una práctica estándar en aplicaciones en contenedores y previene la exposición accidental de secretos en el historial de Git.
+
+---
+
+## BLOQUE — Hito 4 (cierre): Rediseño visual y sistema de diseño
+**Sección destino en memoria**: Capítulo 5 (Diseño de Interfaz) — sección sobre diseño visual y coherencia
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+### Para el capítulo del Frontend
+
+El rediseño visual de la aplicación se abordó como una tarea transversal que afectó a todos los paneles y roles del sistema. El objetivo fue doble: corregir deficiencias de usabilidad detectadas durante las pruebas y establecer una identidad visual coherente en toda la aplicación.
+
+El punto de partida fue la ampliación del sistema de diseño en `app_theme.dart`. Se definió un conjunto de colores semánticos estructurados en tres variantes por cada estado: el color principal (para texto e iconos), su versión clara (para fondos de badges y tarjetas), y su versión de texto sobre fondo claro (para garantizar contraste suficiente). Esta estructura triple —por ejemplo `successLight` para el fondo verde y `successText` para el texto sobre ese fondo— permite componer cualquier badge de estado sin necesidad de calcular colores manualmente en cada pantalla.
+
+La pantalla de login fue rediseñada con un layout de dos columnas: el panel izquierdo presenta el logo y la identidad visual de la plataforma sobre un fondo con gradiente; el panel derecho contiene el formulario de autenticación con el mínimo de elementos necesarios. En pantallas estrechas el panel izquierdo desaparece y el formulario ocupa todo el ancho, manteniendo la funcionalidad en dispositivos móviles.
+
+El panel del tutor de centro requirió una corrección técnica específica de Flutter Web: la propiedad `constraints.maxWidth` dentro de un `LayoutBuilder` devuelve cero durante el primer frame de renderizado en el navegador, antes de que el motor de layout del DOM haya calculado las dimensiones reales. Esto provocaba que el panel principal nunca se renderizara hasta que el usuario abría las herramientas de desarrollo del navegador, momento en que el re-layout forzaba un nuevo frame con las dimensiones correctas. La solución fue sustituir `constraints.maxWidth > 600` por `MediaQuery.sizeOf(context).width > 600`, que consulta el tamaño de la ventana directamente desde el contexto de Flutter y siempre devuelve el valor correcto independientemente del frame.
+
+El panel de detalle del alumno (visible para el tutor del centro al seleccionar un alumno de su lista) se rediseñó con un layout de dos columnas cuando el espacio disponible supera los 650 píxeles: la columna principal (izquierda, expansiva) contiene la cabecera del alumno, tres tarjetas de estadísticas (horas completadas, partes pendientes, incidencias abiertas), la barra de progreso de la FCT y las secciones de partes e incidencias que requieren acción; la columna secundaria (derecha, 220px fija) contiene el acceso a la ficha completa y las tarjetas de chat con el alumno y el tutor de empresa. Este layout permite al tutor ver el estado completo del alumno y acceder a las acciones más frecuentes sin desplazamiento vertical.
+
+Los paneles de administración también se mejoraron visualmente. Las tarjetas de estadísticas del dashboard incorporan un icono en una caja de color, un número prominente y un subtítulo contextual calculado con datos reales (por ejemplo, "2 en borrador · 1 finalizada" junto al contador de prácticas activas). Los filtros de la vista de prácticas se transformaron de `FilterChip` —un widget de Material Design pensado para selección múltiple— a tabs de tipo pill con animación y contador del número de prácticas en cada estado, que comunican mejor la función de filtro único.
+
+---
+
+## BLOQUE — Hito 4 (cierre): Gestión completa de empresas colaboradoras
+**Sección destino en memoria**: Capítulo 4.1 (Backend) + Capítulo 5 (Interfaz Admin)
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+### Para el capítulo del Backend
+
+La entidad `Empresa` existía desde el diseño inicial del esquema de datos y era consultable mediante `GET /api/v1/empresas`, pero no disponía de endpoints de escritura. El sistema asumía que las empresas eran datos de referencia gestionados fuera de la aplicación. Esta limitación resultó inadecuada para un sistema de gestión real, donde el administrador debe poder registrar nuevas empresas colaboradoras sin acceder directamente a la base de datos.
+
+Se implementó el CRUD completo con tres endpoints adicionales protegidos exclusivamente para el rol `ADMIN`. El endpoint `POST /api/v1/empresas` crea una nueva empresa validando que el CIF no esté ya registrado —el CIF es único en el esquema— y lanzando una excepción `IllegalArgumentException` (400 Bad Request) si existe duplicado. El endpoint `PUT /api/v1/empresas/{id}` permite actualizar cualquier campo, con la misma validación de CIF único pero excluyendo la propia empresa del check (para poder guardar sin cambiar el CIF). El endpoint `DELETE /api/v1/empresas/{id}` elimina la empresa; si tiene prácticas asociadas, la restricción de clave foránea de PostgreSQL provoca una excepción de integridad referencial, que el handler global convierte en una respuesta 500 informativa en lugar de propagar el error interno.
+
+El DTO de entrada `EmpresaRequest` usa validaciones estándar de Bean Validation (`@NotBlank`, `@Email`, `@Size`) que son verificadas automáticamente por Spring antes de llegar al servicio, gracias a la anotación `@Valid` en el parámetro del controlador. El mapper MapStruct se amplió con dos métodos nuevos: `toEntity` para la creación y `updateEntity` con `@MappingTarget` para la actualización in-place de una entidad existente, que es la forma correcta de hacer actualizaciones parciales con MapStruct sin crear un objeto nuevo.
+
+### Para el capítulo del Frontend
+
+En el panel de administración se añadió un nuevo modo "Empresas" accesible desde el sidebar (web) y desde la barra de navegación inferior (móvil). La vista presenta la lista de empresas en formato tabla con búsqueda en tiempo real por nombre o CIF. Las acciones de editar y eliminar están accesibles por fila mediante iconos. La eliminación requiere confirmación explícita mediante un diálogo que informa de que la operación fallará si la empresa tiene prácticas asociadas, previniendo así que el administrador intente borrar una empresa en uso sin entender por qué falla.
+
+El formulario de creación y edición se presenta como un diálogo centrado (`Dialog`) con validación en el cliente de los campos obligatorios antes de enviar la petición al servidor. Si el servidor rechaza la operación (por ejemplo, CIF duplicado), el mensaje de error se muestra dentro del propio diálogo, sin cerrarlo, para que el usuario pueda corregir el valor sin tener que volver a abrir el formulario.
+
+---
+
+## BLOQUE — Infraestructura: Corrección de zona horaria
+**Sección destino en memoria**: Capítulo 4.3 (Infraestructura) — añadir como nota técnica
+**Estado**: [PENDIENTE DE INTEGRAR]
+
+Durante las pruebas de aceptación se detectó que todas las marcas temporales registradas por el sistema (partes de seguimiento, mensajes de chat, registros de auditoría) se mostraban con dos horas de diferencia respecto a la hora real. La causa es que los contenedores Docker se ejecutan por defecto en la zona horaria UTC, mientras que España peninsular opera en `Europe/Madrid` (UTC+1 en invierno, UTC+2 en verano con horario de verano CEST).
+
+La corrección se aplicó en tres niveles. En el orquestador Docker Compose, se añadió la variable de entorno `TZ=Europe/Madrid` a los servicios de base de datos y backend; esta variable es respetada tanto por el sistema operativo Alpine Linux del contenedor como por la JVM de Java. Adicionalmente, se configuró `JAVA_TOOL_OPTIONS=-Duser.timezone=Europe/Madrid` para garantizar que la propiedad de zona horaria de la JVM se establece antes de que arranque el servidor de aplicaciones, independientemente de cómo Spring Boot inicialice su contexto. En el fichero `application.properties`, se añadieron las propiedades `spring.jackson.time-zone=Europe/Madrid` y `spring.jackson.serialization.write-dates-as-timestamps=false`: la primera instruye a Jackson para que serialice los objetos `LocalDateTime` con la zona horaria de Madrid; la segunda hace que las fechas se serialicen en formato ISO-8601 legible (por ejemplo, `2026-05-17T11:30:00`) en lugar de como timestamps Unix en milisegundos, facilitando la depuración y la legibilidad de la API.

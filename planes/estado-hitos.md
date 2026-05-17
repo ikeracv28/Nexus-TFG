@@ -1,6 +1,6 @@
 # Estado del Proyecto — Hitos
 
-Actualizado: 10/05/2026
+Actualizado: 17/05/2026
 
 ## Calendario de entregas
 
@@ -92,15 +92,24 @@ Actualizado: 10/05/2026
 - [x] [FLUTTER] PanelTutorEmpresaScreen: Tab 2 = chat canal TUTORES
 - [x] [FLUTTER] Feature 5: Exportar PDF + Excel desde `ficha_alumno_screen.dart` — botón PDF (rojo) + botón Excel (verde) en AppBar; `pdf`, `printing`, `excel` packages
 
+### Completado (17/05/2026)
+
+- [x] [FLUTTER] Rediseño visual completo — Design System v2 (NexusColors semánticos, logo wordmark)
+- [x] [FLUTTER] Login rediseñado — layout 2 columnas, panel branding + formulario
+- [x] [BUGFIX] Fix F12 en panel tutor centro — MediaQuery.sizeOf en lugar de constraints.maxWidth
+- [x] [FLUTTER] Panel tutor centro — DetailPanel 2 columnas, MiniStatBadge, modal incidencia como Dialog
+- [x] [FLUTTER] Panel admin — DashStatCard con iconos, tabs pill con contadores, PracticaCard 3 columnas
+- [x] [BACKEND+FLUTTER] Gestión empresas CRUD completo — EmpresaRequest DTO, POST/PUT/DELETE admin-only, UI tabla+formulario en panel admin
+- [x] [INFRA] Fix zona horaria — TZ=Europe/Madrid en Docker + spring.jackson.time-zone
+
 ### Pendiente para Hito 4
 
-- [ ] [FLUTTER] Chat WebSocket tutor empresa ↔ tutor centro verificado end-to-end en demo
 - [ ] [DOC] Manual de usuario por rol con capturas
-- [ ] [FLUTTER] Pulido visual final, pruebas cross-device
+- [ ] [DOC] Grabar vídeo demo final Hito 4
 
 ---
 
-## Estado técnico actual (13/05/2026)
+## Estado técnico actual (17/05/2026)
 
 ### Lo que funciona end-to-end en Docker
 
@@ -116,6 +125,8 @@ Actualizado: 10/05/2026
 | Tutor centro: exportar expediente alumno en PDF y Excel | ✅ |
 | Tutor centro: notificaciones cuando el alumno le envía mensajes | ✅ |
 | Admin: gestión usuarios, prácticas, empresas (CRUD completo) | ✅ |
+| Admin: gestión empresas colaboradoras (CRUD completo) | ✅ |
+| Zona horaria Europe/Madrid correcta en todos los registros | ✅ |
 | Chat WebSocket STOMP — canal ALUMNO (alumno ↔ tutor centro) | ✅ |
 | Chat WebSocket STOMP — canal TUTORES (tutor empresa ↔ tutor centro) | ✅ |
 | Logout server-side con JTI blacklist | ✅ |

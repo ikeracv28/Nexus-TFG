@@ -38,7 +38,7 @@ class SeguimientoControllerTest {
     private SeguimientoResponse seguimientoResponse(String estado) {
         return new SeguimientoResponse(1L, 10L, LocalDate.now(), 4.0,
                 "Descripción de tareas realizadas hoy", estado,
-                null, null, null, LocalDateTime.now());
+                "DIARIO", null, null, null, LocalDateTime.now());
     }
 
     // ─── POST / ─────────────────────────────────────────────────────────────

@@ -82,6 +82,18 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
             ),
           ),
           const SizedBox(width: 8),
+          OutlinedButton.icon(
+            onPressed: () => _exportarAnexo8(context),
+            icon: const Icon(Icons.assignment_outlined, size: 16),
+            label: const Text('Partes FCT'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF6A1B9A),
+              side: const BorderSide(color: Color(0xFF6A1B9A)),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+          ),
+          const SizedBox(width: 8),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: OutlinedButton.icon(
@@ -498,6 +510,278 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
     final bytes = await doc.save();
     await Printing.sharePdf(
         bytes: bytes, filename: 'expediente_${practica.codigo}.pdf');
+  }
+
+  // ── EXPORTAR PARTES EN FORMATO ANEXO 8 ──────────────────────────────────────
+
+  Future<void> _exportarAnexo8(BuildContext ctx) async {
+    final provider = ctx.read<TutorCentroProvider>();
+    final practica = widget.practica;
+    final seguimientos = provider.seguimientosDe(practica.id)
+      ..sort((a, b) => a.fechaRegistro.compareTo(b.fechaRegistro));
+
+    if (seguimientos.isEmpty) {
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        const SnackBar(content: Text('No hay partes registrados para exportar')),
+      );
+      return;
+    }
+
+    final doc = pw.Document();
+    final fmtDate = DateFormat('dd/MM/yyyy');
+    final cursoAcademico = _calcularCursoAcademico(practica.fechaInicio);
+
+    // Separar nombre completo en apellidos + nombre (formato: "Nombre Apellido1 Apellido2")
+    final parts = practica.alumnoNombre.trim().split(' ');
+    final nombreAlumno = parts.isNotEmpty ? parts.first : practica.alumnoNombre;
+    final apellidosAlumno = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+    final partesTutor = practica.tutorEmpresaNombre.trim().split(' ');
+    final nombreTutor = partesTutor.isNotEmpty ? partesTutor.first : '';
+    final apellidosTutor = partesTutor.length > 1 ? partesTutor.sublist(1).join(' ') : '';
+
+    for (int i = 0; i < seguimientos.length; i++) {
+      final seg = seguimientos[i];
+
+      // Calcular inicio de semana (lunes) a partir de la fecha del seguimiento
+      final fechaFin = seg.fechaRegistro;
+      final fechaInicio = fechaFin.subtract(Duration(days: fechaFin.weekday - 1));
+      final periodoStr = 'De ${fmtDate.format(fechaInicio)} a ${fmtDate.format(fechaFin)}';
+
+      final estadoTexto = _estadoAnexo(seg.estado);
+
+      doc.addPage(pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.symmetric(horizontal: 28, vertical: 28),
+        build: (_) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            // ── Cabecera convenio ──────────────────────────────────────────
+            _anexoHeaderTable(cursoAcademico, practica.codigo, '${i + 1}/${seguimientos.length}'),
+            pw.SizedBox(height: 4),
+
+            // ── Datos del alumno ──────────────────────────────────────────
+            _anexoSectionTable([
+              ['Apellidos: $apellidosAlumno', 'Nombre: $nombreAlumno'],
+              ['E-mail de contacto: ', ''],
+            ], title: 'Datos del alumno'),
+            pw.SizedBox(height: 4),
+
+            // ── Datos del centro de trabajo ───────────────────────────────
+            _anexoSectionTable([
+              ['EMPRESA: ${practica.empresaNombre}', ''],
+              ['Tutor/a de la empresa:', ''],
+              ['Apellidos: $apellidosTutor', 'Nombre: $nombreTutor'],
+              ['Email tutor empresa: ', ''],
+            ], title: 'Datos del centro de trabajo'),
+            pw.SizedBox(height: 4),
+
+            // ── Periodo ───────────────────────────────────────────────────
+            pw.Container(
+              padding: const pw.EdgeInsets.all(6),
+              decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey600, width: 0.5)),
+              child: pw.Text(periodoStr,
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.SizedBox(height: 4),
+
+            // ── Tabla de actividades ──────────────────────────────────────
+            pw.Table(
+              border: pw.TableBorder.all(color: PdfColors.grey600, width: 0.5),
+              columnWidths: {
+                0: const pw.FlexColumnWidth(5),
+                1: const pw.FixedColumnWidth(42),
+                2: const pw.FixedColumnWidth(18),
+                3: const pw.FixedColumnWidth(32),
+                4: const pw.FixedColumnWidth(32),
+                5: const pw.FixedColumnWidth(32),
+                6: const pw.FlexColumnWidth(2),
+              },
+              children: [
+                // Cabecera
+                pw.TableRow(
+                  decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                  children: [
+                    _tCell('Actividad formativa desarrollada', bold: true, size: 7),
+                    _tCell('Módulo profesional', bold: true, size: 7, center: true),
+                    _tCell('R.A.', bold: true, size: 7, center: true),
+                    _tCell('No superado', bold: true, size: 7, center: true),
+                    _tCell('En proceso', bold: true, size: 7, center: true),
+                    _tCell('Superado', bold: true, size: 7, center: true),
+                    _tCell('Observaciones', bold: true, size: 7, center: true),
+                  ],
+                ),
+                // Fila con la descripción del seguimiento
+                pw.TableRow(children: [
+                  _tCellMulti(seg.descripcion ?? '—', size: 8),
+                  _tCell('', size: 8, center: true),
+                  _tCell('', size: 8, center: true),
+                  _tCell(estadoTexto == 'Superado' ? '' : '', size: 8, center: true),
+                  _tCell(estadoTexto == 'En proceso' ? '✓' : '', size: 8, center: true),
+                  _tCell(estadoTexto == 'Superado' ? '✓' : '', size: 8, center: true),
+                  _tCell(
+                    seg.comentarioTutor != null && seg.comentarioTutor!.isNotEmpty
+                        ? seg.comentarioTutor!
+                        : '',
+                    size: 7,
+                  ),
+                ]),
+                // Filas vacías para completar manualmente
+                for (int r = 0; r < 4; r++)
+                  pw.TableRow(children: [
+                    _tCellMulti('', size: 8),
+                    _tCell('', size: 8),
+                    _tCell('', size: 8),
+                    _tCell('', size: 8),
+                    _tCell('', size: 8),
+                    _tCell('', size: 8),
+                    _tCell('', size: 8),
+                  ]),
+              ],
+            ),
+            pw.SizedBox(height: 8),
+
+            // ── Horas + estado ────────────────────────────────────────────
+            pw.Row(children: [
+              pw.Expanded(child: pw.Text('Horas realizadas: ${_fmtHoras(seg.horasRealizadas)}',
+                  style: const pw.TextStyle(fontSize: 9))),
+              pw.Text('Estado: $estadoTexto',
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+            ]),
+            pw.SizedBox(height: 12),
+
+            // ── Firma ─────────────────────────────────────────────────────
+            pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'El/la tutor/a de la empresa u organismo equiparado (Firma digital preferentemente)',
+                        style: pw.TextStyle(fontSize: 8, fontStyle: pw.FontStyle.italic),
+                      ),
+                      pw.SizedBox(height: 24),
+                      pw.Text('Fecha: ${fmtDate.format(fechaFin)}',
+                          style: const pw.TextStyle(fontSize: 9)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 8),
+            pw.Container(
+              padding: const pw.EdgeInsets.all(6),
+              decoration: pw.BoxDecoration(border: pw.Border.all(color: PdfColors.grey600, width: 0.5)),
+              child: pw.Text(
+                'Destinatario: profesor/a tutor/a del centro docente: ${practica.tutorCentroNombre}',
+                style: const pw.TextStyle(fontSize: 9),
+              ),
+            ),
+          ],
+        ),
+      ));
+    }
+
+    final bytes = await doc.save();
+    await Printing.sharePdf(
+        bytes: bytes, filename: 'partes_fct_${practica.codigo}.pdf');
+  }
+
+  String _calcularCursoAcademico(DateTime? fecha) {
+    final d = fecha ?? DateTime.now();
+    return d.month >= 9
+        ? '${d.year} / ${d.year + 1}'
+        : '${d.year - 1} / ${d.year}';
+  }
+
+  String _estadoAnexo(String estado) {
+    switch (estado) {
+      case 'COMPLETADO': return 'Superado';
+      case 'PENDIENTE_EMPRESA': return 'En proceso';
+      case 'RECHAZADO': return 'No superado';
+      default: return 'En proceso';
+    }
+  }
+
+  String _fmtHoras(double h) {
+    if (h == h.truncate()) return '${h.truncate()}h';
+    return '${h.toStringAsFixed(1)}h';
+  }
+
+  pw.Widget _anexoHeaderTable(String curso, String convenio, String anexo) {
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey600, width: 0.5),
+      columnWidths: {
+        0: const pw.FlexColumnWidth(2),
+        1: const pw.FlexColumnWidth(2),
+        2: const pw.FlexColumnWidth(2),
+      },
+      children: [
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+          children: [
+            _tCell('Curso académico', bold: true, size: 7, center: true),
+            _tCell('Nº del Convenio o Acuerdo de aprendizaje', bold: true, size: 7, center: true),
+            _tCell('Nº del Anexo Relación de alumnos', bold: true, size: 7, center: true),
+          ],
+        ),
+        pw.TableRow(children: [
+          _tCell(curso, size: 9, center: true),
+          _tCell(convenio, size: 9, center: true),
+          _tCell(anexo, size: 9, center: true),
+        ]),
+      ],
+    );
+  }
+
+  pw.Widget _anexoSectionTable(List<List<String>> rows, {required String title}) {
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey600, width: 0.5),
+      children: [
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+          children: [
+            pw.Padding(
+              padding: const pw.EdgeInsets.all(4),
+              child: pw.Text(title,
+                  style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.SizedBox(),
+          ],
+        ),
+        for (final row in rows)
+          pw.TableRow(children: [
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              child: pw.Text(row[0], style: const pw.TextStyle(fontSize: 9)),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              child: pw.Text(row[1], style: const pw.TextStyle(fontSize: 9)),
+            ),
+          ]),
+      ],
+    );
+  }
+
+  pw.Widget _tCell(String text, {bool bold = false, double size = 9, bool center = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: pw.Text(
+        text,
+        textAlign: center ? pw.TextAlign.center : pw.TextAlign.left,
+        style: pw.TextStyle(fontSize: size, fontWeight: bold ? pw.FontWeight.bold : pw.FontWeight.normal),
+      ),
+    );
+  }
+
+  pw.Widget _tCellMulti(String text, {double size = 9}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: pw.Text(text, style: pw.TextStyle(fontSize: size)),
+    );
   }
 
   pw.Widget _pdfRow(String label, String value) => pw.Padding(

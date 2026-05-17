@@ -1229,9 +1229,23 @@ class _DetailPanel extends StatelessWidget {
                     ),
                   ],
 
-                  // En layout de una columna, comunicación va aquí abajo
+                  // En layout de una columna, ficha + comunicación van aquí abajo
                   if (!twoCol) ...[
                     const SizedBox(height: 24),
+                    OutlinedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => FichaAlumnoScreen(practica: practica)),
+                      ),
+                      icon: const Icon(Icons.open_in_new, size: 15),
+                      label: const Text('Ver ficha completa'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: NexusColors.primary,
+                        side: const BorderSide(color: NexusColors.primaryLight),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     _buildComunicacionCard(ctx, practica),
                   ],
                 ],
@@ -1747,19 +1761,22 @@ class _AllIncidenciasPanelState extends State<_AllIncidenciasPanel> {
                                   color: context.nxt.border,
                                   width: NexusSizes.borderWidth)),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: NexusSizes.space2XL),
-                        child: Row(
-                          children: [
-                            _IncTab('Todas', todas.length, 0, _tab, (i) => setState(() => _tab = i)),
-                            _IncTab('Pendientes', pendientes.length, 1, _tab,
-                                (i) => setState(() => _tab = i),
-                                accent: NexusColors.danger),
-                            _IncTab('Resueltas', resueltas.length, 2, _tab,
-                                (i) => setState(() => _tab = i)),
-                            _IncTab('Cerradas', cerradas.length, 3, _tab,
-                                (i) => setState(() => _tab = i)),
-                          ],
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: NexusSizes.space2XL),
+                          child: Row(
+                            children: [
+                              _IncTab('Todas', todas.length, 0, _tab, (i) => setState(() => _tab = i)),
+                              _IncTab('Pendientes', pendientes.length, 1, _tab,
+                                  (i) => setState(() => _tab = i),
+                                  accent: NexusColors.danger),
+                              _IncTab('Resueltas', resueltas.length, 2, _tab,
+                                  (i) => setState(() => _tab = i)),
+                              _IncTab('Cerradas', cerradas.length, 3, _tab,
+                                  (i) => setState(() => _tab = i)),
+                            ],
+                          ),
                         ),
                       ),
                       // Table header — responsive: oculta columna Tipo en móvil

@@ -14,6 +14,7 @@ import 'perfil_screen.dart';
 import 'notificaciones_screen.dart';
 import '../widgets/nexus_avatar.dart';
 import '../providers/notificacion_provider.dart';
+import '../widgets/nexus_logo.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -106,8 +107,7 @@ class _MobileHeader extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 0, 10),
-            child: Image.asset('assets/images/nexus_logo.png',
-                height: 22, fit: BoxFit.contain, alignment: Alignment.centerLeft),
+            child: const NexusLogo(height: 22, variant: NexusLogoVariant.light),
           ),
           const Spacer(),
           Consumer<NotificacionProvider>(
@@ -180,8 +180,7 @@ class _NexusRail extends StatelessWidget {
           // Logo
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-            child: Image.asset('assets/images/nexus_logo.png',
-                height: 26, fit: BoxFit.contain, alignment: Alignment.centerLeft),
+            child: const NexusLogo(height: 26, variant: NexusLogoVariant.light),
           ),
 
           // Nav items

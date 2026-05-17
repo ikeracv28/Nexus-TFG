@@ -13,6 +13,7 @@ import 'perfil_screen.dart';
 import 'notificaciones_screen.dart';
 import '../providers/notificacion_provider.dart';
 import '../widgets/nexus_avatar.dart';
+import '../widgets/nexus_logo.dart';
 
 enum _ModoAdmin { dashboard, practicas, usuarios, empresas, auditoria }
 
@@ -145,7 +146,7 @@ class _Sidebar extends StatelessWidget {
           // Logo
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Image.asset('assets/images/nexus_logo.png', height: 28, fit: BoxFit.contain, alignment: Alignment.centerLeft),
+            child: const NexusLogo(height: 28),
           ),
           Divider(height: 1, color: context.nxt.border),
           const SizedBox(height: NexusSizes.spaceSM),

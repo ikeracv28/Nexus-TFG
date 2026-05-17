@@ -17,6 +17,7 @@ import 'perfil_screen.dart';
 import 'notificaciones_screen.dart';
 import '../widgets/nexus_avatar.dart';
 import '../providers/notificacion_provider.dart';
+import '../widgets/nexus_logo.dart';
 
 class PanelTutorEmpresaScreen extends StatefulWidget {
   const PanelTutorEmpresaScreen({super.key});
@@ -785,27 +786,9 @@ class _Sidebar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Logo marca
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: NexusColors.primary,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(Icons.star_outline, size: 12, color: Colors.white),
-                ),
-                const SizedBox(width: 8),
-                Text('Tutor empresa',
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: context.nxt.inkSecondary)),
-              ],
-            ),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: NexusLogo(height: 26),
           ),
           Divider(height: 1, color: context.nxt.border),
           const SizedBox(height: 6),

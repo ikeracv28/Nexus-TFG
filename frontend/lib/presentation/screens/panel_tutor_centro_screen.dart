@@ -15,6 +15,7 @@ import 'perfil_screen.dart';
 import 'notificaciones_screen.dart';
 import '../widgets/nexus_avatar.dart';
 import '../providers/notificacion_provider.dart';
+import '../widgets/nexus_logo.dart';
 
 enum _Mode { alumnos, partes, incidencias, chat }
 
@@ -390,7 +391,7 @@ class _Sidebar extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 14, 12, 10),
-            child: Image.asset('assets/images/nexus_logo.png', height: 26, fit: BoxFit.contain, alignment: Alignment.centerLeft),
+            child: const NexusLogo(height: 26),
           ),
           const SizedBox(height: 10),
           _NavBtn(

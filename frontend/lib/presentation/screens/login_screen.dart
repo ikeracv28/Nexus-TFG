@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../widgets/nexus_logo.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -15,7 +16,21 @@ class LoginScreen extends StatelessWidget {
       return const Scaffold(
         backgroundColor: NexusColors.surfaceAlt,
         body: Center(
-          child: CircularProgressIndicator(color: NexusColors.primary),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              NexusIcon(size: 48, variant: NexusLogoVariant.dark),
+              SizedBox(height: 24),
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: NexusColors.primary,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -51,16 +66,7 @@ class _DesktopLogin extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Wordmark en blanco
-                  const Text(
-                    'Nexus',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 36,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
+                  const NexusLogo(height: 36, variant: NexusLogoVariant.light),
                   const SizedBox(height: 8),
                   Text(
                     'Plataforma de Prácticas FCT',
@@ -104,11 +110,7 @@ class _DesktopLogin extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Image.asset(
-                          'assets/images/nexus_logo.png',
-                          height: 44,
-                          fit: BoxFit.contain,
-                        ),
+                        const NexusLogo(height: 44),
                         const SizedBox(height: 32),
                         const Text(
                           'Bienvenido de nuevo',
@@ -216,11 +218,7 @@ class _MobileLogin extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/images/nexus_logo.png',
-                  height: 48,
-                  fit: BoxFit.contain,
-                ),
+                const NexusLogo(height: 48),
                 const SizedBox(height: NexusSizes.space2XL),
                 Container(
                   padding: const EdgeInsets.all(NexusSizes.space3XL),

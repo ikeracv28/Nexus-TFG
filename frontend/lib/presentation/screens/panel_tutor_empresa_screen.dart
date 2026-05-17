@@ -136,9 +136,9 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
           ),
           const SizedBox(height: 24),
 
-          // ── Stats ──────────────────────────────────────────────────────
-          Row(
-            children: [
+          // ── Stats — responsive: Row en desktop, Column en móvil ────────
+          LayoutBuilder(builder: (ctx, cst) {
+            final tiles = [
               _StatTile(
                 value: '${pendientes.length}',
                 label: 'Pendientes',
@@ -146,7 +146,6 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
                 bg: NexusColors.warningLight,
                 labelColor: NexusColors.warningText,
               ),
-              const SizedBox(width: 10),
               _StatTile(
                 value: fmtH(provider.totalHorasValidadasEmpresa),
                 label: 'Horas validadas',
@@ -154,7 +153,6 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
                 bg: NexusColors.successLight,
                 labelColor: NexusColors.successText,
               ),
-              const SizedBox(width: 10),
               _StatTile(
                 value: provider.totalHorasConvenio > 0
                     ? fmtH(provider.totalHorasRestantes)
@@ -164,8 +162,28 @@ class _PanelTutorEmpresaScreenState extends State<PanelTutorEmpresaScreen> {
                 bg: context.nxt.surfaceAlt,
                 labelColor: context.nxt.inkSecondary,
               ),
-            ],
-          ),
+            ];
+            if (cst.maxWidth < 600) {
+              return Column(
+                children: [
+                  tiles[0],
+                  const SizedBox(height: 10),
+                  tiles[1],
+                  const SizedBox(height: 10),
+                  tiles[2],
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: tiles[0]),
+                const SizedBox(width: 10),
+                Expanded(child: tiles[1]),
+                const SizedBox(width: 10),
+                Expanded(child: tiles[2]),
+              ],
+            );
+          }),
           const SizedBox(height: 28),
 
           // ── Contenido principal ────────────────────────────────────────
@@ -1105,25 +1123,24 @@ class _StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-          border: Border(left: BorderSide(color: accent, width: 3)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(value,
-                style: TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.w600,
-                    color: accent, letterSpacing: -0.5)),
-            const SizedBox(height: 2),
-            Text(label, style: TextStyle(fontSize: 11, color: labelColor)),
-          ],
-        ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        border: Border(left: BorderSide(color: accent, width: 3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(value,
+              style: TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.w600,
+                  color: accent, letterSpacing: -0.5)),
+          const SizedBox(height: 2),
+          Text(label, style: TextStyle(fontSize: 11, color: labelColor)),
+        ],
       ),
     );
   }
@@ -1585,9 +1602,13 @@ class _EvaluarDialogState extends State<_EvaluarDialog> {
         widget.actual == null ? 'Evaluar al alumno' : 'Modificar evaluación',
         style: NexusText.heading3,
       ),
-      content: SizedBox(
-        width: 520,
-        child: SingleChildScrollView(
+      content: LayoutBuilder(builder: (ctx, constraints) {
+        final dialogWidth = constraints.maxWidth > 0
+            ? constraints.maxWidth
+            : (MediaQuery.of(ctx).size.width * 0.9).clamp(0.0, 520.0);
+        return SizedBox(
+          width: dialogWidth,
+          child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1717,7 +1738,8 @@ class _EvaluarDialogState extends State<_EvaluarDialog> {
             ],
           ),
         ),
-      ),
+      );
+      }),
       actions: [
         TextButton(
           onPressed: _guardando ? null : () => Navigator.pop(context),

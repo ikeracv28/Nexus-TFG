@@ -327,45 +327,77 @@ class _VistaDashboard extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Stat cards (clickable)
-              Row(
-                children: [
-                  _DashStatCard(
-                    valor: admin.practicasActivas,
-                    label: 'Prácticas activas',
-                    subtitulo: '${admin.practicasBorrador} en borrador · ${admin.practicasFinalizadas} finalizadas',
-                    color: NexusColors.success,
-                    icon: Icons.work_outline_rounded,
-                    onTap: () => onModoChanged(_ModoAdmin.practicas),
-                  ),
-                  const SizedBox(width: 12),
-                  _DashStatCard(
-                    valor: admin.empresas.length,
-                    label: 'Empresas colaboradoras',
-                    subtitulo: '${admin.practicas.map((p) => p.empresaId).toSet().length} con práctica activa',
-                    color: NexusColors.primary,
-                    icon: Icons.business_outlined,
-                    onTap: () => onModoChanged(_ModoAdmin.empresas),
-                  ),
-                  const SizedBox(width: 12),
-                  _DashStatCard(
-                    valor: admin.incidenciasAbiertas,
-                    label: 'Incidencias abiertas',
-                    subtitulo: '${admin.incidencias.length} incidencias en total',
-                    color: NexusColors.danger,
-                    icon: Icons.warning_amber_outlined,
-                    onTap: () => onModoChanged(_ModoAdmin.auditoria),
-                  ),
-                  const SizedBox(width: 12),
-                  _DashStatCard(
-                    valor: admin.alumnos.length,
-                    label: 'Alumnos registrados',
-                    subtitulo: '${admin.practicasActivas} en prácticas activas',
-                    color: NexusColors.warning,
-                    icon: Icons.school_outlined,
-                    onTap: () => onModoChanged(_ModoAdmin.usuarios),
-                  ),
-                ],
+              // Stat cards (clickable) — responsive 2×2 en móvil, 1×4 en desktop
+              LayoutBuilder(
+                builder: (ctx, constraints) {
+                  final isMobile = constraints.maxWidth < 600;
+                  final cards = [
+                    _DashStatCard(
+                      valor: admin.practicasActivas,
+                      label: 'Prácticas activas',
+                      subtitulo: '${admin.practicasBorrador} en borrador · ${admin.practicasFinalizadas} finalizadas',
+                      color: NexusColors.success,
+                      icon: Icons.work_outline_rounded,
+                      onTap: () => onModoChanged(_ModoAdmin.practicas),
+                    ),
+                    _DashStatCard(
+                      valor: admin.empresas.length,
+                      label: 'Empresas colaboradoras',
+                      subtitulo: '${admin.practicas.map((p) => p.empresaId).toSet().length} con práctica activa',
+                      color: NexusColors.primary,
+                      icon: Icons.business_outlined,
+                      onTap: () => onModoChanged(_ModoAdmin.empresas),
+                    ),
+                    _DashStatCard(
+                      valor: admin.incidenciasAbiertas,
+                      label: 'Incidencias abiertas',
+                      subtitulo: '${admin.incidencias.length} incidencias en total',
+                      color: NexusColors.danger,
+                      icon: Icons.warning_amber_outlined,
+                      onTap: () => onModoChanged(_ModoAdmin.auditoria),
+                    ),
+                    _DashStatCard(
+                      valor: admin.alumnos.length,
+                      label: 'Alumnos registrados',
+                      subtitulo: '${admin.practicasActivas} en prácticas activas',
+                      color: NexusColors.warning,
+                      icon: Icons.school_outlined,
+                      onTap: () => onModoChanged(_ModoAdmin.usuarios),
+                    ),
+                  ];
+                  if (isMobile) {
+                    return Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(child: cards[0]),
+                            const SizedBox(width: 12),
+                            Expanded(child: cards[1]),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(child: cards[2]),
+                            const SizedBox(width: 12),
+                            Expanded(child: cards[3]),
+                          ],
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(child: cards[0]),
+                      const SizedBox(width: 12),
+                      Expanded(child: cards[1]),
+                      const SizedBox(width: 12),
+                      Expanded(child: cards[2]),
+                      const SizedBox(width: 12),
+                      Expanded(child: cards[3]),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 20),
 
@@ -436,55 +468,54 @@ class _DashStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: context.nxt.surface,
-            border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
-            borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(7),
-                    decoration: BoxDecoration(
-                      color: color.withAlpha(24),
-                      borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
-                    ),
-                    child: Icon(icon, size: 16, color: color),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: context.nxt.surface,
+          border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: color.withAlpha(24),
+                    borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
                   ),
-                  const Spacer(),
-                  if (onTap != null)
-                    Icon(Icons.arrow_forward_ios_rounded, size: 10, color: context.nxt.inkTertiary),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(
-                '$valor',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: context.nxt.ink,
-                  letterSpacing: -0.5,
+                  child: Icon(icon, size: 16, color: color),
                 ),
+                const Spacer(),
+                if (onTap != null)
+                  Icon(Icons.arrow_forward_ios_rounded, size: 10, color: context.nxt.inkTertiary),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              '$valor',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.w700,
+                color: context.nxt.ink,
+                letterSpacing: -0.5,
               ),
-              const SizedBox(height: 2),
-              Text(label,
-                  style: NexusText.small.copyWith(fontWeight: FontWeight.w600)),
-              const SizedBox(height: 3),
-              Text(subtitulo,
-                  style: NexusText.caption.copyWith(color: context.nxt.inkSecondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-            ],
-          ),
+            ),
+            const SizedBox(height: 2),
+            Text(label,
+                style: NexusText.small.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 3),
+            Text(subtitulo,
+                style: NexusText.caption.copyWith(color: context.nxt.inkSecondary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+          ],
         ),
       ),
     );

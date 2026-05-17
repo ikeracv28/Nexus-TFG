@@ -1389,25 +1389,28 @@ class _AllPartesPanel extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: context.nxt.surfaceAlt,
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(NexusSizes.radiusLG - 1)),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: NexusSizes.space2XL, vertical: 10),
-                        child: Row(
-                          children: const [
-                            _ColH('Alumno', flex: 3),
-                            _ColH('Empresa', flex: 3),
-                            _ColH('Fecha', flex: 2),
-                            _ColH('Horas', flex: 1),
-                            _ColH('Descripción', flex: 4),
-                            _ColH('Acción', flex: 2),
-                          ],
-                        ),
-                      ),
+                      LayoutBuilder(builder: (ctx, cst) {
+                        final isMobile = cst.maxWidth < 600;
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: context.nxt.surfaceAlt,
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(NexusSizes.radiusLG - 1)),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: NexusSizes.space2XL, vertical: 10),
+                          child: Row(
+                            children: [
+                              const _ColH('Alumno', flex: 3),
+                              if (!isMobile) const _ColH('Empresa', flex: 3),
+                              const _ColH('Fecha', flex: 2),
+                              const _ColH('Horas', flex: 1),
+                              if (!isMobile) const _ColH('Descripción', flex: 4),
+                              _ColH('Acción', flex: isMobile ? 1 : 2),
+                            ],
+                          ),
+                        );
+                      }),
                       Divider(height: 1, thickness: NexusSizes.borderWidth, color: context.nxt.border),
                       ...pendientes.map((s) {
                         final p = provider.practicaDe(s.practicaId);
@@ -1759,21 +1762,24 @@ class _AllIncidenciasPanelState extends State<_AllIncidenciasPanel> {
                           ],
                         ),
                       ),
-                      // Table header
-                      Container(
-                        color: context.nxt.surfaceAlt,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: NexusSizes.space2XL, vertical: 10),
-                        child: Row(
-                          children: const [
-                            _ColH('Alumno / Incidencia', flex: 4),
-                            _ColH('Tipo', flex: 2),
-                            _ColH('Estado', flex: 2),
-                            _ColH('Fecha', flex: 2),
-                            _ColH('Acción', flex: 2),
-                          ],
-                        ),
-                      ),
+                      // Table header — responsive: oculta columna Tipo en móvil
+                      LayoutBuilder(builder: (ctx, cst) {
+                        final isMobile = cst.maxWidth < 600;
+                        return Container(
+                          color: context.nxt.surfaceAlt,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: NexusSizes.space2XL, vertical: 10),
+                          child: Row(
+                            children: [
+                              const _ColH('Alumno / Incidencia', flex: 4),
+                              if (!isMobile) const _ColH('Tipo', flex: 2),
+                              const _ColH('Estado', flex: 2),
+                              const _ColH('Fecha', flex: 2),
+                              const _ColH('Acción', flex: 2),
+                            ],
+                          ),
+                        );
+                      }),
                       Divider(height: 1, thickness: NexusSizes.borderWidth, color: context.nxt.border),
                       if (filtered.isEmpty)
                         Padding(
@@ -1990,104 +1996,108 @@ class _IncidenciaTableRow extends StatelessWidget {
     final tipoFg = isDark ? const Color(0xFF93A8F4) : const Color(0xFF3F52C7);
     final tipoLabel = incidencia.tipo ?? 'General';
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-            bottom: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
-      ),
-      padding: const EdgeInsets.symmetric(
-          horizontal: NexusSizes.space2XL, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 4,
-            child: Row(
-              children: [
-                NexusAvatar(userId: alumnoId, nombre: alumnoNombre, radius: 14),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(alumnoNombre,
-                          style: NexusText.small
-                              .copyWith(fontWeight: FontWeight.w500),
-                          overflow: TextOverflow.ellipsis),
-                      Text(incidencia.descripcion,
-                          style: NexusText.caption
-                              .copyWith(color: context.nxt.inkSecondary),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: tipoBg,
-                borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
-              ),
-              child: Text(tipoLabel,
-                  style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: tipoFg),
-                  overflow: TextOverflow.ellipsis),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: estadoBg,
-                borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
-              ),
-              child: Text(estadoLabel,
-                  style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: estadoFg),
-                  overflow: TextOverflow.ellipsis),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(fecha,
-                style: NexusText.small
-                    .copyWith(color: context.nxt.inkSecondary)),
-          ),
-          Expanded(
-            flex: 2,
-            child: onGestionar != null
-                ? OutlinedButton(
-                    onPressed: onGestionar,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: NexusColors.primary,
-                      side: const BorderSide(color: NexusColors.primary),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      textStyle: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return LayoutBuilder(builder: (ctx, constraints) {
+      final isMobile = constraints.maxWidth < 600;
+      return Container(
+        decoration: BoxDecoration(
+          border: Border(
+              bottom: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
+        ),
+        padding: const EdgeInsets.symmetric(
+            horizontal: NexusSizes.space2XL, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 4,
+              child: Row(
+                children: [
+                  NexusAvatar(userId: alumnoId, nombre: alumnoNombre, radius: 14),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(alumnoNombre,
+                            style: NexusText.small
+                                .copyWith(fontWeight: FontWeight.w500),
+                            overflow: TextOverflow.ellipsis),
+                        Text(incidencia.descripcion,
+                            style: NexusText.caption
+                                .copyWith(color: context.nxt.inkSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ],
                     ),
-                    child: const Text('Gestionar'),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
-      ),
-    );
+                  ),
+                ],
+              ),
+            ),
+            if (!isMobile)
+              Expanded(
+                flex: 2,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: tipoBg,
+                    borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                  ),
+                  child: Text(tipoLabel,
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: tipoFg),
+                      overflow: TextOverflow.ellipsis),
+                ),
+              ),
+            Expanded(
+              flex: 2,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: estadoBg,
+                  borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                ),
+                child: Text(estadoLabel,
+                    style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: estadoFg),
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Text(fecha,
+                  style: NexusText.small
+                      .copyWith(color: context.nxt.inkSecondary)),
+            ),
+            Expanded(
+              flex: 2,
+              child: onGestionar != null
+                  ? OutlinedButton(
+                      onPressed: onGestionar,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: NexusColors.primary,
+                        side: const BorderSide(color: NexusColors.primary),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: isMobile ? 6.0 : 12.0, vertical: 6),
+                        textStyle: const TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(isMobile ? 'Ver' : 'Gestionar'),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -2112,75 +2122,34 @@ class _ParteTableRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final fecha = DateFormat('d MMM', 'es_ES').format(seguimiento.fechaRegistro);
 
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-            bottom: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
-      ),
-      padding: const EdgeInsets.symmetric(
-          horizontal: NexusSizes.space2XL, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Row(
-              children: [
-                NexusAvatar(userId: alumnoId, nombre: alumnoNombre, radius: 14),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(alumnoNombre,
-                      style: NexusText.small.copyWith(fontWeight: FontWeight.w500),
-                      overflow: TextOverflow.ellipsis),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(empresaNombre,
-                style: NexusText.small.copyWith(color: context.nxt.inkSecondary),
-                overflow: TextOverflow.ellipsis),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(fecha, style: NexusText.small),
-          ),
-          Expanded(
-            flex: 1,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: NexusColors.primaryLight,
-                borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
-              ),
-              child: Text(
-                fmtH(seguimiento.horasRealizadas),
-                style: const TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: NexusColors.primaryText),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 4,
-            child: Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Text(
-                seguimiento.descripcion?.isNotEmpty == true
-                    ? seguimiento.descripcion!
-                    : '—',
-                style: NexusText.small.copyWith(color: context.nxt.inkSecondary),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: FilledButton.icon(
+    return LayoutBuilder(builder: (ctx, constraints) {
+      final isMobile = constraints.maxWidth < 600;
+      final horasChip = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: NexusColors.primaryLight,
+          borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+        ),
+        child: Text(
+          fmtH(seguimiento.horasRealizadas),
+          style: const TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: NexusColors.primaryText),
+          textAlign: TextAlign.center,
+        ),
+      );
+      final validarBtn = isMobile
+          ? IconButton(
+              onPressed: onValidar,
+              icon: const Icon(Icons.check, size: 18),
+              color: NexusColors.success,
+              tooltip: 'Validar',
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+            )
+          : FilledButton.icon(
               onPressed: onValidar,
               icon: const Icon(Icons.check, size: 14),
               label: const Text('Validar'),
@@ -2193,11 +2162,64 @@ class _ParteTableRow extends StatelessWidget {
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
+            );
+
+      return Container(
+        decoration: BoxDecoration(
+          border: Border(
+              bottom: BorderSide(color: context.nxt.border, width: NexusSizes.borderWidth)),
+        ),
+        padding: const EdgeInsets.symmetric(
+            horizontal: NexusSizes.space2XL, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Row(
+                children: [
+                  NexusAvatar(userId: alumnoId, nombre: alumnoNombre, radius: 14),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(alumnoNombre,
+                        style: NexusText.small.copyWith(fontWeight: FontWeight.w500),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
+            if (!isMobile) ...[
+              Expanded(
+                flex: 3,
+                child: Text(empresaNombre,
+                    style: NexusText.small.copyWith(color: context.nxt.inkSecondary),
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ],
+            Expanded(
+              flex: 2,
+              child: Text(fecha, style: NexusText.small),
+            ),
+            Expanded(flex: 1, child: horasChip),
+            if (!isMobile)
+              Expanded(
+                flex: 4,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Text(
+                    seguimiento.descripcion?.isNotEmpty == true
+                        ? seguimiento.descripcion!
+                        : '—',
+                    style: NexusText.small.copyWith(color: context.nxt.inkSecondary),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+            Expanded(flex: isMobile ? 1 : 2, child: validarBtn),
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -2787,28 +2809,46 @@ class _SelectPrompt extends StatelessWidget {
               style: NexusText.body.copyWith(color: context.nxt.inkSecondary)),
           const SizedBox(height: 24),
 
-          // Mini stat cards
-          Row(
-            children: [
+          // Mini stat cards — responsive: Row en desktop, Column en móvil
+          LayoutBuilder(builder: (ctx, cst) {
+            final miniStats = [
               _MiniStat(
                   valor: '$activos',
                   label: 'Alumnos activos',
                   color: NexusColors.success,
                   icon: Icons.people_outline),
-              const SizedBox(width: 12),
               _MiniStat(
                   valor: '$pendPartes',
                   label: 'Partes por validar',
                   color: NexusColors.warning,
                   icon: Icons.pending_actions_outlined),
-              const SizedBox(width: 12),
               _MiniStat(
                   valor: '$incAbiertas',
                   label: 'Incidencias abiertas',
                   color: NexusColors.danger,
                   icon: Icons.warning_amber_outlined),
-            ],
-          ),
+            ];
+            if (cst.maxWidth < 600) {
+              return Column(
+                children: [
+                  miniStats[0],
+                  const SizedBox(height: 10),
+                  miniStats[1],
+                  const SizedBox(height: 10),
+                  miniStats[2],
+                ],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: miniStats[0]),
+                const SizedBox(width: 12),
+                Expanded(child: miniStats[1]),
+                const SizedBox(width: 12),
+                Expanded(child: miniStats[2]),
+              ],
+            );
+          }),
           const SizedBox(height: 32),
 
           // Prompt
@@ -2866,31 +2906,30 @@ class _MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: context.nxt.surface,
-          border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(height: 8),
-            Text(valor,
-                style: TextStyle(
-                    fontFamily: 'Inter',
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: color)),
-            const SizedBox(height: 2),
-            Text(label,
-                style: NexusText.caption.copyWith(color: context.nxt.inkSecondary),
-                maxLines: 2),
-          ],
-        ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(height: 8),
+          Text(valor,
+              style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: color)),
+          const SizedBox(height: 2),
+          Text(label,
+              style: NexusText.caption.copyWith(color: context.nxt.inkSecondary),
+              maxLines: 2),
+        ],
       ),
     );
   }

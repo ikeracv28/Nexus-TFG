@@ -352,9 +352,11 @@ class _InicioTab extends StatelessWidget {
     return RefreshIndicator(
       color: NexusColors.primary,
       onRefresh: () => practica.cargarDashboard(),
-      child: SingleChildScrollView(
+      child: LayoutBuilder(builder: (ctx, cst) {
+        final pad = cst.maxWidth < 600 ? 16.0 : NexusSizes.space3XL;
+        return SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(NexusSizes.space3XL),
+        padding: EdgeInsets.all(pad),
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1200),
@@ -383,7 +385,8 @@ class _InicioTab extends StatelessWidget {
             ),
           ),
         ),
-      ),
+      );
+      }),
     );
   }
 }
@@ -661,90 +664,97 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final horasCol = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Horas
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('TOTAL HORAS',
-                  style: TextStyle(
-                      fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w600,
-                      letterSpacing: 0.8, color: context.nxt.inkTertiary)),
-              const SizedBox(height: 4),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(_fmtH(horasCompletadas),
-                      style: const TextStyle(
-                          fontFamily: 'Inter', fontSize: 28, fontWeight: FontWeight.w700,
-                          color: NexusColors.primary)),
-                  Text(' / ${horas}h', style: NexusText.caption),
-                ],
-              ),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(
-                  value: horas > 0 ? (horasCompletadas / horas).clamp(0.0, 1.0) : 0.0,
-                  minHeight: 4,
-                  backgroundColor: context.nxt.border,
-                  valueColor: const AlwaysStoppedAnimation<Color>(NexusColors.primary),
-                ),
-              ),
-            ],
-          ),
+        Text('TOTAL HORAS',
+            style: TextStyle(
+                fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w600,
+                letterSpacing: 0.8, color: context.nxt.inkTertiary)),
+        const SizedBox(height: 4),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(_fmtH(horasCompletadas),
+                style: const TextStyle(
+                    fontFamily: 'Inter', fontSize: 28, fontWeight: FontWeight.w700,
+                    color: NexusColors.primary)),
+            Text(' / ${horas}h', style: NexusText.caption),
+          ],
         ),
-        Container(width: 1, height: 56, color: context.nxt.border,
-            margin: const EdgeInsets.symmetric(horizontal: 16)),
-
-        // Progreso
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('PROGRESO GLOBAL',
-                  style: TextStyle(
-                      fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w600,
-                      letterSpacing: 0.8, color: context.nxt.inkTertiary)),
-              const SizedBox(height: 4),
-              Text('$pct%',
-                  style: TextStyle(
-                      fontFamily: 'Inter', fontSize: 28, fontWeight: FontWeight.w700,
-                      color: context.nxt.ink)),
-            ],
-          ),
-        ),
-        Container(width: 1, height: 56, color: context.nxt.border,
-            margin: const EdgeInsets.symmetric(horizontal: 16)),
-
-        // Último reporte
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('ÚLTIMO REPORTE',
-                  style: TextStyle(
-                      fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w600,
-                      letterSpacing: 0.8, color: context.nxt.inkTertiary)),
-              const SizedBox(height: 4),
-              if (ultimoReporte != null) ...[
-                Text(_estadoLabel(ultimoReporte!.estado),
-                    style: TextStyle(
-                        fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600,
-                        color: _estadoColor(ultimoReporte!.estado))),
-                const SizedBox(height: 2),
-                Text(_relativeDays(ultimoReporte!.fechaRegistro), style: NexusText.caption),
-              ] else
-                Text('Sin partes', style: NexusText.caption),
-            ],
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(2),
+          child: LinearProgressIndicator(
+            value: horas > 0 ? (horasCompletadas / horas).clamp(0.0, 1.0) : 0.0,
+            minHeight: 4,
+            backgroundColor: context.nxt.border,
+            valueColor: const AlwaysStoppedAnimation<Color>(NexusColors.primary),
           ),
         ),
       ],
     );
+    final progresoCol = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('PROGRESO GLOBAL',
+            style: TextStyle(
+                fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w600,
+                letterSpacing: 0.8, color: context.nxt.inkTertiary)),
+        const SizedBox(height: 4),
+        Text('$pct%',
+            style: TextStyle(
+                fontFamily: 'Inter', fontSize: 28, fontWeight: FontWeight.w700,
+                color: context.nxt.ink)),
+      ],
+    );
+    final reporteCol = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('ÚLTIMO REPORTE',
+            style: TextStyle(
+                fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w600,
+                letterSpacing: 0.8, color: context.nxt.inkTertiary)),
+        const SizedBox(height: 4),
+        if (ultimoReporte != null) ...[
+          Text(_estadoLabel(ultimoReporte!.estado),
+              style: TextStyle(
+                  fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600,
+                  color: _estadoColor(ultimoReporte!.estado))),
+          const SizedBox(height: 2),
+          Text(_relativeDays(ultimoReporte!.fechaRegistro), style: NexusText.caption),
+        ] else
+          Text('Sin partes', style: NexusText.caption),
+      ],
+    );
+
+    return LayoutBuilder(builder: (ctx, cst) {
+      if (cst.maxWidth < 600) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            horasCol,
+            Divider(height: 24, thickness: 1, color: context.nxt.border),
+            progresoCol,
+            Divider(height: 24, thickness: 1, color: context.nxt.border),
+            reporteCol,
+          ],
+        );
+      }
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: horasCol),
+          Container(width: 1, height: 56, color: context.nxt.border,
+              margin: const EdgeInsets.symmetric(horizontal: 16)),
+          Expanded(child: progresoCol),
+          Container(width: 1, height: 56, color: context.nxt.border,
+              margin: const EdgeInsets.symmetric(horizontal: 16)),
+          Expanded(child: reporteCol),
+        ],
+      );
+    });
   }
 
   static String _fmtH(double h) {

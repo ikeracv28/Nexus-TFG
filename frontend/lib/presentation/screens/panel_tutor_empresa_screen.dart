@@ -1165,7 +1165,9 @@ class _ParteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fecha = DateFormat('d MMM yyyy', 'es_ES').format(seguimiento.fechaRegistro);
+    final fecha = seguimiento.esSemanal
+        ? 'Sem. ${DateFormat('d MMM', 'es_ES').format(seguimiento.fechaRegistro)} - ${DateFormat('d MMM yyyy', 'es_ES').format(seguimiento.fechaRegistro.add(const Duration(days: 4)))}'
+        : DateFormat('d MMM yyyy', 'es_ES').format(seguimiento.fechaRegistro);
 
     return Container(
       decoration: BoxDecoration(
@@ -1200,7 +1202,7 @@ class _ParteCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                _HoursPill(hours: seguimiento.horasRealizadas),
+                _HoursPill(hours: seguimiento.horasRealizadas, esSemanal: seguimiento.esSemanal),
                 const SizedBox(width: 8),
                 _StatusPill(label: 'Pendiente', color: NexusColors.warning),
               ],
@@ -1441,17 +1443,19 @@ class _EmptyCard extends StatelessWidget {
 
 class _HoursPill extends StatelessWidget {
   final double hours;
-  const _HoursPill({required this.hours});
+  final bool esSemanal;
+  const _HoursPill({required this.hours, this.esSemanal = false});
 
   @override
   Widget build(BuildContext context) {
+    final label = hours == hours.truncateToDouble() ? '${hours.toInt()}h' : '${hours.truncate()}h 30min';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: context.nxt.surfaceAlt,
         borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
       ),
-      child: Text(hours == hours.truncateToDouble() ? '${hours.toInt()}h' : '${hours.truncate()}h 30min',
+      child: Text(esSemanal ? '$label/sem' : label,
           style: TextStyle(
               fontSize: 11, fontWeight: FontWeight.w600,
               color: context.nxt.inkSecondary)),

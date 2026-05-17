@@ -1501,8 +1501,12 @@ class _AllPartesPanel extends StatelessWidget {
                                 children: [
                                   Icon(Icons.calendar_today_outlined, size: 13, color: context.nxt.inkTertiary),
                                   const SizedBox(width: 5),
-                                  Text(DateFormat('d MMM yyyy', 'es_ES').format(ultimo.fechaRegistro),
-                                      style: NexusText.caption),
+                                  Text(
+                                    ultimo.esSemanal
+                                        ? 'Sem. ${DateFormat('d MMM', 'es_ES').format(ultimo.fechaRegistro)} - ${DateFormat('d MMM yyyy', 'es_ES').format(ultimo.fechaRegistro.add(const Duration(days: 4)))}'
+                                        : DateFormat('d MMM yyyy', 'es_ES').format(ultimo.fechaRegistro),
+                                    style: NexusText.caption,
+                                  ),
                                   const SizedBox(width: 12),
                                   Icon(Icons.access_time, size: 13, color: context.nxt.inkTertiary),
                                   const SizedBox(width: 5),
@@ -2138,7 +2142,7 @@ class _ParteTableRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fecha = seguimiento.esSemanal
-        ? 'Sem. ${DateFormat('d MMM', 'es_ES').format(seguimiento.fechaRegistro)}'
+        ? 'Sem. ${DateFormat('d MMM', 'es_ES').format(seguimiento.fechaRegistro)} - ${DateFormat('d MMM', 'es_ES').format(seguimiento.fechaRegistro.add(const Duration(days: 4)))}'
         : DateFormat('d MMM', 'es_ES').format(seguimiento.fechaRegistro);
 
     return LayoutBuilder(builder: (ctx, constraints) {

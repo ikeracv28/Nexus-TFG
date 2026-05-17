@@ -518,8 +518,8 @@ class _SeguimientoRow extends StatelessWidget {
           horizontal: NexusSizes.space2XL, vertical: 14),
       child: Row(
         children: [
-          Expanded(flex: 2, child: Text(_fmtDate(s.fechaRegistro), style: NexusText.small)),
-          Expanded(flex: 1, child: Text(_fmtH(s.horasRealizadas), style: NexusText.small)),
+          Expanded(flex: 2, child: Text(fmtSeguimientoFecha(s), style: NexusText.small)),
+          Expanded(flex: 1, child: Text(s.esSemanal ? '${_fmtH(s.horasRealizadas)}/sem' : _fmtH(s.horasRealizadas), style: NexusText.small)),
           Expanded(
             flex: 5,
             child: Text(
@@ -534,11 +534,6 @@ class _SeguimientoRow extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  static String _fmtDate(DateTime d) {
-    const m = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    return '${d.day} ${m[d.month - 1]}, ${d.year}';
   }
 
   static String _fmtH(double h) {
@@ -615,6 +610,9 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
   String _tipo = 'DIARIO'; // 'DIARIO' o 'SEMANAL'
   DateTime _fecha = DateTime.now();
   double _horas = 8.0;
+  // SEMANAL: entrada desglosada
+  double _horasDia = 8.0;
+  int _diasSemana = 5;
   final _descripcionCtrl = TextEditingController();
   bool _enviando = false;
   String? _error;
@@ -665,7 +663,7 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
       final nuevo = await SeguimientoService().registrar(
         practicaId: practica.id,
         fechaRegistro: _fecha,
-        horasRealizadas: _horas,
+        horasRealizadas: _tipo == 'SEMANAL' ? _horasDia * _diasSemana : _horas,
         descripcion: desc,
         tipo: _tipo,
       );
@@ -802,94 +800,216 @@ class _NuevoParteDialogState extends State<NuevoParteDialog> {
                       const SizedBox(height: 16),
 
                       // ── Fecha / Semana + Horas ───────────────────────
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          // Fecha
-                          Expanded(
-                            child: Column(
+                      if (_tipo == 'SEMANAL') ...[
+                        // Selector de semana (ancho completo)
+                        Text('Semana', style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                          fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: _seleccionarFecha,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                            decoration: BoxDecoration(
+                              color: context.nxt.surfaceAlt,
+                              border: Border.all(color: context.nxt.border),
+                              borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.date_range_outlined, size: 15, color: context.nxt.inkSecondary),
+                                const SizedBox(width: 8),
+                                Expanded(child: Text(_fmtSemana(_fecha),
+                                  style: NexusText.small, overflow: TextOverflow.ellipsis)),
+                                Icon(Icons.unfold_more, size: 15, color: context.nxt.inkTertiary),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        // Steppers: horas/día + días + total calculado
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            // Horas por día
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(_tipo == 'SEMANAL' ? 'Semana' : 'Fecha',
-                                  style: TextStyle(fontFamily: 'Inter', fontSize: 12,
-                                    fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
+                                Text('Horas / día', style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                                  fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
                                 const SizedBox(height: 8),
-                                GestureDetector(
-                                  onTap: _seleccionarFecha,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-                                    decoration: BoxDecoration(
-                                      color: context.nxt.surfaceAlt,
-                                      border: Border.all(color: context.nxt.border),
-                                      borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          _tipo == 'SEMANAL'
-                                              ? Icons.date_range_outlined
-                                              : Icons.calendar_today_outlined,
-                                          size: 15, color: context.nxt.inkSecondary),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            _tipo == 'SEMANAL'
-                                                ? _fmtSemana(_fecha)
-                                                : _fmtFecha(_fecha),
-                                            style: NexusText.small, overflow: TextOverflow.ellipsis),
-                                        ),
-                                        Icon(Icons.unfold_more, size: 15, color: context.nxt.inkTertiary),
-                                      ],
-                                    ),
+                                Container(
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: context.nxt.surfaceAlt,
+                                    border: Border.all(color: context.nxt.border),
+                                    borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _StepBtn(
+                                        icon: Icons.remove,
+                                        enabled: _horasDia > 0.5,
+                                        onTap: _horasDia > 0.5 ? () => setState(() => _horasDia = (_horasDia - 0.5).clamp(0.5, 12.0)) : null,
+                                      ),
+                                      SizedBox(
+                                        width: 50,
+                                        child: Text(_fmtHoras(_horasDia),
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(fontFamily: 'Inter', fontSize: 14,
+                                            fontWeight: FontWeight.w600, color: context.nxt.ink)),
+                                      ),
+                                      _StepBtn(
+                                        icon: Icons.add,
+                                        enabled: _horasDia < 12.0,
+                                        onTap: _horasDia < 12.0 ? () => setState(() => _horasDia = (_horasDia + 0.5).clamp(0.5, 12.0)) : null,
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          // Horas stepper
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Horas', style: TextStyle(fontFamily: 'Inter', fontSize: 12,
-                                fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
-                              const SizedBox(height: 8),
-                              Container(
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: context.nxt.surfaceAlt,
-                                  border: Border.all(color: context.nxt.border),
-                                  borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                            const SizedBox(width: 12),
+                            // Días trabajados
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Días', style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                                  fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
+                                const SizedBox(height: 8),
+                                Container(
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: context.nxt.surfaceAlt,
+                                    border: Border.all(color: context.nxt.border),
+                                    borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _StepBtn(
+                                        icon: Icons.remove,
+                                        enabled: _diasSemana > 1,
+                                        onTap: _diasSemana > 1 ? () => setState(() => _diasSemana--) : null,
+                                      ),
+                                      SizedBox(
+                                        width: 36,
+                                        child: Text('$_diasSemana',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(fontFamily: 'Inter', fontSize: 14,
+                                            fontWeight: FontWeight.w600, color: context.nxt.ink)),
+                                      ),
+                                      _StepBtn(
+                                        icon: Icons.add,
+                                        enabled: _diasSemana < 5,
+                                        onTap: _diasSemana < 5 ? () => setState(() => _diasSemana++) : null,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    _StepBtn(
-                                      icon: Icons.remove,
-                                      enabled: _horas > 0.5,
-                                      onTap: _horas > 0.5 ? () => setState(() => _horas = (_horas - 0.5).clamp(0.5, _tipo == 'SEMANAL' ? 50.0 : 24.0)) : null,
-                                    ),
-                                    SizedBox(
-                                      width: 54,
-                                      child: Text(_fmtHoras(_horas),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(fontFamily: 'Inter', fontSize: 14,
-                                          fontWeight: FontWeight.w600, color: context.nxt.ink)),
-                                    ),
-                                    _StepBtn(
-                                      icon: Icons.add,
-                                      enabled: _horas < (_tipo == 'SEMANAL' ? 50.0 : 24.0),
-                                      onTap: _horas < (_tipo == 'SEMANAL' ? 50.0 : 24.0)
-                                          ? () => setState(() => _horas = (_horas + 0.5).clamp(0.5, _tipo == 'SEMANAL' ? 50.0 : 24.0))
-                                          : null,
-                                    ),
-                                  ],
+                              ],
+                            ),
+                            const Spacer(),
+                            // Total calculado
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text('Total semana', style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                                  fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
+                                const SizedBox(height: 8),
+                                Container(
+                                  height: 42,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  decoration: BoxDecoration(
+                                    color: NexusColors.primaryLight,
+                                    borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(_fmtHoras(_horasDia * _diasSemana),
+                                    style: const TextStyle(fontFamily: 'Inter', fontSize: 15,
+                                      fontWeight: FontWeight.w700, color: NexusColors.primaryText)),
                                 ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        // DIARIO: fecha + horas en la misma fila
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Fecha', style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                                    fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
+                                  const SizedBox(height: 8),
+                                  GestureDetector(
+                                    onTap: _seleccionarFecha,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                                      decoration: BoxDecoration(
+                                        color: context.nxt.surfaceAlt,
+                                        border: Border.all(color: context.nxt.border),
+                                        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.calendar_today_outlined, size: 15, color: context.nxt.inkSecondary),
+                                          const SizedBox(width: 8),
+                                          Expanded(child: Text(_fmtFecha(_fecha),
+                                            style: NexusText.small, overflow: TextOverflow.ellipsis)),
+                                          Icon(Icons.unfold_more, size: 15, color: context.nxt.inkTertiary),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                            const SizedBox(width: 16),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Horas', style: TextStyle(fontFamily: 'Inter', fontSize: 12,
+                                  fontWeight: FontWeight.w500, color: context.nxt.inkSecondary)),
+                                const SizedBox(height: 8),
+                                Container(
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    color: context.nxt.surfaceAlt,
+                                    border: Border.all(color: context.nxt.border),
+                                    borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      _StepBtn(
+                                        icon: Icons.remove,
+                                        enabled: _horas > 0.5,
+                                        onTap: _horas > 0.5 ? () => setState(() => _horas = (_horas - 0.5).clamp(0.5, 24.0)) : null,
+                                      ),
+                                      SizedBox(
+                                        width: 54,
+                                        child: Text(_fmtHoras(_horas),
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(fontFamily: 'Inter', fontSize: 14,
+                                            fontWeight: FontWeight.w600, color: context.nxt.ink)),
+                                      ),
+                                      _StepBtn(
+                                        icon: Icons.add,
+                                        enabled: _horas < 24.0,
+                                        onTap: _horas < 24.0 ? () => setState(() => _horas = (_horas + 0.5).clamp(0.5, 24.0)) : null,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
 
                       const SizedBox(height: 20),
 

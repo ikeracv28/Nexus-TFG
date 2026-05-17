@@ -68,7 +68,7 @@ class SeguimientoDoubleValidationTest {
     void caso1_registro_estado_pendiente_empresa() {
         setSecurityContext("alumno@validacion.test");
         SeguimientoResponse response = seguimientoService.registrar(
-                new SeguimientoRequest(practica.getId(), LocalDate.now(), 8.0, "Primera semana"));
+                new SeguimientoRequest(practica.getId(), LocalDate.now(), 8.0, "Primera semana", null));
 
         assertThat(response.estado()).isEqualTo("PENDIENTE_EMPRESA");
     }
@@ -81,7 +81,7 @@ class SeguimientoDoubleValidationTest {
     void caso2_tutor_empresa_valida() {
         setSecurityContext("alumno@validacion.test");
         SeguimientoResponse reg = seguimientoService.registrar(
-                new SeguimientoRequest(practica.getId(), LocalDate.now(), 8.0, "Segunda semana"));
+                new SeguimientoRequest(practica.getId(), LocalDate.now(), 8.0, "Segunda semana", null));
 
         setSecurityContext(EMAIL_TUTOR_EMPRESA);
         SeguimientoResponse result = seguimientoService.validarEmpresa(reg.id(), "PENDIENTE_CENTRO", null);
@@ -98,7 +98,7 @@ class SeguimientoDoubleValidationTest {
     void caso3_tutor_empresa_rechaza_genera_incidencia() {
         setSecurityContext("alumno@validacion.test");
         SeguimientoResponse reg = seguimientoService.registrar(
-                new SeguimientoRequest(practica.getId(), LocalDate.now(), 8.0, "Tercera semana"));
+                new SeguimientoRequest(practica.getId(), LocalDate.now(), 8.0, "Tercera semana", null));
 
         long incidenciasPrevias = incidenciaRepository.count();
 
@@ -124,7 +124,7 @@ class SeguimientoDoubleValidationTest {
     void caso4_tutor_centro_no_puede_saltarse_el_orden() {
         setSecurityContext("alumno@validacion.test");
         SeguimientoResponse reg = seguimientoService.registrar(
-                new SeguimientoRequest(practica.getId(), LocalDate.now(), 8.0, "Cuarta semana"));
+                new SeguimientoRequest(practica.getId(), LocalDate.now(), 8.0, "Cuarta semana", null));
 
         setSecurityContext(EMAIL_TUTOR_CENTRO);
         assertThatThrownBy(() -> seguimientoService.validarCentro(reg.id()))
@@ -140,7 +140,7 @@ class SeguimientoDoubleValidationTest {
     void flujo_completo_empresa_luego_centro() {
         setSecurityContext("alumno@validacion.test");
         SeguimientoResponse reg = seguimientoService.registrar(
-                new SeguimientoRequest(practica.getId(), LocalDate.now(), 8.0, "Quinta semana"));
+                new SeguimientoRequest(practica.getId(), LocalDate.now(), 8.0, "Quinta semana", null));
 
         setSecurityContext(EMAIL_TUTOR_EMPRESA);
         seguimientoService.validarEmpresa(reg.id(), "PENDIENTE_CENTRO", null);

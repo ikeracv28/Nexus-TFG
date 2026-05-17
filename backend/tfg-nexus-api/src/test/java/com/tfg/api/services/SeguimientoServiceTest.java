@@ -67,7 +67,7 @@ class SeguimientoServiceTest {
     void should_register_seguimiento() {
         setSecurityContext("alumno@test.com");
         SeguimientoRequest request = new SeguimientoRequest(
-                practicaTest.getId(), LocalDate.now(), 4.0, "Tareas de desarrollo"
+                practicaTest.getId(), LocalDate.now(), 4.0, "Tareas de desarrollo", null
         );
 
         SeguimientoResponse response = seguimientoService.registrar(request);
@@ -82,7 +82,7 @@ class SeguimientoServiceTest {
     void should_validate_empresa() {
         setSecurityContext("alumno@test.com");
         SeguimientoResponse reg = seguimientoService.registrar(new SeguimientoRequest(
-                practicaTest.getId(), LocalDate.now(), 6.0, "Pruebas unitarias"
+                practicaTest.getId(), LocalDate.now(), 6.0, "Pruebas unitarias", null
         ));
 
         setSecurityContext("empresa@test.com");

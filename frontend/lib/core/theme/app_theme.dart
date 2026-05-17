@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../data/models/seguimiento_model.dart';
 
 // ── Paleta estática (modo claro) ──────────────────────────────────────────────
 
@@ -428,4 +430,16 @@ String fmtH(num h) {
   if (h == h.truncate()) return '${h.toInt()}h';
   final enteras = h.truncate();
   return enteras == 0 ? '30min' : '${enteras}h 30min';
+}
+
+// ── Formateo de fecha de seguimiento según tipo ────────────────────────────────
+// DIARIO: "12 may 26" | SEMANAL: "Sem. 12-16 may 26"
+String fmtSeguimientoFecha(Seguimiento s) {
+  if (s.esSemanal) {
+    final viernes = s.fechaRegistro.add(const Duration(days: 4));
+    final ini = DateFormat('d MMM', 'es_ES').format(s.fechaRegistro);
+    final fin = DateFormat('d MMM yy', 'es_ES').format(viernes);
+    return 'Sem. $ini-$fin';
+  }
+  return DateFormat('d MMM yy', 'es_ES').format(s.fechaRegistro);
 }

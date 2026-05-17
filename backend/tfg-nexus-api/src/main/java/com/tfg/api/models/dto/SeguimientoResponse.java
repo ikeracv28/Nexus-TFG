@@ -14,6 +14,7 @@ public record SeguimientoResponse(
     Double horasRealizadas,
     String descripcion,
     String estado,
+    String tipo,
     Long validadoPorId,
     String validadoPorNombre,
     String comentarioTutor,

@@ -29,14 +29,16 @@ class SeguimientoService {
     required int practicaId,
     required DateTime fechaRegistro,
     required double horasRealizadas,
-    String? descripcion,
+    required String descripcion,
+    String tipo = 'DIARIO',
   }) async {
     try {
       final body = {
         'practicaId': practicaId,
         'fechaRegistro': fechaRegistro.toIso8601String().split('T')[0],
         'horasRealizadas': horasRealizadas,
-        if (descripcion != null && descripcion.isNotEmpty) 'descripcion': descripcion,
+        'descripcion': descripcion,
+        'tipo': tipo,
       };
       final response = await _apiClient.dio.post('/seguimientos', data: body);
       return Seguimiento.fromJson(response.data);

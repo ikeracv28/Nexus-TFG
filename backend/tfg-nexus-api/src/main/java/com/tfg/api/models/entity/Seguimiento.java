@@ -62,6 +62,14 @@ public class Seguimiento {
     private Usuario validadoPor;
 
     /**
+     * Tipo de registro: DIARIO (un día concreto) o SEMANAL (toda la semana).
+     * Para SEMANAL, fechaRegistro almacena el lunes de esa semana.
+     */
+    @Column(length = 10)
+    @Builder.Default
+    private String tipo = "DIARIO";
+
+    /**
      * Feedback opcional del tutor tras la validación o rechazo.
      */
     @Column(name = "comentario_tutor", columnDefinition = "TEXT")

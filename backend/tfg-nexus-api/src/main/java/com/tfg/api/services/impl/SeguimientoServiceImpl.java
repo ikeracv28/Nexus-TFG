@@ -57,18 +57,45 @@ public class SeguimientoServiceImpl implements SeguimientoService {
             throw new AccessDeniedException("No tienes acceso a esta práctica");
         }
 
-        // A04: máximo 1 parte pendiente por semana ISO (lunes-domingo)
-        LocalDate lunes = request.fechaRegistro().with(DayOfWeek.MONDAY);
-        LocalDate domingo = request.fechaRegistro().with(DayOfWeek.SUNDAY);
-        if (seguimientoRepository.existsByPracticaIdAndEstadoAndFechaRegistroBetween(
-                request.practicaId(), "PENDIENTE_EMPRESA", lunes, domingo)) {
-            throw new BusinessRuleException(
-                "Ya tienes un parte pendiente de validación para esta semana. Espera a que sea procesado antes de registrar otro.");
+        // Determinar tipo (DIARIO por defecto)
+        String tipo = (request.tipo() != null && !request.tipo().isBlank())
+                ? request.tipo().toUpperCase() : "DIARIO";
+        if (!"DIARIO".equals(tipo) && !"SEMANAL".equals(tipo)) {
+            throw new BusinessRuleException("Tipo de parte no válido: " + tipo);
+        }
+
+        // Validación de horas según tipo
+        if ("DIARIO".equals(tipo) && request.horasRealizadas() > 24.0) {
+            throw new BusinessRuleException("Para registro diario el máximo son 24 horas");
+        }
+        if ("SEMANAL".equals(tipo) && request.horasRealizadas() > 50.0) {
+            throw new BusinessRuleException("Para registro semanal el máximo son 50 horas");
+        }
+
+        // A04: no permitir duplicados en el mismo periodo
+        LocalDate inicio, fin;
+        if ("SEMANAL".equals(tipo)) {
+            inicio = request.fechaRegistro().with(DayOfWeek.MONDAY);
+            fin    = request.fechaRegistro().with(DayOfWeek.SUNDAY);
+        } else {
+            inicio = request.fechaRegistro();
+            fin    = request.fechaRegistro();
+        }
+        if (seguimientoRepository.existsByPracticaIdAndFechaRegistroBetween(
+                request.practicaId(), inicio, fin)) {
+            throw new BusinessRuleException("SEMANAL".equals(tipo)
+                ? "Ya tienes un parte registrado para esta semana"
+                : "Ya tienes un parte registrado para esta fecha");
         }
 
         Seguimiento seguimiento = seguimientoMapper.toEntity(request);
         seguimiento.setPractica(practica);
         seguimiento.setEstado("PENDIENTE_EMPRESA");
+        seguimiento.setTipo(tipo);
+        // Para SEMANAL, normalizar fechaRegistro al lunes de esa semana
+        if ("SEMANAL".equals(tipo)) {
+            seguimiento.setFechaRegistro(request.fechaRegistro().with(DayOfWeek.MONDAY));
+        }
 
         SeguimientoResponse registrado = seguimientoMapper.toResponse(seguimientoRepository.save(seguimiento));
         String actor = currentUserEmail();

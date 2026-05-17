@@ -1,21 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../providers/practica_provider.dart';
 import '../../data/services/seguimiento_service.dart';
 
-/**
- * Pantalla de registro de un parte semanal de prácticas.
- *
- * El alumno introduce:
- *   - Fecha del parte (DatePicker — no puede ser futura)
- *   - Horas realizadas ese día/semana (1 – 24)
- *   - Descripción de las tareas (texto libre, obligatoria)
- *
- * Al enviar se llama POST /api/v1/seguimientos con el JWT en cabecera.
- * Si el servidor responde 201, se añade el seguimiento al provider
- * sin necesidad de recargar todo el dashboard desde la red.
- */
 class SeguimientoScreen extends StatefulWidget {
   const SeguimientoScreen({super.key});
 
@@ -29,7 +18,12 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
   final _horasCtrl = TextEditingController();
   final _seguimientoService = SeguimientoService();
 
+  // Tipo: 'DIARIO' o 'SEMANAL'
+  String _tipo = 'DIARIO';
+
+  // Para DIARIO: día concreto. Para SEMANAL: lunes de la semana.
   DateTime _fechaSeleccionada = DateTime.now();
+
   bool _enviando = false;
 
   @override
@@ -40,59 +34,60 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
   }
 
   // ──────────────────────────────────────────────
-  // Selección de fecha con DatePicker nativo
+  // Selección de fecha
   // ──────────────────────────────────────────────
+
   Future<void> _seleccionarFecha() async {
     final picked = await showDatePicker(
       context: context,
       initialDate: _fechaSeleccionada,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(), // No se puede registrar una fecha futura
+      lastDate: DateTime.now(),
       locale: const Locale('es', 'ES'),
-      builder: (context, child) {
-        // Aplicamos el color primario Nexus al DatePicker
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: NexusColors.primary,
-              onPrimary: Colors.white,
-              surface: NexusColors.surface,
-            ),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme.copyWith(
+            primary: NexusColors.primary,
+            onPrimary: Colors.white,
+            surface: NexusColors.surface,
           ),
-          child: child!,
-        );
-      },
+        ),
+        child: child!,
+      ),
     );
     if (picked != null) {
-      setState(() => _fechaSeleccionada = picked);
+      setState(() {
+        // Para SEMANAL normalizamos al lunes de la semana elegida
+        _fechaSeleccionada = _tipo == 'SEMANAL'
+            ? picked.subtract(Duration(days: picked.weekday - 1))
+            : picked;
+      });
     }
   }
 
   // ──────────────────────────────────────────────
   // Envío del formulario
   // ──────────────────────────────────────────────
+
   Future<void> _enviar() async {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = Provider.of<PracticaProvider>(context, listen: false);
     final practica = provider.practicaActiva;
-
     if (practica == null) {
-      _mostrarError('No tienes una práctica activa asignada.');
+      _mostrarError('No tienes una practica activa asignada.');
       return;
     }
 
     setState(() => _enviando = true);
-
     try {
       final nuevo = await _seguimientoService.registrar(
         practicaId: practica.id,
         fechaRegistro: _fechaSeleccionada,
-        horasRealizadas: double.parse(_horasCtrl.text.trim()),
+        horasRealizadas: double.parse(_horasCtrl.text.trim().replaceAll(',', '.')),
         descripcion: _descripcionCtrl.text.trim(),
+        tipo: _tipo,
       );
-
-      // Actualiza el estado local sin llamada extra a la red
       provider.agregarSeguimiento(nuevo);
 
       if (mounted) {
@@ -102,8 +97,7 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
             backgroundColor: NexusColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-            ),
+                borderRadius: BorderRadius.circular(NexusSizes.radiusMD)),
           ),
         );
         Navigator.of(context).pop();
@@ -122,15 +116,38 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
         backgroundColor: NexusColors.danger,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-        ),
+            borderRadius: BorderRadius.circular(NexusSizes.radiusMD)),
       ),
     );
   }
 
   // ──────────────────────────────────────────────
+  // Helpers de display
+  // ──────────────────────────────────────────────
+
+  String get _labelFecha {
+    if (_tipo == 'SEMANAL') {
+      final lunes = _fechaSeleccionada;
+      final viernes = lunes.add(const Duration(days: 4));
+      final fmtD = DateFormat('d MMM', 'es_ES');
+      final fmtDY = DateFormat('d MMM yyyy', 'es_ES');
+      return 'Semana del ${fmtD.format(lunes)} al ${fmtDY.format(viernes)}';
+    }
+    return DateFormat('dd/MM/yyyy').format(_fechaSeleccionada);
+  }
+
+  String get _hintHoras =>
+      _tipo == 'SEMANAL' ? 'Ej. 35 (total semana)' : 'Ej. 8';
+
+  String get _validatorMaxHoras =>
+      _tipo == 'SEMANAL' ? 'Introduce un valor entre 0.5 y 50' : 'Introduce un valor entre 0.5 y 24';
+
+  double get _maxHoras => _tipo == 'SEMANAL' ? 50.0 : 24.0;
+
+  // ──────────────────────────────────────────────
   // UI
   // ──────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -141,13 +158,12 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
         scrolledUnderElevation: 0,
         title: const Text('Registrar seguimiento', style: NexusText.heading3),
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(0.5),
+          preferredSize: const Size.fromHeight(0.5),
           child: Divider(height: 0.5, thickness: 0.5, color: context.nxt.border),
         ),
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // En pantallas anchas el formulario se centra y limita a 500px
           final isWide = constraints.maxWidth > 700;
           return Center(
             child: ConstrainedBox(
@@ -159,32 +175,54 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Fecha ──────────────────────────────
-                      _FieldLabel('Fecha del parte'),
+                      // ── Toggle DIARIO / SEMANAL ────────────
+                      _FieldLabel('Tipo de registro'),
+                      const SizedBox(height: NexusSizes.spaceSM),
+                      _TipoToggle(
+                        selected: _tipo,
+                        onChanged: (t) => setState(() {
+                          _tipo = t;
+                          // Renormalizamos la fecha al cambiar de tipo
+                          if (t == 'SEMANAL') {
+                            _fechaSeleccionada = _fechaSeleccionada.subtract(
+                                Duration(days: _fechaSeleccionada.weekday - 1));
+                          }
+                        }),
+                      ),
+                      const SizedBox(height: NexusSizes.spaceLG),
+
+                      // ── Fecha / Semana ─────────────────────
+                      _FieldLabel(_tipo == 'SEMANAL' ? 'Semana' : 'Fecha del parte'),
                       const SizedBox(height: NexusSizes.spaceSM),
                       _FechaPicker(
-                        fecha: _fechaSeleccionada,
+                        label: _labelFecha,
+                        icon: _tipo == 'SEMANAL'
+                            ? Icons.date_range_outlined
+                            : Icons.calendar_today_outlined,
                         onTap: _seleccionarFecha,
                       ),
                       const SizedBox(height: NexusSizes.spaceLG),
 
                       // ── Horas ──────────────────────────────
-                      _FieldLabel('Horas realizadas'),
+                      _FieldLabel(_tipo == 'SEMANAL'
+                          ? 'Horas totales de la semana'
+                          : 'Horas realizadas'),
                       const SizedBox(height: NexusSizes.spaceSM),
                       TextFormField(
                         controller: _horasCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          hintText: 'Ej. 8',
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          hintText: _hintHoras,
                           suffixText: 'h',
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Introduce las horas realizadas';
                           }
-                          final horas = int.tryParse(value.trim());
-                          if (horas == null || horas < 1 || horas > 24) {
-                            return 'Introduce un valor entre 1 y 24';
+                          final horas = double.tryParse(
+                              value.trim().replaceAll(',', '.'));
+                          if (horas == null || horas < 0.5 || horas > _maxHoras) {
+                            return _validatorMaxHoras;
                           }
                           return null;
                         },
@@ -198,9 +236,10 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
                         controller: _descripcionCtrl,
                         maxLines: 5,
                         maxLength: 1000,
-                        decoration: const InputDecoration(
-                          hintText:
-                              'Describe brevemente las tareas realizadas durante este periodo...',
+                        decoration: InputDecoration(
+                          hintText: _tipo == 'SEMANAL'
+                              ? 'Resume las actividades realizadas durante toda la semana...'
+                              : 'Describe brevemente las tareas realizadas durante este periodo...',
                           alignLabelWithHint: true,
                         ),
                         validator: (value) {
@@ -215,7 +254,7 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
                       ),
                       const SizedBox(height: NexusSizes.space2XL),
 
-                      // ── Botón de envío ─────────────────────
+                      // ── Botón envío ────────────────────────
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -225,37 +264,34 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
                                   height: 18,
                                   width: 18,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
+                                      strokeWidth: 2, color: Colors.white),
                                 )
                               : const Text('Registrar parte'),
                         ),
                       ),
                       const SizedBox(height: NexusSizes.spaceMD),
 
-                      // ── Nota informativa ──────────────────
+                      // ── Info ───────────────────────────────
                       Container(
                         padding: const EdgeInsets.all(NexusSizes.spaceMD),
                         decoration: BoxDecoration(
                           color: NexusColors.primaryLight,
-                          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+                          borderRadius:
+                              BorderRadius.circular(NexusSizes.radiusMD),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(
-                              Icons.info_outline,
-                              size: 15,
-                              color: NexusColors.primary,
-                            ),
+                            const Icon(Icons.info_outline,
+                                size: 15, color: NexusColors.primary),
                             const SizedBox(width: NexusSizes.spaceSM),
                             Expanded(
                               child: Text(
-                                'El parte quedará pendiente de validacion por tu tutor de empresa. Una vez validado, tu tutor del centro dara el visto bueno final.',
+                                _tipo == 'SEMANAL'
+                                    ? 'El parte semanal agrupa todas las horas de la semana en un solo registro. Quedara pendiente de validacion por tu tutor de empresa.'
+                                    : 'El parte quedara pendiente de validacion por tu tutor de empresa. Una vez validado, tu tutor del centro dara el visto bueno final.',
                                 style: NexusText.caption.copyWith(
-                                  color: NexusColors.primaryText,
-                                ),
+                                    color: NexusColors.primaryText),
                               ),
                             ),
                           ],
@@ -277,56 +313,117 @@ class _SeguimientoScreenState extends State<SeguimientoScreen> {
 // Widgets auxiliares
 // ─────────────────────────────────────────────────────
 
+class _TipoToggle extends StatelessWidget {
+  final String selected;
+  final ValueChanged<String> onChanged;
+  const _TipoToggle({required this.selected, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _ToggleBtn(
+          label: 'Diario',
+          icon: Icons.today_outlined,
+          active: selected == 'DIARIO',
+          onTap: () => onChanged('DIARIO'),
+        ),
+        const SizedBox(width: 8),
+        _ToggleBtn(
+          label: 'Semanal',
+          icon: Icons.date_range_outlined,
+          active: selected == 'SEMANAL',
+          onTap: () => onChanged('SEMANAL'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ToggleBtn extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+  const _ToggleBtn(
+      {required this.label,
+      required this.icon,
+      required this.active,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: active ? NexusColors.primary : context.nxt.surface,
+          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+          border: Border.all(
+            color: active ? NexusColors.primary : context.nxt.border,
+            width: NexusSizes.borderWidth,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                size: 15,
+                color: active ? Colors.white : context.nxt.inkSecondary),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: NexusText.small.copyWith(
+                color: active ? Colors.white : context.nxt.inkSecondary,
+                fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _FieldLabel extends StatelessWidget {
   final String text;
   const _FieldLabel(this.text);
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: NexusText.small.copyWith(fontWeight: FontWeight.w500),
-    );
+    return Text(text,
+        style: NexusText.small.copyWith(fontWeight: FontWeight.w500));
   }
 }
 
 class _FechaPicker extends StatelessWidget {
-  final DateTime fecha;
+  final String label;
+  final IconData icon;
   final VoidCallback onTap;
-  const _FechaPicker({required this.fecha, required this.onTap});
+  const _FechaPicker(
+      {required this.label, required this.icon, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final texto =
-        '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 12,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: context.nxt.surface,
-          border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+          border: Border.all(
+              color: context.nxt.border, width: NexusSizes.borderWidth),
           borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.calendar_today_outlined,
-              size: 16,
-              color: context.nxt.inkSecondary,
-            ),
+            Icon(icon, size: 16, color: context.nxt.inkSecondary),
             const SizedBox(width: NexusSizes.spaceSM),
-            Text(texto, style: NexusText.small),
-            const Spacer(),
-            Icon(
-              Icons.keyboard_arrow_down,
-              size: 16,
-              color: context.nxt.inkSecondary,
-            ),
+            Expanded(child: Text(label, style: NexusText.small)),
+            Icon(Icons.keyboard_arrow_down,
+                size: 16, color: context.nxt.inkSecondary),
           ],
         ),
       ),

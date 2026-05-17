@@ -13,10 +13,13 @@ public record SeguimientoRequest(
 
     @NotNull(message = "Las horas realizadas son obligatorias")
     @DecimalMin(value = "0.5", message = "Debe registrar al menos 0.5 horas")
-    @DecimalMax(value = "24.0", message = "No se pueden registrar más de 24 horas al día")
+    @DecimalMax(value = "50.0", message = "No se pueden registrar más de 50 horas")
     Double horasRealizadas,
 
     @NotBlank(message = "La descripción es obligatoria")
     @Size(min = 10, max = 1000, message = "La descripción debe tener entre 10 y 1000 caracteres")
-    String descripcion
+    String descripcion,
+
+    // Opcional: DIARIO (defecto) o SEMANAL
+    String tipo
 ) {}

@@ -392,11 +392,11 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
             },
             data: seguimientos
                 .map((s) => [
-                      DateFormat('d MMM yy', 'es_ES').format(s.fechaRegistro),
+                      fmtSeguimientoFecha(s),
                       fmtH(s.horasRealizadas),
                       _estadoLabel(s.estado),
                       (s.descripcion ?? '').length > 55
-                          ? '${(s.descripcion ?? '').substring(0, 55)}…'
+                          ? '${(s.descripcion ?? '').substring(0, 55)}...'
                           : (s.descripcion ?? ''),
                     ])
                 .toList(),
@@ -416,7 +416,7 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
                       DateFormat('d MMM yy', 'es_ES').format(i.fechaCreacion),
                       i.estado,
                       i.descripcion.length > 70
-                          ? '${i.descripcion.substring(0, 70)}…'
+                          ? '${i.descripcion.substring(0, 70)}...'
                           : i.descripcion,
                     ])
                 .toList(),
@@ -444,7 +444,7 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
                       DateFormat('d MMM yy', 'es_ES').format(a.fecha),
                       _ausenciaLabel(a.tipo),
                       a.motivo.length > 60
-                          ? '${a.motivo.substring(0, 60)}…'
+                          ? '${a.motivo.substring(0, 60)}...'
                           : a.motivo,
                       a.revisadaPorNombre ?? '—',
                     ])
@@ -543,10 +543,17 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
     for (int i = 0; i < seguimientos.length; i++) {
       final seg = seguimientos[i];
 
-      // Calcular inicio de semana (lunes) a partir de la fecha del seguimiento
-      final fechaFin = seg.fechaRegistro;
-      final fechaInicio = fechaFin.subtract(Duration(days: fechaFin.weekday - 1));
-      final periodoStr = 'De ${fmtDate.format(fechaInicio)} a ${fmtDate.format(fechaFin)}';
+      // Para SEMANAL fechaRegistro ya es el lunes; para DIARIO calculamos el lunes de esa semana
+      final DateTime lunes;
+      final DateTime fechaFin;
+      if (seg.esSemanal) {
+        lunes = seg.fechaRegistro;
+        fechaFin = lunes.add(const Duration(days: 4)); // viernes
+      } else {
+        fechaFin = seg.fechaRegistro;
+        lunes = fechaFin.subtract(Duration(days: fechaFin.weekday - 1));
+      }
+      final periodoStr = 'De ${fmtDate.format(lunes)} a ${fmtDate.format(fechaFin)}';
 
       final estadoTexto = _estadoAnexo(seg.estado);
 
@@ -616,9 +623,9 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
                   _tCellMulti(seg.descripcion ?? '—', size: 8),
                   _tCell('', size: 8, center: true),
                   _tCell('', size: 8, center: true),
-                  _tCell(estadoTexto == 'Superado' ? '' : '', size: 8, center: true),
-                  _tCell(estadoTexto == 'En proceso' ? '✓' : '', size: 8, center: true),
-                  _tCell(estadoTexto == 'Superado' ? '✓' : '', size: 8, center: true),
+                  _tCell(estadoTexto == 'No superado' ? 'X' : '', size: 8, center: true),
+                  _tCell(estadoTexto == 'En proceso' ? 'X' : '', size: 8, center: true),
+                  _tCell(estadoTexto == 'Superado' ? 'X' : '', size: 8, center: true),
                   _tCell(
                     seg.comentarioTutor != null && seg.comentarioTutor!.isNotEmpty
                         ? seg.comentarioTutor!
@@ -737,31 +744,48 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
   }
 
   pw.Widget _anexoSectionTable(List<List<String>> rows, {required String title}) {
-    return pw.Table(
-      border: pw.TableBorder.all(color: PdfColors.grey600, width: 0.5),
+    const border = pw.BorderSide(color: PdfColors.grey600, width: 0.5);
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.stretch,
       children: [
-        pw.TableRow(
-          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
-          children: [
-            pw.Padding(
-              padding: const pw.EdgeInsets.all(4),
-              child: pw.Text(title,
-                  style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+        // Cabecera span completo sin divisor vertical interno
+        pw.Container(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          decoration: const pw.BoxDecoration(
+            color: PdfColors.grey200,
+            border: pw.Border(
+              top: border,
+              left: border,
+              right: border,
+              bottom: border,
             ),
-            pw.SizedBox(),
+          ),
+          child: pw.Text(title,
+              style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+        ),
+        // Filas de datos sin borde superior (ya lo pone el Container)
+        pw.Table(
+          border: pw.TableBorder(
+            left: border,
+            right: border,
+            bottom: border,
+            horizontalInside: border,
+            verticalInside: border,
+          ),
+          children: [
+            for (final row in rows)
+              pw.TableRow(children: [
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  child: pw.Text(row[0], style: const pw.TextStyle(fontSize: 9)),
+                ),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  child: pw.Text(row[1], style: const pw.TextStyle(fontSize: 9)),
+                ),
+              ]),
           ],
         ),
-        for (final row in rows)
-          pw.TableRow(children: [
-            pw.Padding(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              child: pw.Text(row[0], style: const pw.TextStyle(fontSize: 9)),
-            ),
-            pw.Padding(
-              padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              child: pw.Text(row[1], style: const pw.TextStyle(fontSize: 9)),
-            ),
-          ]),
       ],
     );
   }
@@ -809,7 +833,7 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
         padding: const pw.EdgeInsets.only(bottom: 3),
         child: pw.Row(children: [
           pw.Expanded(
-              child: pw.Text('• $label',
+              child: pw.Text('- $label',
                   style: const pw.TextStyle(fontSize: 9))),
           pw.Text('${value.toStringAsFixed(1)} / 10',
               style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
@@ -823,92 +847,116 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
     final incidencias = provider.incidenciasDe(practica.id);
     final ausencias = provider.ausenciasDe(practica.id);
     final evaluacion = provider.evaluacionDe(practica.id);
+    final fmt = DateFormat('dd/MM/yyyy');
 
     final wb = Excel.createExcel();
     wb.delete('Sheet1');
 
-    // Sheet: Información
-    final info = wb['Información'];
-    _xlRow(info, ['Campo', 'Valor']);
-    _xlRow(info, ['Alumno', practica.alumnoNombre]);
-    _xlRow(info, ['Empresa', practica.empresaNombre]);
-    _xlRow(info, ['Código', practica.codigo]);
-    _xlRow(info, ['Estado', practica.estado]);
-    _xlRow(info, ['Tutor centro', practica.tutorCentroNombre]);
-    _xlRow(info, ['Tutor empresa', practica.tutorEmpresaNombre]);
-    if (practica.fechaInicio != null)
-      _xlRow(info,
-          ['Fecha inicio', DateFormat('dd/MM/yyyy').format(practica.fechaInicio!)]);
-    if (practica.fechaFin != null)
-      _xlRow(info,
-          ['Fecha fin', DateFormat('dd/MM/yyyy').format(practica.fechaFin!)]);
-    if (practica.horasTotales != null)
-      _xlRow(info, ['Horas totales', '${practica.horasTotales}']);
+    // ── Hoja Información ────────────────────────────────────────────────
+    final info = wb['Informacion'];
+    _xlHeader(info, ['Campo', 'Valor'], ExcelColor.fromHexString('FF17375E'));
+    info.setColumnWidth(0, 22);
+    info.setColumnWidth(1, 36);
+    final infoRows = [
+      ['Alumno', practica.alumnoNombre],
+      ['Empresa', practica.empresaNombre],
+      ['Codigo', practica.codigo],
+      ['Estado', practica.estado],
+      ['Tutor centro', practica.tutorCentroNombre],
+      ['Tutor empresa', practica.tutorEmpresaNombre],
+      if (practica.fechaInicio != null) ['Fecha inicio', fmt.format(practica.fechaInicio!)],
+      if (practica.fechaFin != null) ['Fecha fin', fmt.format(practica.fechaFin!)],
+      if (practica.horasTotales != null) ['Horas totales', '${practica.horasTotales}'],
+    ];
+    for (int i = 0; i < infoRows.length; i++) {
+      _xlInfoRow(info, infoRows[i][0], infoRows[i][1], i);
+    }
 
-    // Sheet: Seguimientos
+    // ── Hoja Seguimientos ───────────────────────────────────────────────
     final segSheet = wb['Seguimientos'];
-    _xlRow(segSheet, ['Fecha', 'Horas', 'Estado', 'Descripción', 'Validado por', 'Comentario tutor']);
-    for (final s in seguimientos) {
-      _xlRow(segSheet, [
-        DateFormat('dd/MM/yyyy').format(s.fechaRegistro),
+    _xlHeader(segSheet, ['Fecha', 'Horas', 'Estado', 'Descripcion', 'Validado por', 'Comentario tutor'],
+        ExcelColor.fromHexString('FF1A5C2A'));
+    segSheet.setColumnWidth(0, 13);
+    segSheet.setColumnWidth(1, 8);
+    segSheet.setColumnWidth(2, 20);
+    segSheet.setColumnWidth(3, 52);
+    segSheet.setColumnWidth(4, 24);
+    segSheet.setColumnWidth(5, 34);
+    for (int i = 0; i < seguimientos.length; i++) {
+      final s = seguimientos[i];
+      _xlDataRow(segSheet, [
+        fmtSeguimientoFecha(s),
         '${s.horasRealizadas}',
         _estadoLabel(s.estado),
         s.descripcion ?? '',
         s.validadoPorNombre ?? '',
         s.comentarioTutor ?? '',
-      ]);
+      ], i);
     }
 
-    // Sheet: Incidencias
+    // ── Hoja Incidencias ────────────────────────────────────────────────
     if (incidencias.isNotEmpty) {
       final incSheet = wb['Incidencias'];
-      _xlRow(incSheet, ['Fecha', 'Estado', 'Descripción']);
-      for (final i in incidencias) {
-        _xlRow(incSheet, [
-          DateFormat('dd/MM/yyyy').format(i.fechaCreacion),
-          i.estado,
-          i.descripcion,
-        ]);
+      _xlHeader(incSheet, ['Fecha', 'Estado', 'Descripcion'],
+          ExcelColor.fromHexString('FF7B3F00'));
+      incSheet.setColumnWidth(0, 13);
+      incSheet.setColumnWidth(1, 18);
+      incSheet.setColumnWidth(2, 60);
+      for (int i = 0; i < incidencias.length; i++) {
+        final inc = incidencias[i];
+        _xlDataRow(incSheet, [
+          fmt.format(inc.fechaCreacion),
+          inc.estado,
+          inc.descripcion,
+        ], i);
       }
     }
 
-    // Sheet: Ausencias
+    // ── Hoja Ausencias ──────────────────────────────────────────────────
     if (ausencias.isNotEmpty) {
       final ausSheet = wb['Ausencias'];
-      _xlRow(ausSheet, ['Fecha', 'Estado', 'Motivo', 'Revisada por', 'Comentario revisión']);
-      for (final a in ausencias) {
-        _xlRow(ausSheet, [
-          DateFormat('dd/MM/yyyy').format(a.fecha),
+      _xlHeader(ausSheet, ['Fecha', 'Estado', 'Motivo', 'Revisada por', 'Comentario revision'],
+          ExcelColor.fromHexString('FF6B1515'));
+      ausSheet.setColumnWidth(0, 13);
+      ausSheet.setColumnWidth(1, 16);
+      ausSheet.setColumnWidth(2, 40);
+      ausSheet.setColumnWidth(3, 24);
+      ausSheet.setColumnWidth(4, 36);
+      for (int i = 0; i < ausencias.length; i++) {
+        final a = ausencias[i];
+        _xlDataRow(ausSheet, [
+          fmt.format(a.fecha),
           _ausenciaLabel(a.tipo),
           a.motivo,
           a.revisadaPorNombre ?? '',
           a.comentarioRevision ?? '',
-        ]);
+        ], i);
       }
     }
 
-    // Sheet: Evaluación
+    // ── Hoja Evaluación ─────────────────────────────────────────────────
     if (evaluacion != null) {
-      final evalSheet = wb['Evaluación'];
-      _xlRow(evalSheet, ['Criterio', 'Nota']);
-      _xlRow(evalSheet, ['Nota global', evaluacion.notaGlobal.toStringAsFixed(2)]);
+      final evalSheet = wb['Evaluacion'];
+      _xlHeader(evalSheet, ['Criterio', 'Nota / 10'],
+          ExcelColor.fromHexString('FF17375E'));
+      evalSheet.setColumnWidth(0, 28);
+      evalSheet.setColumnWidth(1, 14);
+      int idx = 0;
+      _xlDataRow(evalSheet, ['Nota global', evaluacion.notaGlobal.toStringAsFixed(2)], idx++);
       if (evaluacion.actitudPuntualidad != null)
-        _xlRow(evalSheet, ['Actitud y puntualidad', evaluacion.actitudPuntualidad!.toStringAsFixed(1)]);
+        _xlDataRow(evalSheet, ['Actitud y puntualidad', evaluacion.actitudPuntualidad!.toStringAsFixed(1)], idx++);
       if (evaluacion.competenciaTecnica != null)
-        _xlRow(evalSheet, ['Competencia técnica', evaluacion.competenciaTecnica!.toStringAsFixed(1)]);
+        _xlDataRow(evalSheet, ['Competencia tecnica', evaluacion.competenciaTecnica!.toStringAsFixed(1)], idx++);
       if (evaluacion.iniciativaAutonomia != null)
-        _xlRow(evalSheet, ['Iniciativa y autonomía', evaluacion.iniciativaAutonomia!.toStringAsFixed(1)]);
+        _xlDataRow(evalSheet, ['Iniciativa y autonomia', evaluacion.iniciativaAutonomia!.toStringAsFixed(1)], idx++);
       if (evaluacion.trabajoEquipo != null)
-        _xlRow(evalSheet, ['Trabajo en equipo', evaluacion.trabajoEquipo!.toStringAsFixed(1)]);
+        _xlDataRow(evalSheet, ['Trabajo en equipo', evaluacion.trabajoEquipo!.toStringAsFixed(1)], idx++);
       if (evaluacion.cumplimientoTareas != null)
-        _xlRow(evalSheet, ['Cumplimiento de tareas', evaluacion.cumplimientoTareas!.toStringAsFixed(1)]);
+        _xlDataRow(evalSheet, ['Cumplimiento de tareas', evaluacion.cumplimientoTareas!.toStringAsFixed(1)], idx++);
       if (evaluacion.comentario != null && evaluacion.comentario!.isNotEmpty)
-        _xlRow(evalSheet, ['Comentario', evaluacion.comentario!]);
-      _xlRow(evalSheet, ['Evaluado por', evaluacion.tutorEmpresaNombre]);
-      _xlRow(evalSheet, [
-        'Fecha evaluación',
-        DateFormat('dd/MM/yyyy').format(evaluacion.fechaEvaluacion)
-      ]);
+        _xlDataRow(evalSheet, ['Comentario', evaluacion.comentario!], idx++);
+      _xlDataRow(evalSheet, ['Evaluado por', evaluacion.tutorEmpresaNombre], idx++);
+      _xlDataRow(evalSheet, ['Fecha evaluacion', fmt.format(evaluacion.fechaEvaluacion)], idx);
     }
 
     final rawBytes = wb.save();
@@ -921,13 +969,55 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
     html.Url.revokeObjectUrl(url);
   }
 
-  void _xlRow(Sheet sheet, List<String> values) {
+  void _xlHeader(Sheet sheet, List<String> cols, ExcelColor bgColor) {
+    final row = sheet.maxRows;
+    for (int i = 0; i < cols.length; i++) {
+      final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: row));
+      cell.value = TextCellValue(cols[i]);
+      cell.cellStyle = CellStyle(
+        backgroundColorHex: bgColor,
+        fontColorHex: ExcelColor.fromHexString('FFFFFFFF'),
+        bold: true,
+        horizontalAlign: HorizontalAlign.Center,
+        verticalAlign: VerticalAlign.Center,
+      );
+    }
+  }
+
+  void _xlDataRow(Sheet sheet, List<String> values, int rowIndex) {
+    final isAlt = rowIndex % 2 == 1;
+    final bg = isAlt
+        ? ExcelColor.fromHexString('FFE8F0F7')
+        : ExcelColor.fromHexString('FFFFFFFF');
     final row = sheet.maxRows;
     for (int i = 0; i < values.length; i++) {
-      sheet
-          .cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: row))
-          .value = TextCellValue(values[i]);
+      final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: i, rowIndex: row));
+      cell.value = TextCellValue(values[i]);
+      cell.cellStyle = CellStyle(
+        backgroundColorHex: bg,
+        verticalAlign: VerticalAlign.Center,
+      );
     }
+  }
+
+  void _xlInfoRow(Sheet sheet, String label, String value, int rowIndex) {
+    final isAlt = rowIndex % 2 == 1;
+    final row = sheet.maxRows;
+    final labelCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row));
+    labelCell.value = TextCellValue(label);
+    labelCell.cellStyle = CellStyle(
+      backgroundColorHex: ExcelColor.fromHexString('FF2A6496'),
+      fontColorHex: ExcelColor.fromHexString('FFFFFFFF'),
+      bold: true,
+    );
+    final valueCell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: 1, rowIndex: row));
+    valueCell.value = TextCellValue(value);
+    valueCell.cellStyle = CellStyle(
+      backgroundColorHex: isAlt
+          ? ExcelColor.fromHexString('FFE8F0F7')
+          : ExcelColor.fromHexString('FFFFFFFF'),
+      verticalAlign: VerticalAlign.Center,
+    );
   }
 
   String _initials(String nombre) {
@@ -943,7 +1033,7 @@ class _FichaAlumnoScreenState extends State<FichaAlumnoScreen> {
         DateFormat('d MMM yyyy', 'es_ES').format(d);
     if (inicio == null) return 'Sin fecha de inicio';
     if (fin == null) return 'Desde ${fmt(inicio)}';
-    return '${fmt(inicio)} → ${fmt(fin)}';
+    return '${fmt(inicio)} al ${fmt(fin)}';
   }
 
   String _ausenciaLabel(String tipo) => switch (tipo) {
@@ -1213,8 +1303,7 @@ class _SeguimientoFila extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fecha = DateFormat('d MMM yy', 'es_ES')
-        .format(seguimiento.fechaRegistro);
+    final fecha = fmtSeguimientoFecha(seguimiento);
 
     final (label, color) = switch (seguimiento.estado) {
       'COMPLETADO' => ('Validado', NexusColors.success),

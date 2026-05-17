@@ -2137,7 +2137,9 @@ class _ParteTableRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fecha = DateFormat('d MMM', 'es_ES').format(seguimiento.fechaRegistro);
+    final fecha = seguimiento.esSemanal
+        ? 'Sem. ${DateFormat('d MMM', 'es_ES').format(seguimiento.fechaRegistro)}'
+        : DateFormat('d MMM', 'es_ES').format(seguimiento.fechaRegistro);
 
     return LayoutBuilder(builder: (ctx, constraints) {
       final isMobile = constraints.maxWidth < 600;

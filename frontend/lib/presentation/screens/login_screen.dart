@@ -54,7 +54,7 @@ class _DesktopLogin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: NexusColors.surface,
+      backgroundColor: context.nxt.surface,
       body: Row(
         children: [
           // Panel izquierdo — branding
@@ -101,7 +101,7 @@ class _DesktopLogin extends StatelessWidget {
           // Panel derecho — formulario
           Expanded(
             child: Container(
-              color: NexusColors.surface,
+              color: context.nxt.surface,
               child: Center(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(48),
@@ -112,22 +112,22 @@ class _DesktopLogin extends StatelessWidget {
                       children: [
                         const NexusLogo(height: 44),
                         const SizedBox(height: 32),
-                        const Text(
+                        Text(
                           'Bienvenido de nuevo',
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 22,
                             fontWeight: FontWeight.w600,
-                            color: NexusColors.ink,
+                            color: context.nxt.ink,
                           ),
                         ),
                         const SizedBox(height: 6),
-                        const Text(
+                        Text(
                           'Accede con tu cuenta institucional',
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 14,
-                            color: NexusColors.inkSecondary,
+                            color: context.nxt.inkSecondary,
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -209,7 +209,7 @@ class _MobileLogin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: NexusColors.surfaceAlt,
+      backgroundColor: context.nxt.surfaceAlt,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(NexusSizes.space2XL),
@@ -223,29 +223,29 @@ class _MobileLogin extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(NexusSizes.space3XL),
                   decoration: BoxDecoration(
-                    color: NexusColors.surface,
-                    border: Border.all(color: NexusColors.border, width: NexusSizes.borderWidth),
+                    color: context.nxt.surface,
+                    border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
                     borderRadius: BorderRadius.circular(NexusSizes.radiusLG),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Iniciar sesión',
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: NexusColors.ink,
+                          color: context.nxt.ink,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
+                      Text(
                         'Accede con tu cuenta institucional',
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 13,
-                          color: NexusColors.inkTertiary,
+                          color: context.nxt.inkTertiary,
                         ),
                       ),
                       const SizedBox(height: NexusSizes.space2XL),

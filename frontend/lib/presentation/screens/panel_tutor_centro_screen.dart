@@ -1046,11 +1046,13 @@ class _DetailPanel extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(practica.alumnoNombre,
-                            style: NexusText.heading2.copyWith(letterSpacing: -0.3)),
+                            style: NexusText.heading2.copyWith(letterSpacing: -0.3),
+                            overflow: TextOverflow.ellipsis),
                         const SizedBox(height: 3),
                         Text(
                           '${practica.empresaNombre} · ${practica.codigo}',
                           style: NexusText.body.copyWith(color: ctx.nxt.inkSecondary),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -1058,6 +1060,18 @@ class _DetailPanel extends StatelessWidget {
                   _StatusChip(
                     label: practica.estado == 'ACTIVA' ? 'En curso' : practica.estado,
                     color: practica.estado == 'ACTIVA' ? NexusColors.primary : ctx.nxt.inkSecondary,
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    tooltip: 'Ver ficha completa',
+                    color: NexusColors.primary,
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => FichaAlumnoScreen(practica: practica)),
+                    ),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   ),
                 ],
               );
@@ -1154,7 +1168,7 @@ class _DetailPanel extends StatelessWidget {
                 ),
               );
 
-              // ── Contenido principal (columna izquierda) ────────────────
+              // ── Contenido principal ────────────────────────────────────
               final mainContent = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1162,7 +1176,18 @@ class _DetailPanel extends StatelessWidget {
                   const SizedBox(height: 20),
                   miniStats,
                   const SizedBox(height: 20),
-                  progresoCard,
+                  // En desktop: progresoCard + comunicación en la misma fila
+                  if (twoCol)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: progresoCard),
+                        const SizedBox(width: 16),
+                        SizedBox(width: 210, child: _buildComunicacionCard(ctx, practica)),
+                      ],
+                    )
+                  else
+                    progresoCard,
 
                   if (pendientes.isNotEmpty) ...[
                     const SizedBox(height: 24),
@@ -1229,60 +1254,13 @@ class _DetailPanel extends StatelessWidget {
                     ),
                   ],
 
-                  // En layout de una columna, ficha + comunicación van aquí abajo
+                  // En móvil (una columna), comunicación va al final
                   if (!twoCol) ...[
                     const SizedBox(height: 24),
-                    OutlinedButton.icon(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => FichaAlumnoScreen(practica: practica)),
-                      ),
-                      icon: const Icon(Icons.open_in_new, size: 15),
-                      label: const Text('Ver ficha completa'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: NexusColors.primary,
-                        side: const BorderSide(color: NexusColors.primaryLight),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     _buildComunicacionCard(ctx, practica),
                   ],
                 ],
               );
-
-              // ── Sidebar derecha ────────────────────────────────────────
-              final rightSidebar = Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => FichaAlumnoScreen(practica: practica)),
-                    ),
-                    icon: const Icon(Icons.open_in_new, size: 15),
-                    label: const Text('Ver ficha completa'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: NexusColors.primary,
-                      side: const BorderSide(color: NexusColors.primaryLight),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildComunicacionCard(ctx, practica),
-                ],
-              );
-
-              if (twoCol) {
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: mainContent),
-                    const SizedBox(width: 24),
-                    SizedBox(width: 220, child: rightSidebar),
-                  ],
-                );
-              }
 
               return mainContent;
             },
@@ -1367,20 +1345,17 @@ class _AllPartesPanel extends StatelessWidget {
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(NexusSizes.space2XL),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
               children: [
-                // Header
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Validación de Partes',
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Validación de Partes',
                               style: NexusText.heading2.copyWith(letterSpacing: -0.3)),
                           const SizedBox(height: 2),
                           Text(
@@ -1418,9 +1393,9 @@ class _AllPartesPanel extends StatelessWidget {
                               const _ColH('Alumno', flex: 3),
                               if (!isMobile) const _ColH('Empresa', flex: 3),
                               const _ColH('Fecha', flex: 2),
-                              const _ColH('Horas', flex: 1),
-                              if (!isMobile) const _ColH('Descripción', flex: 4),
-                              _ColH('Acción', flex: isMobile ? 1 : 2),
+                              const _ColH('Horas', flex: 2),
+                              if (!isMobile) const _ColH('Descripción', flex: 3),
+                              _ColH('Acción', flex: isMobile ? 2 : 2),
                             ],
                           ),
                         );
@@ -1501,19 +1476,24 @@ class _AllPartesPanel extends StatelessWidget {
                                 children: [
                                   Icon(Icons.calendar_today_outlined, size: 13, color: context.nxt.inkTertiary),
                                   const SizedBox(width: 5),
-                                  Text(
-                                    ultimo.esSemanal
-                                        ? 'Sem. ${DateFormat('d MMM', 'es_ES').format(ultimo.fechaRegistro)} - ${DateFormat('d MMM yyyy', 'es_ES').format(ultimo.fechaRegistro.add(const Duration(days: 4)))}'
-                                        : DateFormat('d MMM yyyy', 'es_ES').format(ultimo.fechaRegistro),
-                                    style: NexusText.caption,
+                                  Flexible(
+                                    child: Text(
+                                      ultimo.esSemanal
+                                          ? 'Sem. ${DateFormat('d MMM', 'es_ES').format(ultimo.fechaRegistro)} - ${DateFormat('d MMM', 'es_ES').format(ultimo.fechaRegistro.add(const Duration(days: 4)))}'
+                                          : DateFormat('d MMM yyyy', 'es_ES').format(ultimo.fechaRegistro),
+                                      style: NexusText.caption,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: 10),
                                   Icon(Icons.access_time, size: 13, color: context.nxt.inkTertiary),
                                   const SizedBox(width: 5),
-                                  Text('${fmtH(ultimo.horasRealizadas)} declaradas',
-                                      style: NexusText.caption),
+                                  Flexible(
+                                    child: Text('${fmtH(ultimo.horasRealizadas)}h',
+                                        style: NexusText.caption, overflow: TextOverflow.ellipsis),
+                                  ),
                                   if (ultimoPractica != null) ...[
-                                    const SizedBox(width: 12),
+                                    const SizedBox(width: 10),
                                     Icon(Icons.person_outline, size: 13, color: context.nxt.inkTertiary),
                                     const SizedBox(width: 5),
                                     Expanded(
@@ -1578,8 +1558,6 @@ class _AllPartesPanel extends StatelessWidget {
                 }),
               ],
             ),
-          ),
-        ),
       ),
     );
   }
@@ -1659,20 +1637,17 @@ class _AllIncidenciasPanelState extends State<_AllIncidenciasPanel> {
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(NexusSizes.space2XL),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
               children: [
-                // Header
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Gestión de Incidencias',
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Gestión de Incidencias',
                               style: NexusText.heading2.copyWith(letterSpacing: -0.3)),
                           const SizedBox(height: 2),
                           Text(
@@ -1687,63 +1662,24 @@ class _AllIncidenciasPanelState extends State<_AllIncidenciasPanel> {
                 const SizedBox(height: 20),
                 // Stat cards (responsive)
                 LayoutBuilder(builder: (ctx, cst) {
-                  final statusCard = Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: abiertas == 0 ? NexusColors.successLight : context.nxt.surface,
-                      border: Border.all(
-                          color: abiertas == 0 ? NexusColors.success.withAlpha(60) : context.nxt.border,
-                          width: NexusSizes.borderWidth),
-                      borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          abiertas == 0 ? Icons.check_circle_outline : Icons.error_outline,
-                          size: 18,
-                          color: abiertas == 0 ? NexusColors.success : NexusColors.warning,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Estado',
-                                  style: NexusText.caption.copyWith(fontWeight: FontWeight.w600)),
-                              Text(
-                                abiertas == 0 ? 'Todo correcto' : '$abiertas requieren atención',
-                                style: NexusText.caption.copyWith(
-                                    color: abiertas == 0 ? NexusColors.success : NexusColors.warning,
-                                    fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-
                   if (cst.maxWidth < 480) {
-                    return Column(
+                    return Row(
                       children: [
-                        Row(children: [
-                          _IncStatCard(valor: '$abiertas', label: 'ABIERTAS', color: NexusColors.danger, icon: Icons.warning_amber_outlined),
-                          const SizedBox(width: 10),
-                          _IncStatCard(valor: '$enProceso', label: 'EN PROCESO', color: NexusColors.primary, icon: Icons.sync_outlined),
-                        ]),
-                        const SizedBox(height: 10),
-                        statusCard,
+                        Expanded(child: _IncStatCard(valor: '$abiertas', label: 'ABIERTAS', color: NexusColors.danger, icon: Icons.warning_amber_outlined)),
+                        const SizedBox(width: 6),
+                        Expanded(child: _IncStatCard(valor: '$enProceso', label: 'EN PROCESO', color: NexusColors.primary, icon: Icons.sync_outlined)),
+                        const SizedBox(width: 6),
+                        Expanded(child: _IncStatCard(valor: '${resueltas.length}', label: 'RESUELTAS', color: NexusColors.success, icon: Icons.check_circle_outline_rounded)),
                       ],
                     );
                   }
                   return Row(
                     children: [
-                      _IncStatCard(valor: '$abiertas', label: 'INCIDENCIAS ABIERTAS', color: NexusColors.danger, icon: Icons.warning_amber_outlined),
+                      Expanded(child: _IncStatCard(valor: '$abiertas', label: 'INCIDENCIAS ABIERTAS', color: NexusColors.danger, icon: Icons.warning_amber_outlined)),
                       const SizedBox(width: 12),
-                      _IncStatCard(valor: '$enProceso', label: 'EN PROCESO', color: NexusColors.primary, icon: Icons.sync_outlined),
+                      Expanded(child: _IncStatCard(valor: '$enProceso', label: 'EN PROCESO', color: NexusColors.primary, icon: Icons.sync_outlined)),
                       const SizedBox(width: 12),
-                      Expanded(child: statusCard),
+                      Expanded(child: _IncStatCard(valor: '${resueltas.length}', label: 'RESUELTAS', color: NexusColors.success, icon: Icons.check_circle_outline_rounded)),
                     ],
                   );
                 }),
@@ -1843,8 +1779,6 @@ class _AllIncidenciasPanelState extends State<_AllIncidenciasPanel> {
                 ),
               ],
             ),
-          ),
-        ),
       ),
     );
   }
@@ -1861,47 +1795,45 @@ class _IncStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          color: context.nxt.surface,
-          border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
-          borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: color.withAlpha(20),
-                borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
-              ),
-              child: Icon(icon, size: 18, color: color),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: context.nxt.surface,
+        border: Border.all(color: context.nxt.border, width: NexusSizes.borderWidth),
+        borderRadius: BorderRadius.circular(NexusSizes.radiusMD),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: color.withAlpha(20),
+              borderRadius: BorderRadius.circular(NexusSizes.radiusSM),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(valor,
-                      style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: color,
-                          letterSpacing: -0.3)),
-                  Text(label,
-                      style: NexusText.caption.copyWith(
-                          color: context.nxt.inkSecondary, letterSpacing: 0.3),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                ],
-              ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(valor,
+                    style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                        letterSpacing: -0.3)),
+                Text(label,
+                    style: NexusText.caption.copyWith(
+                        color: context.nxt.inkSecondary, letterSpacing: 0.3),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -2056,62 +1988,80 @@ class _IncidenciaTableRow extends StatelessWidget {
             if (!isMobile)
               Expanded(
                 flex: 2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: tipoBg,
-                    borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: tipoBg,
+                      borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                    ),
+                    child: Text(tipoLabel,
+                        style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: tipoFg),
+                        overflow: TextOverflow.ellipsis),
                   ),
-                  child: Text(tipoLabel,
-                      style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: tipoFg),
-                      overflow: TextOverflow.ellipsis),
                 ),
               ),
             Expanded(
               flex: 2,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: estadoBg,
-                  borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: estadoBg,
+                    borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                  ),
+                  child: Text(estadoLabel,
+                      style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: estadoFg),
+                      overflow: TextOverflow.ellipsis),
                 ),
-                child: Text(estadoLabel,
-                    style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: estadoFg),
-                    overflow: TextOverflow.ellipsis),
               ),
             ),
             Expanded(
               flex: 2,
               child: Text(fecha,
-                  style: NexusText.small
-                      .copyWith(color: context.nxt.inkSecondary)),
+                  style: NexusText.small.copyWith(color: context.nxt.inkSecondary),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1),
             ),
             Expanded(
               flex: 2,
               child: onGestionar != null
-                  ? OutlinedButton(
-                      onPressed: onGestionar,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: NexusColors.primary,
-                        side: const BorderSide(color: NexusColors.primary),
-                        padding: EdgeInsets.symmetric(
-                            horizontal: isMobile ? 6.0 : 12.0, vertical: 6),
-                        textStyle: const TextStyle(
-                            fontFamily: 'Inter',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ? Align(
+                      alignment: Alignment.centerLeft,
+                      child: InkWell(
+                        onTap: onGestionar,
+                        borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: NexusColors.dangerLight,
+                            borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                isMobile ? 'Ver' : 'Gestionar',
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: NexusColors.dangerText, fontFamily: 'Inter'),
+                              ),
+                              if (!isMobile) ...[
+                                const SizedBox(width: 4),
+                                const Icon(Icons.arrow_forward_rounded, size: 11, color: NexusColors.dangerText),
+                              ],
+                            ],
+                          ),
+                        ),
                       ),
-                      child: Text(isMobile ? 'Ver' : 'Gestionar'),
                     )
                   : const SizedBox.shrink(),
             ),
@@ -2166,24 +2116,29 @@ class _ParteTableRow extends StatelessWidget {
       final validarBtn = isMobile
           ? IconButton(
               onPressed: onValidar,
-              icon: const Icon(Icons.check, size: 18),
+              icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
               color: NexusColors.success,
               tooltip: 'Validar',
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
             )
-          : FilledButton.icon(
-              onPressed: onValidar,
-              icon: const Icon(Icons.check, size: 14),
-              label: const Text('Validar'),
-              style: FilledButton.styleFrom(
-                backgroundColor: NexusColors.success,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                textStyle: const TextStyle(
-                    fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w500),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          : InkWell(
+              onTap: onValidar,
+              borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: NexusColors.successLight,
+                  borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle_outline_rounded, size: 12, color: NexusColors.successText),
+                    SizedBox(width: 4),
+                    Text('Validar', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: NexusColors.successText, fontFamily: 'Inter')),
+                  ],
+                ),
               ),
             );
 
@@ -2220,12 +2175,12 @@ class _ParteTableRow extends StatelessWidget {
             ],
             Expanded(
               flex: 2,
-              child: Text(fecha, style: NexusText.small),
+              child: Text(fecha, style: NexusText.small, overflow: TextOverflow.ellipsis, maxLines: 1),
             ),
-            Expanded(flex: 1, child: horasChip),
+            Expanded(flex: 2, child: Align(alignment: Alignment.centerLeft, child: horasChip)),
             if (!isMobile)
               Expanded(
-                flex: 4,
+                flex: 3,
                 child: Padding(
                   padding: const EdgeInsets.only(right: 12),
                   child: Text(
@@ -2238,7 +2193,7 @@ class _ParteTableRow extends StatelessWidget {
                   ),
                 ),
               ),
-            Expanded(flex: isMobile ? 1 : 2, child: validarBtn),
+            Expanded(flex: 2, child: Align(alignment: Alignment.centerLeft, child: validarBtn)),
           ],
         ),
       );
@@ -2329,16 +2284,24 @@ class _ParteRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          FilledButton(
-            onPressed: onValidar,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              backgroundColor: NexusColors.primary,
-              minimumSize: const Size(0, 30),
-              textStyle: const TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w500),
+          InkWell(
+            onTap: onValidar,
+            borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: NexusColors.successLight,
+                borderRadius: BorderRadius.circular(NexusSizes.radiusFull),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check_circle_outline_rounded, size: 12, color: NexusColors.successText),
+                  SizedBox(width: 4),
+                  Text('Validar', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: NexusColors.successText, fontFamily: 'Inter')),
+                ],
+              ),
             ),
-            child: const Text('Validar'),
           ),
         ],
       ),
@@ -3143,6 +3106,8 @@ class _MiniStatBadge extends StatelessWidget {
           Text(
             label,
             style: NexusText.caption.copyWith(color: context.nxt.inkSecondary),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

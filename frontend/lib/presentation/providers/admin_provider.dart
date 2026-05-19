@@ -237,6 +237,19 @@ class AdminProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> eliminarPractica(int id) async {
+    try {
+      await _service.eliminarPractica(id);
+      _practicas = _practicas.where((p) => p.id != id).toList();
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString().replaceFirst('Exception: ', '');
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<bool> eliminarEmpresa(int id) async {
     try {
       await _service.eliminarEmpresa(id);

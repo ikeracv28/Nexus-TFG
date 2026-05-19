@@ -214,6 +214,17 @@ class AdminService {
     }
   }
 
+  Future<void> eliminarPractica(int id) async {
+    try {
+      await _apiClient.dio.delete('/practicas/$id');
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      final message = (data is Map ? data['message'] as String? : null)
+          ?? 'Error al eliminar la práctica';
+      throw Exception(message);
+    }
+  }
+
   // ---- Audit logs ----
 
   Future<List<AuditLogModel>> listarAuditLogs({String? modulo, int page = 0, int size = 50}) async {

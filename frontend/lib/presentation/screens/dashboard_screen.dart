@@ -357,13 +357,10 @@ class _InicioTab extends StatelessWidget {
         return SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: EdgeInsets.all(pad),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _GreetingHeader(nombreCompleto: auth.user?.nombreCompleto ?? 'Usuario'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _GreetingHeader(nombreCompleto: auth.user?.nombreCompleto ?? 'Usuario'),
                 const SizedBox(height: NexusSizes.space2XL),
                 if (practica.isLoading)
                   const _LoadingCard()
@@ -383,8 +380,6 @@ class _InicioTab extends StatelessWidget {
                   ),
               ],
             ),
-          ),
-        ),
       );
       }),
     );

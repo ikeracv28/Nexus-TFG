@@ -1033,6 +1033,13 @@ class _PracticaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (ctx, cst) {
+      final narrow = compacta || cst.maxWidth < 480;
+      return _buildCard(context, narrow);
+    });
+  }
+
+  Widget _buildCard(BuildContext context, bool narrow) {
     return Container(
       decoration: BoxDecoration(
         color: context.nxt.surface,
@@ -1050,9 +1057,12 @@ class _PracticaCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(practica.codigo,
-                        style: NexusText.small.copyWith(
-                            fontWeight: FontWeight.w700, letterSpacing: -0.2)),
+                    Flexible(
+                      child: Text(practica.codigo,
+                          style: NexusText.small.copyWith(
+                              fontWeight: FontWeight.w700, letterSpacing: -0.2),
+                          overflow: TextOverflow.ellipsis),
+                    ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1090,7 +1100,7 @@ class _PracticaCard extends StatelessWidget {
               ],
             ),
           ),
-          if (!compacta) ...[
+          if (!narrow) ...[
             // Center: empresa + tutor
             Expanded(
               flex: 4,
@@ -1164,7 +1174,96 @@ class _PracticaCard extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             );
           }),
+          if (practica.estado == 'BORRADOR')
+            Builder(builder: (ctx) {
+              return IconButton(
+                icon: const Icon(Icons.delete_outline, color: NexusColors.danger, size: 17),
+                tooltip: 'Eliminar práctica',
+                onPressed: () => _confirmarEliminar(ctx),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+              );
+            }),
         ],
+      ),
+    );
+  }
+
+  Future<void> _confirmarEliminar(BuildContext context) async {
+    final primera = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Eliminar práctica'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Vas a eliminar la práctica ${practica.codigo}.'),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: NexusColors.dangerLight,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: NexusColors.dangerText, size: 16),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Esta acción no tiene vuelta atrás.',
+                      style: TextStyle(fontWeight: FontWeight.w600, color: NexusColors.dangerText, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: NexusColors.danger),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+    if (primera != true || !context.mounted) return;
+
+    final segunda = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirmación final'),
+        content: const Text(
+          'La práctica y todos sus partes de seguimiento se eliminarán de forma permanente.\n\n¿Estás completamente seguro?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: NexusColors.danger),
+            child: const Text('Sí, eliminar definitivamente'),
+          ),
+        ],
+      ),
+    );
+    if (segunda != true || !context.mounted) return;
+
+    final ok = await context.read<AdminProvider>().eliminarPractica(practica.id);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok ? 'Práctica ${practica.codigo} eliminada' : context.read<AdminProvider>().error ?? 'Error al eliminar'),
+        backgroundColor: ok ? NexusColors.success : NexusColors.danger,
       ),
     );
   }
@@ -1948,20 +2047,17 @@ class _VistaEmpresasState extends State<_VistaEmpresas> {
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(NexusSizes.space2XL),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1100),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
               children: [
-                // Header
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Empresas colaboradoras',
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Empresas colaboradoras',
                               style: NexusText.heading2.copyWith(letterSpacing: -0.3)),
                           const SizedBox(height: 2),
                           Text('${provider.empresas.length} empresas registradas',
@@ -2067,8 +2163,6 @@ class _VistaEmpresasState extends State<_VistaEmpresas> {
                   ),
               ],
             ),
-          ),
-        ),
       ),
     );
   }

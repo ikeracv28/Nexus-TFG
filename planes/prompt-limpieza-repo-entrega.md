@@ -155,11 +155,35 @@ o rutas que hayan cambiado.
 
 ---
 
-## FASE 5 — Actualizar .gitignore
+## FASE 5 — Verificar secretos y actualizar .gitignore
 
-Añade al `.gitignore` para prevenir que vuelvan a aparecer en futuras sincronizaciones:
+**Primero — verificar que `.env` NO está trackeado:**
+```bash
+git ls-files .env
+```
+Si devuelve el nombre del archivo, quitarlo del tracking antes de cualquier otra cosa:
+```bash
+git rm --cached .env
+git commit -m "fix: eliminar .env del tracking de git"
+```
+El `.env` contiene `DB_PASSWORD`, `JWT_SECRET` y otras variables sensibles que nunca deben estar en un repo público.
+
+**Nota sobre `USUARIOS_PRUEBA.md`:** las contraseñas en texto plano que contiene (`Admin@Nexus2026`, etc.) son **credenciales de demostración intencionales** — el evaluador las necesita para probar el sistema. El profesor las valoró positivamente. No eliminar este archivo.
+
+**Nota sobre `V6__Passwords_Seguros_Usuarios_Prueba.sql`:** solo contiene hashes BCrypt irreversibles (`$2a$10$...`). Es seguro y necesario para que Flyway inicialice la BD.
+
+Añade al `.gitignore` para prevenir filtraciones en futuras sincronizaciones:
 
 ```gitignore
+# Secretos — NUNCA subir
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+*.jks
+
 # Herramientas IA
 CLAUDE.md
 GEMINI.md

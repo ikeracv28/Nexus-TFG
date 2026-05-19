@@ -4,162 +4,212 @@ Copia y pega esto en el chat de Claude del repositorio de entrega.
 
 ---
 
-## PROMPT
+## CONTEXTO
 
-Eres Claude Code trabajando en el repositorio de entrega de un TFG de desarrollo de software. Este repositorio es el que verá el profesor evaluador y debe estar completamente limpio y profesional. El repositorio de desarrollo (privado) contiene archivos de configuración de herramientas de IA que NO deben aparecer aquí.
+Este es el repositorio de entrega del TFG (https://github.com/ikeracv28/TFG-Seguimiento).
+El repositorio de desarrollo (privado) contiene archivos de configuración de herramientas de IA
+que NO deben aparecer aquí, pero hay documentación técnica valiosa que el profesor evaluador
+ha valorado explícitamente en el feedback del 75% y que DEBE mantenerse o mejorarse.
 
-Tu tarea es hacer una limpieza completa y dejar el repositorio en estado profesional.
+Feedback del profesor (hito 75%): valoración EXCELENTE. Destacó expresamente:
+- PLAN_SEGURIDAD_OWASP.md: "inusual en un TFG de DAM, nivel de rigor profesional"
+- USUARIOS_PRUEBA.md: "con cuentas demo y prácticas de demostración"
+- decisiones_tecnicas.md: "bitácora interna de calidad"
+- ERD_DATABASE.md, UML_CLASS_DIAGRAM.md: "Diagramas enlazados"
+- "Documentación abundante (10 ficheros raíz + bitácora interna)"
 
 ---
 
-### FASE 1 — Eliminar archivos de herramientas IA y trabajo interno
+## FASE 1 — Eliminar archivos de herramientas IA (sí o sí)
 
-Elimina todos estos archivos y carpetas del repositorio (git rm + commit):
-
-**Carpetas enteras:**
-- `planes/` — planes de trabajo internos con IA
-- `conductor/` — configuración de agente IA (Conductor)
-- `.agents/` — configuración de agentes IA
+Estos archivos son configuración interna de herramientas de IA y NO aportan valor académico.
+Elimínalos con `git rm`:
 
 **Archivos de configuración IA en raíz:**
 - `CLAUDE.md` — instrucciones para Claude Code
 - `GEMINI.md` — instrucciones para Gemini
 - `skills-lock.json` — lock de skills de Claude Code
-- `DESIGN_SYSTEM.md` — referencia interna del design system
-- `HISTORIAL_CAMBIOS.md` — bitácora de sesiones de IA
-- `RETOMAR_SESION.md` — contexto para retomar sesión con IA
-- `PLAN_SEGURIDAD_OWASP.md` — checklist interno de seguridad
-- `contexto_proyecto.md` — contexto interno del proyecto
-- `ACTUALIZACIONES_MEMORIA.md` — notas internas de memoria
-- `MEMORIA_ACTUALIZACIONES.md` — bloques de memoria para la memoria Word
-- `MEMORIA_NUEVA_CONTENIDO.md` — borradores de memoria
-- `Feedback.md` — feedback de tutorías (notas internas)
+- `RETOMAR_SESION.md` — contexto de sesión con IA
+- `contexto_proyecto.md` — contexto interno del proyecto para IA
+
+**Carpetas de configuración IA:**
+- `.agents/` — configuración de agentes IA
+- `conductor/` — configuración de agente Conductor (IA)
 
 **Archivos de configuración IA en subcarpetas:**
 - `backend/GEMINI.md`
 - `backend/contexto_proyecto.md`
-- `backend/ARQUITECTURA_API.md` (duplicado del de raíz)
-- `backend/MEMORIA_SEGUIMIENTO_ENTREGA_1.md`
 - `frontend/GEMINI.md`
 - `frontend/contexto_proyecto.md`
-- `frontend/ARQUITECTURA_API.md` (duplicado del de raíz)
 
-**Borradores de memoria/documentación:**
-- `memoria75%.md`
-- `MemoriaEnMd.md`
-- `Memoria TFG Iker-Acevedo 75% (1).md`
-- `Memoria TFG Iker-Acevedo 75% (2).md`
-- `Captura de pantalla 2026-04-29 202731.md`
+**Carpeta `planes/` — eliminar casi toda, pero EXTRAER antes lo valioso:**
+
+Antes de borrar `planes/`, copia estos archivos a la raíz del proyecto con nombre en mayúsculas:
+- `planes/decisiones-tecnicas.md` → `DECISIONES_TECNICAS.md` (el profesor lo valoró)
+
+Luego elimina la carpeta `planes/` completa.
 
 ---
 
-### FASE 2 — Revisar y pulir el README.md
+## FASE 2 — Eliminar borradores de documentación
 
-El README.md debe ser profesional y útil para el evaluador. Estructura sugerida:
+Archivos de trabajo en progreso que no deben aparecer en el repo de entrega:
+
+- `HISTORIAL_CAMBIOS.md` — bitácora de sesiones de IA (no es documentación académica)
+- `ACTUALIZACIONES_MEMORIA.md` — notas internas de memoria IA
+- `MEMORIA_ACTUALIZACIONES.md` — bloques de memoria para Word
+- `MEMORIA_NUEVA_CONTENIDO.md` — borradores de la memoria TFG
+- `DESIGN_SYSTEM.md` — referencia interna del design system para IA
+- `Feedback.md` — notas privadas de tutoría
+- `memoria75%.md` — borrador de la memoria
+- `MemoriaEnMd.md` — borrador de la memoria
+- `"Memoria TFG Iker-Acevedo 75% (1).md"` — borrador
+- `"Memoria TFG Iker-Acevedo 75% (2).md"` — borrador
+- `"Captura de pantalla 2026-04-29 202731.md"` — archivo suelto
+
+**Duplicados de ARQUITECTURA_API.md en subcarpetas** (el raíz es el definitivo):
+- `backend/ARQUITECTURA_API.md`
+- `frontend/ARQUITECTURA_API.md`
+- `backend/MEMORIA_SEGUIMIENTO_ENTREGA_1.md`
+
+---
+
+## FASE 3 — Lo que hay que MANTENER (no tocar)
+
+El profesor valoró expresamente estos archivos. Deben estar en el repo de entrega:
+
+| Archivo | Por qué se mantiene |
+|---------|-------------------|
+| `README.md` | Punto de entrada — revisar en Fase 4 |
+| `ARQUITECTURA_API.md` | Contrato REST completo — documentación técnica |
+| `MANUAL_USUARIO.md` | Manual por roles con capturas — el profesor lo pidió |
+| `USUARIOS_PRUEBA.md` | Credenciales demo — el profesor lo valoró |
+| `PLAN_SEGURIDAD_OWASP.md` | **El profesor lo destacó especialmente** — no tocar |
+| `ERD_DATABASE.md` | Diagrama E-R — mencionado positivamente |
+| `UML_CLASS_DIAGRAM.md` | Diagramas de clases — mencionado positivamente |
+| `DECISIONES_TECNICAS.md` | (recién movido de planes/) — el profesor lo valoró |
+| `ANEXO 8_ACEVEDO DONATE, IKER.md` | Documento oficial del TFG |
+| `docker-compose.yml` | Para levantar el sistema |
+| `backend/` | Código fuente backend — no tocar |
+| `frontend/` | Código fuente frontend — no tocar |
+
+---
+
+## FASE 4 — Revisar y mejorar el README.md
+
+El README debe ser profesional. Estructura ideal para la entrega final:
 
 ```markdown
 # Nexus — Plataforma de Gestión de Prácticas FCT
 
-Breve descripción del proyecto (2-3 líneas).
+[Descripción breve del sistema: qué es, para qué sirve, a quién va dirigido]
 
 ## Stack tecnológico
-[tabla con Backend/Frontend/Base de datos/Infraestructura]
+| Capa | Tecnología |
+|------|-----------|
+| Backend | Java 21 + Spring Boot 3.4.1 |
+| Seguridad | Spring Security + JWT |
+| Persistencia | PostgreSQL + Hibernate (JPA) + Flyway |
+| Frontend | Flutter (Dart) + Provider + Dio + go_router |
+| Infraestructura | Docker Compose |
 
 ## Requisitos previos
-- Docker Desktop
+- Docker Desktop instalado y arrancado
 - Git
 
 ## Arranque rápido
-[comandos docker-compose para levantar el proyecto]
+```bash
+git clone https://github.com/ikeracv28/TFG-Seguimiento.git
+cd TFG-Seguimiento
+docker-compose up -d
+```
+La primera vez tarda ~3 minutos (descarga imágenes + aplica migraciones Flyway).
 
-## Acceso a la aplicación
-[URL y usuarios de prueba de cada rol]
+Acceso: http://localhost (Flutter web compilado)
+API: http://localhost:8080
 
-## Estructura del proyecto
-[árbol de carpetas explicado brevemente]
+## Usuarios de prueba
+Ver USUARIOS_PRUEBA.md para credenciales y escenarios de demostración.
 
-## Documentación
-[links a ARQUITECTURA_API.md, MANUAL_USUARIO.md, ERD_DATABASE.md]
+## Documentación técnica
+- ARQUITECTURA_API.md — Contrato REST completo
+- PLAN_SEGURIDAD_OWASP.md — Plan de seguridad con trazabilidad OWASP Top 10
+- ERD_DATABASE.md — Diagrama entidad-relación
+- UML_CLASS_DIAGRAM.md — Diagramas de clases
+- DECISIONES_TECNICAS.md — Decisiones de arquitectura justificadas
+- MANUAL_USUARIO.md — Manual de uso por rol
+
+## Tests
+| Área | Clases | Tests |
+|------|--------|-------|
+| Seguridad OWASP | 6 | ~60 |
+| Controllers | 10 | ~130 |
+| Servicios | 2 | ~30 |
+| **Total** | **~18** | **~258** |
+
+Cobertura JaCoCo disponible tras: `./mvnw test`
 ```
 
-Elimina del README cualquier mención a:
-- Claude Code, Gemini, IA, herramientas de agentes
-- Archivos internos que ya habrás borrado
-- Rutas de archivos que ya no existen
+Elimina del README cualquier mención a herramientas de IA, archivos internos que ya no existen,
+o rutas que hayan cambiado.
 
 ---
 
-### FASE 3 — Revisar el .gitignore
+## FASE 5 — Actualizar .gitignore
 
-Añade al `.gitignore` para que nunca aparezcan en este repo:
-```
-# Archivos de herramientas IA
+Añade al `.gitignore` para prevenir que vuelvan a aparecer en futuras sincronizaciones:
+
+```gitignore
+# Herramientas IA
 CLAUDE.md
 GEMINI.md
 skills-lock.json
 .agents/
 conductor/
 planes/
+RETOMAR_SESION.md
+contexto_proyecto.md
 DESIGN_SYSTEM.md
 HISTORIAL_CAMBIOS.md
-RETOMAR_SESION.md
-PLAN_SEGURIDAD_OWASP.md
-contexto_proyecto.md
 ACTUALIZACIONES_MEMORIA.md
 MEMORIA_ACTUALIZACIONES.md
+
+# Borradores
+memoria75%.md
+MemoriaEnMd.md
+Feedback.md
 ```
 
 ---
 
-### FASE 4 — Verificar que solo queda lo valioso
+## FASE 6 — Commit final
 
-Tras la limpieza, en raíz solo deben quedar:
+```bash
+git add -A
+git commit -m "chore: limpieza repo entrega — eliminar archivos IA, extraer decisiones-tecnicas"
+git push
+```
 
-| Archivo | Por qué se mantiene |
-|---------|-------------------|
-| `README.md` | Punto de entrada para el evaluador |
-| `ARQUITECTURA_API.md` | Documentación técnica del contrato REST |
-| `MANUAL_USUARIO.md` | Manual de uso por roles |
-| `USUARIOS_PRUEBA.md` | Credenciales para probar el sistema |
-| `ANEXO 8_ACEVEDO DONATE, IKER.md` | Documento oficial del TFG |
-| `ERD_DATABASE.md` | Diagrama entidad-relación |
-| `UML_CLASS_DIAGRAM.md` | Diagramas de clases |
-| `docker-compose.yml` | Para levantar el sistema |
-| `backend/` | Código fuente backend |
-| `frontend/` | Código fuente frontend |
+Tras el push, verifica con `git log --oneline -3` y `git status` que el working tree está limpio.
 
 ---
 
-### FASE 5 — Commit final
+## RESULTADO ESPERADO
 
-Haz un único commit limpio con todo lo eliminado:
-
+Raíz del repo de entrega tras la limpieza:
 ```
-git rm -r --cached planes/ conductor/ .agents/ 2>/dev/null || true
-git rm --cached CLAUDE.md GEMINI.md skills-lock.json DESIGN_SYSTEM.md \
-  HISTORIAL_CAMBIOS.md RETOMAR_SESION.md PLAN_SEGURIDAD_OWASP.md \
-  contexto_proyecto.md ACTUALIZACIONES_MEMORIA.md MEMORIA_ACTUALIZACIONES.md \
-  MEMORIA_NUEVA_CONTENIDO.md Feedback.md memoria75%.md MemoriaEnMd.md \
-  "Memoria TFG Iker-Acevedo 75% (1).md" "Memoria TFG Iker-Acevedo 75% (2).md" \
-  "Captura de pantalla 2026-04-29 202731.md" 2>/dev/null || true
-git rm --cached backend/GEMINI.md backend/contexto_proyecto.md \
-  "backend/ARQUITECTURA_API.md" backend/MEMORIA_SEGUIMIENTO_ENTREGA_1.md \
-  frontend/GEMINI.md frontend/contexto_proyecto.md \
-  "frontend/ARQUITECTURA_API.md" 2>/dev/null || true
-```
-
-Mensaje del commit:
-```
-chore: limpieza repositorio de entrega — eliminar archivos de trabajo interno
+├── README.md                    ← punto de entrada profesional
+├── ARQUITECTURA_API.md          ← contrato REST
+├── PLAN_SEGURIDAD_OWASP.md      ← destacado por el profesor
+├── MANUAL_USUARIO.md            ← manual por roles
+├── USUARIOS_PRUEBA.md           ← credenciales demo
+├── DECISIONES_TECNICAS.md       ← movido de planes/
+├── ERD_DATABASE.md              ← diagrama E-R
+├── UML_CLASS_DIAGRAM.md         ← diagramas de clases
+├── ANEXO 8_ACEVEDO DONATE...md  ← documento oficial
+├── docker-compose.yml           ← infraestructura
+├── backend/                     ← código fuente
+└── frontend/                    ← código fuente
 ```
 
-Luego `git push`.
-
----
-
-### NOTAS FINALES
-
-- **No toques el código fuente** (backend/src/, frontend/lib/). Solo documentación y configuración.
-- Si algún archivo de la lista no existe en este repo, ignóralo (puede que nunca se sincronizara).
-- Después de la limpieza, haz `git log --oneline -5` y `git status` para confirmar que el working tree está limpio.
-- El repositorio de entrega es: https://github.com/ikeracv28/TFG-Seguimiento
+12 archivos en raíz — limpio, profesional y coherente con el feedback del profesor.
